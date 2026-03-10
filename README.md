@@ -35,6 +35,9 @@
    - `python scripts/gateway_status.py --env dev`
    - `python scripts/replay_gateway_event.py --env dev --channel telegram --session-id demo-001 --text "设备故障需要处理" --trace-id trace_demo_001`
    - `python scripts/trace_debug.py --env dev --trace-id trace_demo_001 --limit 20`
+   - `python -m scripts.deploy_release --env dev`
+   - `python -m scripts.verify_release --env dev --require-active-release`
+   - `python -m scripts.rollback_release --env dev`
    - `python -m scripts.run_acceptance --env dev`
    - `python -m scripts.trace_kpi --env dev --output storage/acceptance/trace_kpi_from_log.json`
 
@@ -67,6 +70,10 @@
 - `make trace-kpi`：从 trace 日志计算链路 KPI 并写入文件。
 - `make ci`：CI 同步质量闸门（validate + lint + typecheck + unit + workflow + regression + integration + smoke）。
 - `make container-smoke`：在容器内执行 smoke replay（`docker compose run --rm smoke`）。
+- `make deploy-release ENV=dev`：执行发布前检查并生成可回滚快照。
+- `make verify-release ENV=dev`：执行发布后验证（健康检查 + 网关状态 + release state）。
+- `make rollback-release ENV=dev`：按快照回滚最近一次发布。
+- `make release-cycle ENV=dev`：一条命令执行 `deploy -> verify -> rollback`。
 - `make validate-structure`：校验目录与关键文件结构。
 - `make check`：完整质量闸门（validate + lint + typecheck + unit + workflow + regression + integration + smoke）。
 - 若本地存在 `refs/` 参考仓，建议对本仓代码做路径限定 lint：  
@@ -114,3 +121,13 @@
 - CI 定义：
   - `.github/workflows/ci.yml` 包含 `quality`、`smoke-container`、`acceptance` 三个阶段。
   - `acceptance` 为独立 job，不强耦合 `check` 目标。
+
+## 发布与回滚
+
+- 推荐命令链（dev）：
+  - `make release-cycle ENV=dev`
+- 分步执行（dev）：
+  - `make deploy-release ENV=dev`
+  - `make verify-release ENV=dev`
+  - `make rollback-release ENV=dev`
+- 当发布/验证失败时，脚本会输出 `commands` 与 `diagnostics` 字段，可直接复制复现排障。

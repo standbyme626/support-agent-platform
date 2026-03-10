@@ -35,6 +35,10 @@ REQUIRED_FILES = [
     "scripts/replay_gateway_event.py",
     "scripts/run_acceptance.py",
     "scripts/trace_kpi.py",
+    "scripts/deploy_release.py",
+    "scripts/verify_release.py",
+    "scripts/rollback_release.py",
+    "scripts/release_state.py",
     "seed_data/acceptance_samples/default_samples.json",
 ]
 

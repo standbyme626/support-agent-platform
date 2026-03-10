@@ -6,4 +6,6 @@ __pycache__/
 .env
 storage/*.db
 storage/*.log
+storage/acceptance/
+storage/releases/
 refs/

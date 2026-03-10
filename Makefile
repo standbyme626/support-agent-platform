@@ -1,4 +1,6 @@
-.PHONY: format lint typecheck test test-unit test-workflow test-regression test-integration smoke-replay acceptance acceptance-gate trace-kpi ci container-smoke check validate-structure
+ENV ?= dev
+
+.PHONY: format lint typecheck test test-unit test-workflow test-regression test-integration smoke-replay acceptance acceptance-gate trace-kpi ci container-smoke deploy-release verify-release rollback-release release-cycle check validate-structure
 
 format:
 	python -m ruff format .
@@ -39,6 +41,17 @@ ci: validate-structure lint typecheck test-unit test-workflow test-regression te
 
 container-smoke:
 	docker compose run --rm smoke
+
+deploy-release:
+	python -m scripts.deploy_release --env $(ENV)
+
+verify-release:
+	python -m scripts.verify_release --env $(ENV) --require-active-release
+
+rollback-release:
+	python -m scripts.rollback_release --env $(ENV)
+
+release-cycle: deploy-release verify-release rollback-release
 
 validate-structure:
 	python scripts/validate_structure.py

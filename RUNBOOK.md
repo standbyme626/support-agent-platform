@@ -10,6 +10,9 @@
 - `scripts/trace_debug.py`
 - `scripts/run_acceptance.py`
 - `scripts/trace_kpi.py`
+- `scripts/deploy_release.py`
+- `scripts/verify_release.py`
+- `scripts/rollback_release.py`
 
 ## 2. 运行前检查
 
@@ -142,6 +145,55 @@ docker compose run --rm smoke
 - `smoke-container`：`docker compose run --rm smoke`
 - `acceptance`：`make acceptance-gate`（独立 job，不强耦合 `check`）
 
+### 3.9 deploy（发布前检查 + 快照）
+
+命令：
+
+```bash
+python -m scripts.deploy_release --env dev
+```
+
+预期：
+
+- `status` 为 `ok`
+- 输出 `release_id`、`snapshot_dir`
+- 输出可复现命令：`commands.verify`、`commands.rollback`
+
+### 3.10 verify（发布后验证）
+
+命令：
+
+```bash
+python -m scripts.verify_release --env dev --require-active-release
+```
+
+预期：
+
+- `status` 为 `ok`
+- `diagnostics.healthcheck.status` 非 `error`
+- `diagnostics.gateway_status.recent_events` 可读
+
+### 3.11 rollback（失败回滚）
+
+命令：
+
+```bash
+python -m scripts.rollback_release --env dev
+```
+
+预期：
+
+- `status` 为 `ok`
+- 返回 `rolled_back_release_id` 与 `restored_paths`
+
+### 3.12 一条命令链（deploy -> verify -> rollback）
+
+```bash
+make release-cycle ENV=dev
+```
+
+该命令可复现完整发布链路，适合作为 staging/dev 演练入口。
+
 ## 4. 故障排查步骤
 
 ### 4.1 healthcheck 返回 `error` 或 `degraded`
@@ -170,6 +222,24 @@ docker compose run --rm smoke
    - `/reassign` 需要目标 assignee。
    - `/close` 需要 resolution note。
 2. 通过 trace/event 日志确认最后一次状态变更事件。
+
+### 4.5 deploy 脚本失败
+
+1. 查看返回 JSON 的 `reason` 与 `diagnostics.healthcheck`。
+2. 先执行 `commands.precheck` 修复环境问题。
+3. 修复后重新执行 `python -m scripts.deploy_release --env <env>`。
+
+### 4.6 verify 脚本失败
+
+1. 查看 `errors` 是否包含 `active_release_missing` 或 `healthcheck_failed`。
+2. 先执行 `commands.healthcheck`、`commands.gateway_status` 收集诊断信息。
+3. 若发布异常，执行 `commands.rollback` 回滚。
+
+### 4.7 rollback 脚本失败
+
+1. 查看 `reason` 是否为 `snapshot_missing`。
+2. 使用 `diagnostics.missing_snapshots` 定位缺失快照。
+3. 执行 `commands.redeploy` 重新发布，随后 `commands.verify` 复核。
 
 ## 5. 标准恢复流程
 
