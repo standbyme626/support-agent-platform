@@ -122,6 +122,10 @@ class WorkflowEngine:
                 "escalation_targets": sla_result.escalation_targets,
                 "first_response_due_at": sla_result.first_response_due_at.isoformat(),
                 "resolution_due_at": sla_result.resolution_due_at.isoformat(),
+                "policy_version": sla_result.policy_version,
+                "matched_rule_id": sla_result.matched_rule_id,
+                "matched_rule_path": sla_result.matched_rule_path,
+                "used_fallback": sla_result.used_fallback,
             },
             trace_id=trace_id,
             ticket_id=ticket.ticket_id,
@@ -141,12 +145,15 @@ class WorkflowEngine:
             case_summary=summary,
             recommendations=recommendations,
             recent_events=events,
+            sla_result=sla_result,
         )
         self._log(
             "handoff_decision",
             {
                 "should_handoff": handoff_decision.should_handoff,
                 "reason": handoff_decision.reason,
+                "policy_version": handoff_decision.policy_version,
+                "matched_rule_paths": list(handoff_decision.matched_rule_paths),
             },
             trace_id=trace_id,
             ticket_id=ticket.ticket_id,

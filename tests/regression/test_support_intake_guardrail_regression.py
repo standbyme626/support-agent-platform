@@ -26,18 +26,19 @@ def _build_intake(tmp_path: Path) -> SupportIntakeWorkflow:
         ticket_api=ticket_api,
         retriever=Retriever(Path(__file__).resolve().parents[2] / "seed_data"),
     )
+    policy_path = (
+        Path(__file__).resolve().parents[2]
+        / "seed_data"
+        / "sla_rules"
+        / "default_sla_rules.json"
+    )
     engine = WorkflowEngine(
         ticket_api=ticket_api,
         intent_router=IntentRouter(),
         tool_router=tool_router,
         summary_engine=SummaryEngine(),
-        handoff_manager=HandoffManager(),
-        sla_engine=SlaEngine.from_file(
-            Path(__file__).resolve().parents[2]
-            / "seed_data"
-            / "sla_rules"
-            / "default_sla_rules.json"
-        ),
+        handoff_manager=HandoffManager.from_file(policy_path),
+        sla_engine=SlaEngine.from_file(policy_path),
         recommendation_engine=RecommendedActionsEngine(),
     )
     return SupportIntakeWorkflow(engine, case_collab_workflow=CaseCollabWorkflow(ticket_api))

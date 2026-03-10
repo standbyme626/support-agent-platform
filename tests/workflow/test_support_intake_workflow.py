@@ -25,19 +25,20 @@ def _build_intake_workflow(tmp_path: Path) -> tuple[SupportIntakeWorkflow, Ticke
     ticket_api = TicketAPI(repo)
     retriever = Retriever(Path(__file__).resolve().parents[2] / "seed_data")
     tool_router = ToolRouter(ticket_api=ticket_api, retriever=retriever)
+    policy_path = (
+        Path(__file__).resolve().parents[2]
+        / "seed_data"
+        / "sla_rules"
+        / "default_sla_rules.json"
+    )
 
     engine = WorkflowEngine(
         ticket_api=ticket_api,
         intent_router=IntentRouter(),
         tool_router=tool_router,
         summary_engine=SummaryEngine(),
-        handoff_manager=HandoffManager(),
-        sla_engine=SlaEngine.from_file(
-            Path(__file__).resolve().parents[2]
-            / "seed_data"
-            / "sla_rules"
-            / "default_sla_rules.json"
-        ),
+        handoff_manager=HandoffManager.from_file(policy_path),
+        sla_engine=SlaEngine.from_file(policy_path),
         recommendation_engine=RecommendedActionsEngine(),
     )
 
@@ -90,3 +91,25 @@ def test_support_intake_repair_creates_ticket_and_pushes_collab(tmp_path: Path) 
     assert "ticket_classified" in event_types
     assert "ticket_context_retrieved" in event_types
     assert "ticket_draft_generated" in event_types
+
+
+def test_support_intake_handoff_event_contains_policy_paths(tmp_path: Path) -> None:
+    workflow, ticket_api = _build_intake_workflow(tmp_path)
+    result = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-complaint-handoff",
+            message_text="我要投诉并要求人工客服马上处理",
+            metadata={"thread_id": "thread-complaint-handoff"},
+        )
+    )
+
+    assert result.handoff_required is True
+    events = ticket_api.list_events(result.ticket_id)
+    handoff_events = [item for item in events if item.event_type == "ticket_handoff_requested"]
+    assert handoff_events
+
+    payload = handoff_events[-1].payload
+    assert str(payload["sla_rule_path"]).startswith("sla.")
+    assert isinstance(payload["handoff_rule_paths"], list)
+    assert payload["handoff_rule_paths"]

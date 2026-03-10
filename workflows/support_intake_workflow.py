@@ -154,6 +154,10 @@ class SupportIntakeWorkflow:
                 payload={
                     "reason": outcome.handoff.reason,
                     "sla_targets": outcome.sla.escalation_targets,
+                    "sla_policy_version": outcome.sla.policy_version,
+                    "sla_rule_path": outcome.sla.matched_rule_path,
+                    "handoff_policy_version": outcome.handoff.policy_version,
+                    "handoff_rule_paths": list(outcome.handoff.matched_rule_paths),
                 },
             )
 

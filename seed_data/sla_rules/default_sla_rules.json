@@ -1,8 +1,104 @@
 {
-  "rules": {
-    "P1": {"first_response_minutes": 15, "resolution_minutes": 120, "escalation": "immediate"},
-    "P2": {"first_response_minutes": 30, "resolution_minutes": 240, "escalation": "supervisor"},
-    "P3": {"first_response_minutes": 60, "resolution_minutes": 480, "escalation": "queue"},
-    "P4": {"first_response_minutes": 120, "resolution_minutes": 1440, "escalation": "queue"}
+  "version": "2026-03-11.p1-8",
+  "fallback": {
+    "first_response_minutes": 60,
+    "resolution_minutes": 480,
+    "escalation_target": "queue",
+    "escalate_on_breaches": ["first_response_overdue", "resolution_overdue"]
+  },
+  "overrides": [
+    {
+      "id": "priority-p1",
+      "when": {"priority": ["P1"]},
+      "first_response_minutes": 15,
+      "resolution_minutes": 120,
+      "escalation_target": "immediate",
+      "escalate_on_breaches": ["first_response_overdue", "resolution_overdue"]
+    },
+    {
+      "id": "priority-p2",
+      "when": {"priority": ["P2"]},
+      "first_response_minutes": 30,
+      "resolution_minutes": 240,
+      "escalation_target": "supervisor",
+      "escalate_on_breaches": ["resolution_overdue"]
+    },
+    {
+      "id": "complaint-all",
+      "when": {"intent": ["complaint"]},
+      "first_response_minutes": 20,
+      "resolution_minutes": 180,
+      "escalation_target": "customer_relations",
+      "escalate_on_breaches": ["first_response_overdue", "resolution_overdue"]
+    },
+    {
+      "id": "billing-wecom",
+      "when": {"intent": ["billing"], "channel": ["wecom"]},
+      "first_response_minutes": 25,
+      "resolution_minutes": 180,
+      "escalation_target": "finance_lead",
+      "escalate_on_breaches": ["resolution_overdue"]
+    },
+    {
+      "id": "vip-queue",
+      "when": {"queue": ["vip-support"]},
+      "first_response_minutes": 10,
+      "resolution_minutes": 90,
+      "escalation_target": "vip_manager",
+      "escalate_on_breaches": ["first_response_overdue", "resolution_overdue"]
+    },
+    {
+      "id": "faq-telegram",
+      "when": {"intent": ["faq"], "channel": ["telegram"]},
+      "first_response_minutes": 120,
+      "resolution_minutes": 1440,
+      "escalation_target": "queue",
+      "escalate_on_breaches": []
+    }
+  ],
+  "handoff": {
+    "version": "2026-03-11.p1-8",
+    "fallback_rules": [
+      {
+        "id": "customer-asks-human",
+        "reason": "customer-asks-human",
+        "trigger": "customer_request_human",
+        "keywords": ["人工", "客服", "human", "agent"]
+      },
+      {
+        "id": "low-confidence-default",
+        "reason": "low-confidence",
+        "trigger": "low_confidence",
+        "low_confidence_threshold": 0.45
+      }
+    ],
+    "overrides": [
+      {
+        "id": "priority-p1-handoff",
+        "reason": "priority-P1",
+        "trigger": "always",
+        "when": {"priority": ["P1"]}
+      },
+      {
+        "id": "complaint-handoff",
+        "reason": "complaint-intent",
+        "trigger": "always",
+        "when": {"intent": ["complaint"]}
+      },
+      {
+        "id": "complaint-wecom-low-confidence",
+        "reason": "complaint-wecom-low-confidence",
+        "trigger": "low_confidence",
+        "when": {"intent": ["complaint"], "channel": ["wecom"]},
+        "low_confidence_threshold": 0.6
+      },
+      {
+        "id": "sla-critical-handoff",
+        "reason": "sla-critical-breach",
+        "trigger": "sla_breach",
+        "when": {"priority": ["P1", "P2"]},
+        "sla_breaches": ["first_response_overdue", "resolution_overdue"]
+      }
+    ]
   }
 }

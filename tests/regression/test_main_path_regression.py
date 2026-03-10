@@ -27,16 +27,17 @@ def _build_workflow(tmp_path: Path) -> tuple[WorkflowEngine, TicketAPI, SlaEngin
 
     logger = JsonTraceLogger(log_path)
     retriever = Retriever(Path(__file__).resolve().parents[2] / "seed_data")
-    sla_engine = SlaEngine.from_file(
+    policy_path = (
         Path(__file__).resolve().parents[2] / "seed_data" / "sla_rules" / "default_sla_rules.json"
     )
+    sla_engine = SlaEngine.from_file(policy_path)
     tool_router = ToolRouter(ticket_api=ticket_api, retriever=retriever, trace_logger=logger)
     workflow = WorkflowEngine(
         ticket_api=ticket_api,
         intent_router=IntentRouter(),
         tool_router=tool_router,
         summary_engine=SummaryEngine(),
-        handoff_manager=HandoffManager(),
+        handoff_manager=HandoffManager.from_file(policy_path),
         sla_engine=sla_engine,
         recommendation_engine=RecommendedActionsEngine(),
         trace_logger=logger,
@@ -76,6 +77,11 @@ def test_handoff_regression(tmp_path: Path) -> None:
     trace_events = logger.query_by_trace("trace_reg_handoff")
     event_types = {event["event_type"] for event in trace_events}
     assert "handoff_decision" in event_types
+    handoff_event = next(
+        event for event in trace_events if event["event_type"] == "handoff_decision"
+    )
+    assert handoff_event["payload"]["matched_rule_paths"]
+    assert str(handoff_event["payload"]["policy_version"]).startswith("2026-03-11")
 
 
 def test_sla_trigger_regression(tmp_path: Path) -> None:
@@ -94,5 +100,30 @@ def test_sla_trigger_regression(tmp_path: Path) -> None:
     evaluated = sla_engine.evaluate(ticket, events, now=datetime.now(UTC) + timedelta(hours=6))
 
     assert "resolution_overdue" in evaluated.breached_items
+    assert evaluated.matched_rule_path.startswith("sla.overrides")
     trace_events = logger.query_by_trace("trace_reg_sla")
-    assert any(event["event_type"] == "sla_evaluated" for event in trace_events)
+    sla_events = [event for event in trace_events if event["event_type"] == "sla_evaluated"]
+    assert sla_events
+    assert "matched_rule_path" in sla_events[-1]["payload"]
+
+
+def test_first_response_timeout_regression(tmp_path: Path) -> None:
+    workflow, ticket_api, sla_engine, _ = _build_workflow(tmp_path)
+    outcome = workflow.process_intake(
+        InboundEnvelope(
+            channel="telegram",
+            session_id="first-response-reg",
+            message_text="设备故障报修",
+            metadata={"thread_id": "thread-first-response"},
+        )
+    )
+
+    ticket = ticket_api.require_ticket(outcome.ticket.ticket_id)
+    events = ticket_api.list_events(ticket.ticket_id)
+    evaluated = sla_engine.evaluate(
+        ticket,
+        events,
+        now=(ticket.created_at or datetime.now(UTC)) + timedelta(minutes=40),
+    )
+
+    assert "first_response_overdue" in evaluated.breached_items
