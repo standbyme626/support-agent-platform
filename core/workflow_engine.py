@@ -67,7 +67,7 @@ class WorkflowEngine:
             session_id=envelope.session_id,
             ticket_id=existing_ticket_id,
         )
-        kb_source = "faq" if intent.intent == "faq" else "sop"
+        kb_source = "faq" if intent.intent == "faq" else "grounded"
         docs_result = self._tool_router.execute(
             "search_kb",
             {
@@ -230,4 +230,7 @@ class WorkflowEngine:
         if intent.is_low_confidence:
             return "我需要更多信息来准确处理，请补充订单号或故障截图。"
 
+        if retrieved_docs:
+            evidence = ", ".join(f"{doc.source_type}:{doc.doc_id}" for doc in retrieved_docs[:2])
+            return f"已收到，我们正在处理你的工单。参考证据：{evidence}"
         return "已收到，我们正在处理你的工单。"

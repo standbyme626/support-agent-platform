@@ -22,13 +22,23 @@ class Retriever:
     def search_history(self, query: str, *, top_k: int = 3) -> list[KBDocument]:
         return self.search("history_case", query, top_k=top_k)
 
-    def search(self, source_type: str, query: str, *, top_k: int = 3) -> list[KBDocument]:
+    def search_grounded(self, query: str, *, top_k: int = 5) -> list[KBDocument]:
+        history = self.search("history_case", query, top_k=max(top_k, 5), source_boost=0.30)
+        sop = self.search("sop", query, top_k=max(top_k, 5), source_boost=0.10)
+        faq = self.search("faq", query, top_k=max(top_k, 5), source_boost=0.00)
+        merged = [*history, *sop, *faq]
+        merged.sort(key=lambda item: item.score, reverse=True)
+        return merged[:top_k]
+
+    def search(
+        self, source_type: str, query: str, *, top_k: int = 3, source_boost: float = 0.0
+    ) -> list[KBDocument]:
         docs = [doc for doc in self._documents if doc.source_type == source_type]
         terms = self._tokenize(query)
 
         scored: list[KBDocument] = []
         for doc in docs:
-            score = self._score(doc, terms)
+            score = self._score(doc, terms) + source_boost
             if score <= 0:
                 continue
             scored.append(

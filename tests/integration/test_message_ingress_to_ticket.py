@@ -84,7 +84,7 @@ def test_message_ingress_to_ticket_creation(tmp_path: Path) -> None:
 
     assert result.ticket_id.startswith("TCK-")
     events = ticket_api.list_events(result.ticket_id)
-    assert any(event.event_type == "classify_decision" for event in events)
+    assert any(event.event_type == "ticket_classified" for event in events)
     bound = bindings.session_mapper.get("67890")
     assert bound is not None
     assert bound.ticket_id == result.ticket_id

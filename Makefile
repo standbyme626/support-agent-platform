@@ -1,18 +1,33 @@
-.PHONY: format lint typecheck test check validate-structure
+.PHONY: format lint typecheck test test-unit test-workflow test-regression test-integration smoke-replay check validate-structure
 
 format:
 	python -m ruff format .
 
 lint:
-	python -m ruff check .
+	python -m ruff check channel_adapters config core openclaw_adapter storage tools workflows tests scripts
 
 typecheck:
-	python -m mypy .
+	python -m mypy channel_adapters config core openclaw_adapter storage tools workflows tests scripts
 
 test:
 	python -m pytest
 
+test-unit:
+	python -m pytest tests/unit
+
+test-workflow:
+	python -m pytest tests/workflow
+
+test-regression:
+	python -m pytest tests/regression
+
+test-integration:
+	python -m pytest tests/integration
+
+smoke-replay:
+	python -m pytest tests/integration/test_openclaw_gateway.py -q
+
 validate-structure:
 	python scripts/validate_structure.py
 
-check: validate-structure lint typecheck test
+check: validate-structure lint typecheck test-unit test-workflow test-regression test-integration smoke-replay

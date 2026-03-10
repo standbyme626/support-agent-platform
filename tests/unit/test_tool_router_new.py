@@ -46,3 +46,10 @@ def test_tool_router_dispatches_core_tools(tmp_path: Path) -> None:
 
     docs = router.execute("search_kb", {"source_type": "sop", "query": "报修 故障", "top_k": 1})
     assert docs.output
+
+    grounded = router.execute(
+        "search_kb",
+        {"source_type": "grounded", "query": "支付 重复 扣费", "top_k": 3},
+    )
+    assert grounded.output
+    assert any(item["source_type"] == "history_case" for item in grounded.output)

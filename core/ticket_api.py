@@ -40,6 +40,7 @@ class TicketAPI:
         queue: str = "support",
         customer_id: str | None = None,
         assignee: str | None = None,
+        risk_level: str = "medium",
         inbox: str | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> Ticket:
@@ -56,11 +57,13 @@ class TicketAPI:
             queue=queue,
             assignee=assignee,
             inbox=normalized_inbox,
+            source_channel=channel,
+            risk_level=risk_level,
             metadata=metadata,
         )
         self._repository.append_event(
             ticket_id=ticket.ticket_id,
-            event_type="created",
+            event_type="ticket_created",
             actor_type="system",
             actor_id="ticket-api",
             payload={
@@ -90,7 +93,7 @@ class TicketAPI:
                     ticket_id=ticket_id,
                     new_status=requested_status,
                     actor_id=actor_id,
-                    event_type="status_changed",
+                    event_type="ticket_status_changed",
                     extra_updates=merged_updates,
                     payload={"requested_via": "update_ticket"},
                 )
@@ -99,7 +102,7 @@ class TicketAPI:
         updated = self._repository.update_ticket(ticket_id, merged_updates)
         self._repository.append_event(
             ticket_id=ticket_id,
-            event_type="updated",
+            event_type="ticket_updated",
             actor_type="agent",
             actor_id=actor_id,
             payload={"updates": merged_updates},
@@ -109,7 +112,7 @@ class TicketAPI:
     def assign_ticket(self, ticket_id: str, assignee: str, *, actor_id: str) -> Ticket:
         current = self.require_ticket(ticket_id)
         self._ensure_not_closed(current)
-        event_type = "reassigned" if current.assignee else "assigned"
+        event_type = "ticket_reassigned" if current.assignee else "ticket_assigned"
 
         updated = self._transition_status(
             ticket_id=ticket_id,
@@ -119,12 +122,23 @@ class TicketAPI:
             extra_updates={
                 "assignee": assignee,
                 "lifecycle_stage": "classified",
+                "last_agent_action": f"assign:{assignee}",
             },
             payload={"assignee": assignee},
         )
         return updated
 
-    def close_ticket(self, ticket_id: str, *, actor_id: str, resolution_note: str) -> Ticket:
+    def close_ticket(
+        self,
+        ticket_id: str,
+        *,
+        actor_id: str,
+        resolution_note: str,
+        close_reason: str | None = None,
+        resolution_code: str | None = None,
+        handoff_state: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> Ticket:
         current = self.require_ticket(ticket_id)
         self._ensure_not_closed(current)
 
@@ -133,39 +147,62 @@ class TicketAPI:
                 ticket_id=ticket_id,
                 actor_id=actor_id,
                 resolution_note=resolution_note,
+                resolution_code=resolution_code,
             )
+
+        updates: dict[str, Any] = {
+            "needs_handoff": False,
+            "latest_message": resolution_note,
+            "resolution_note": resolution_note,
+            "resolution_code": resolution_code,
+            "close_reason": close_reason or "agent_close",
+            "closed_at": datetime.now(UTC),
+            "lifecycle_stage": "closed",
+            "last_agent_action": "close",
+        }
+        if handoff_state is not None:
+            updates["handoff_state"] = handoff_state
+        if metadata is not None:
+            updates["metadata"] = metadata
 
         return self._transition_status(
             ticket_id=ticket_id,
             new_status="closed",
             actor_id=actor_id,
-            event_type="closed",
-            extra_updates={
-                "needs_handoff": False,
-                "latest_message": resolution_note,
+            event_type="ticket_closed",
+            extra_updates=updates,
+            payload={
                 "resolution_note": resolution_note,
-                "closed_at": datetime.now(UTC),
-                "lifecycle_stage": "closed",
+                "resolution_code": resolution_code,
+                "close_reason": close_reason or "agent_close",
             },
-            payload={"resolution_note": resolution_note},
         )
 
-    def resolve_ticket(self, ticket_id: str, *, actor_id: str, resolution_note: str) -> Ticket:
+    def resolve_ticket(
+        self,
+        ticket_id: str,
+        *,
+        actor_id: str,
+        resolution_note: str,
+        resolution_code: str | None = None,
+    ) -> Ticket:
         current = self.require_ticket(ticket_id)
         self._ensure_not_closed(current)
         return self._transition_status(
             ticket_id=ticket_id,
             new_status="resolved",
             actor_id=actor_id,
-            event_type="resolved",
+            event_type="ticket_resolved",
             extra_updates={
                 "needs_handoff": False,
                 "latest_message": resolution_note,
                 "resolution_note": resolution_note,
+                "resolution_code": resolution_code,
                 "resolved_at": datetime.now(UTC),
                 "lifecycle_stage": "resolved",
+                "last_agent_action": "resolve",
             },
-            payload={"resolution_note": resolution_note},
+            payload={"resolution_note": resolution_note, "resolution_code": resolution_code},
         )
 
     def escalate_ticket(
@@ -183,11 +220,14 @@ class TicketAPI:
             ticket_id=ticket_id,
             new_status="escalated",
             actor_id=actor_id,
-            event_type="escalated",
+            event_type="ticket_escalated",
             extra_updates={
                 "priority": new_priority,
                 "escalated_at": datetime.now(UTC),
                 "lifecycle_stage": "awaiting_human",
+                "handoff_state": "requested",
+                "risk_level": "high",
+                "last_agent_action": "escalate",
             },
             payload={"reason": reason, "priority": new_priority},
         )

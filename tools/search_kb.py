@@ -16,6 +16,8 @@ def search_kb(
         docs = retriever.search_sop(query, top_k=top_k)
     elif source_type in {"history", "history_case"}:
         docs = retriever.search_history(query, top_k=top_k)
+    elif source_type in {"grounded", "hybrid"}:
+        docs = retriever.search_grounded(query, top_k=top_k)
     else:
         raise ValueError(f"Unsupported source_type: {source_type}")
 

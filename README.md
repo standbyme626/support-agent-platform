@@ -54,8 +54,13 @@
 - `make lint`：静态检查（ruff）。
 - `make typecheck`：类型检查（mypy）。
 - `make test`：运行所有测试（pytest）。
+- `make test-unit`：运行单元测试。
+- `make test-workflow`：运行工作流测试。
+- `make test-regression`：运行回归测试。
+- `make test-integration`：运行集成测试。
+- `make smoke-replay`：运行入口回放烟雾测试。
 - `make validate-structure`：校验目录与关键文件结构。
-- `make check`：完整质量闸门（validate + lint + typecheck + test）。
+- `make check`：完整质量闸门（validate + lint + typecheck + unit + workflow + regression + integration + smoke）。
 - 若本地存在 `refs/` 参考仓，建议对本仓代码做路径限定 lint：  
   `python -m ruff check core storage workflows channel_adapters openclaw_adapter tests`
 

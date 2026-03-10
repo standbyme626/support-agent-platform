@@ -31,9 +31,11 @@ def test_case_collab_commands_end_to_end(tmp_path: Path) -> None:
 
     pushed = collab.push_new_ticket(ticket_id)
     assert "/claim" in pushed["message"]
+    assert "summary=" in pushed["message"]
 
     claim = collab.handle_command(ticket_id=ticket_id, actor_id="agent-a", command_line="/claim")
     assert claim.ticket.assignee == "agent-a"
+    assert claim.ticket.handoff_state == "claimed"
 
     reassign = collab.handle_command(
         ticket_id=ticket_id,
@@ -41,6 +43,7 @@ def test_case_collab_commands_end_to_end(tmp_path: Path) -> None:
         command_line="/reassign agent-b",
     )
     assert reassign.ticket.assignee == "agent-b"
+    assert reassign.ticket.handoff_state == "waiting_internal"
 
     escalate = collab.handle_command(
         ticket_id=ticket_id,
@@ -48,6 +51,7 @@ def test_case_collab_commands_end_to_end(tmp_path: Path) -> None:
         command_line="/escalate customer is blocked",
     )
     assert escalate.ticket.status == "escalated"
+    assert escalate.ticket.handoff_state == "pending_approval"
 
     resolved = collab.handle_command(
         ticket_id=ticket_id,
@@ -55,6 +59,7 @@ def test_case_collab_commands_end_to_end(tmp_path: Path) -> None:
         command_line="/resolve fix prepared and verified",
     )
     assert resolved.ticket.status == "resolved"
+    assert resolved.ticket.handoff_state == "waiting_customer"
 
     closed = collab.handle_command(
         ticket_id=ticket_id,
@@ -62,3 +67,5 @@ def test_case_collab_commands_end_to_end(tmp_path: Path) -> None:
         command_line="/close resolved with firmware reset",
     )
     assert closed.ticket.status == "closed"
+    assert closed.ticket.handoff_state == "completed"
+    assert "final_action_trail" in closed.ticket.metadata

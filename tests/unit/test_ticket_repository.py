@@ -27,7 +27,7 @@ def test_repository_migrations_apply_and_rollback(tmp_path: Path) -> None:
     rolled_back = repo.rollback_last_migration()
     tables_after_rollback = _list_tables(sqlite_path)
 
-    assert rolled_back == "0003_add_ticket_lifecycle_columns"
+    assert rolled_back == "0004_add_ticket_operational_columns"
     assert "ticket_events" in tables_after_rollback
 
 
@@ -52,6 +52,9 @@ def test_repository_persists_lifecycle_fields(tmp_path: Path) -> None:
         lifecycle_stage="classified",
         first_response_due_at=first_due,
         resolution_due_at=resolution_due,
+        source_channel="wecom",
+        handoff_state="none",
+        risk_level="medium",
     )
 
     assert ticket.inbox == "wecom.vip"
@@ -66,8 +69,18 @@ def test_repository_persists_lifecycle_fields(tmp_path: Path) -> None:
             "lifecycle_stage": "awaiting_human",
             "escalated_at": escalated_at,
             "resolution_note": "need on-call engineer",
+            "resolution_code": "NEED_ESCALATION",
+            "close_reason": "awaiting_specialist",
+            "handoff_state": "requested",
+            "last_agent_action": "escalate",
+            "risk_level": "high",
         },
     )
     assert updated.lifecycle_stage == "awaiting_human"
     assert updated.escalated_at is not None
     assert updated.resolution_note == "need on-call engineer"
+    assert updated.resolution_code == "NEED_ESCALATION"
+    assert updated.close_reason == "awaiting_specialist"
+    assert updated.handoff_state == "requested"
+    assert updated.last_agent_action == "escalate"
+    assert updated.risk_level == "high"

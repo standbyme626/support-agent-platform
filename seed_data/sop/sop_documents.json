@@ -2,15 +2,331 @@
   {
     "doc_id": "sop-001",
     "source_type": "sop",
-    "title": "报修工单处理SOP",
-    "content": "识别报修意图后创建工单，收集故障截图和设备编号，分配给维修队列。",
-    "tags": ["报修", "SOP", "维修"]
+    "title": "报修工单SOP#001",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步维修队列，步骤4回写resolution与close_reason。SOP-001。",
+    "tags": [
+      "support",
+      "维修队列",
+      "SOP"
+    ]
   },
   {
     "doc_id": "sop-002",
     "source_type": "sop",
-    "title": "投诉升级SOP",
-    "content": "投诉类P1工单必须2小时内首响，超过阈值自动升级并触发人工接管。",
-    "tags": ["投诉", "升级", "人工"]
+    "title": "投诉升级SOP#002",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步值班负责人，步骤4回写resolution与close_reason。SOP-002。",
+    "tags": [
+      "complaint",
+      "值班负责人",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-003",
+    "source_type": "sop",
+    "title": "账单争议SOP#003",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步财务队列，步骤4回写resolution与close_reason。SOP-003。",
+    "tags": [
+      "billing",
+      "财务队列",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-004",
+    "source_type": "sop",
+    "title": "人工接管SOP#004",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步人工客服，步骤4回写resolution与close_reason。SOP-004。",
+    "tags": [
+      "handoff",
+      "人工客服",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-005",
+    "source_type": "sop",
+    "title": "服务中断SOP#005",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步oncall，步骤4回写resolution与close_reason。SOP-005。",
+    "tags": [
+      "incident",
+      "oncall",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-006",
+    "source_type": "sop",
+    "title": "权限审批SOP#006",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步内控队列，步骤4回写resolution与close_reason。SOP-006。",
+    "tags": [
+      "approval",
+      "内控队列",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-007",
+    "source_type": "sop",
+    "title": "报修工单SOP#007",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步维修队列，步骤4回写resolution与close_reason。SOP-007。",
+    "tags": [
+      "support",
+      "维修队列",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-008",
+    "source_type": "sop",
+    "title": "投诉升级SOP#008",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步值班负责人，步骤4回写resolution与close_reason。SOP-008。",
+    "tags": [
+      "complaint",
+      "值班负责人",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-009",
+    "source_type": "sop",
+    "title": "账单争议SOP#009",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步财务队列，步骤4回写resolution与close_reason。SOP-009。",
+    "tags": [
+      "billing",
+      "财务队列",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-010",
+    "source_type": "sop",
+    "title": "人工接管SOP#010",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步人工客服，步骤4回写resolution与close_reason。SOP-010。",
+    "tags": [
+      "handoff",
+      "人工客服",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-011",
+    "source_type": "sop",
+    "title": "服务中断SOP#011",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步oncall，步骤4回写resolution与close_reason。SOP-011。",
+    "tags": [
+      "incident",
+      "oncall",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-012",
+    "source_type": "sop",
+    "title": "权限审批SOP#012",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步内控队列，步骤4回写resolution与close_reason。SOP-012。",
+    "tags": [
+      "approval",
+      "内控队列",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-013",
+    "source_type": "sop",
+    "title": "报修工单SOP#013",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步维修队列，步骤4回写resolution与close_reason。SOP-013。",
+    "tags": [
+      "support",
+      "维修队列",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-014",
+    "source_type": "sop",
+    "title": "投诉升级SOP#014",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步值班负责人，步骤4回写resolution与close_reason。SOP-014。",
+    "tags": [
+      "complaint",
+      "值班负责人",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-015",
+    "source_type": "sop",
+    "title": "账单争议SOP#015",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步财务队列，步骤4回写resolution与close_reason。SOP-015。",
+    "tags": [
+      "billing",
+      "财务队列",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-016",
+    "source_type": "sop",
+    "title": "人工接管SOP#016",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步人工客服，步骤4回写resolution与close_reason。SOP-016。",
+    "tags": [
+      "handoff",
+      "人工客服",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-017",
+    "source_type": "sop",
+    "title": "服务中断SOP#017",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步oncall，步骤4回写resolution与close_reason。SOP-017。",
+    "tags": [
+      "incident",
+      "oncall",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-018",
+    "source_type": "sop",
+    "title": "权限审批SOP#018",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步内控队列，步骤4回写resolution与close_reason。SOP-018。",
+    "tags": [
+      "approval",
+      "内控队列",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-019",
+    "source_type": "sop",
+    "title": "报修工单SOP#019",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步维修队列，步骤4回写resolution与close_reason。SOP-019。",
+    "tags": [
+      "support",
+      "维修队列",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-020",
+    "source_type": "sop",
+    "title": "投诉升级SOP#020",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步值班负责人，步骤4回写resolution与close_reason。SOP-020。",
+    "tags": [
+      "complaint",
+      "值班负责人",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-021",
+    "source_type": "sop",
+    "title": "账单争议SOP#021",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步财务队列，步骤4回写resolution与close_reason。SOP-021。",
+    "tags": [
+      "billing",
+      "财务队列",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-022",
+    "source_type": "sop",
+    "title": "人工接管SOP#022",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步人工客服，步骤4回写resolution与close_reason。SOP-022。",
+    "tags": [
+      "handoff",
+      "人工客服",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-023",
+    "source_type": "sop",
+    "title": "服务中断SOP#023",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步oncall，步骤4回写resolution与close_reason。SOP-023。",
+    "tags": [
+      "incident",
+      "oncall",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-024",
+    "source_type": "sop",
+    "title": "权限审批SOP#024",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步内控队列，步骤4回写resolution与close_reason。SOP-024。",
+    "tags": [
+      "approval",
+      "内控队列",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-025",
+    "source_type": "sop",
+    "title": "报修工单SOP#025",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步维修队列，步骤4回写resolution与close_reason。SOP-025。",
+    "tags": [
+      "support",
+      "维修队列",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-026",
+    "source_type": "sop",
+    "title": "投诉升级SOP#026",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步值班负责人，步骤4回写resolution与close_reason。SOP-026。",
+    "tags": [
+      "complaint",
+      "值班负责人",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-027",
+    "source_type": "sop",
+    "title": "账单争议SOP#027",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步财务队列，步骤4回写resolution与close_reason。SOP-027。",
+    "tags": [
+      "billing",
+      "财务队列",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-028",
+    "source_type": "sop",
+    "title": "人工接管SOP#028",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步人工客服，步骤4回写resolution与close_reason。SOP-028。",
+    "tags": [
+      "handoff",
+      "人工客服",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-029",
+    "source_type": "sop",
+    "title": "服务中断SOP#029",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步oncall，步骤4回写resolution与close_reason。SOP-029。",
+    "tags": [
+      "incident",
+      "oncall",
+      "SOP"
+    ]
+  },
+  {
+    "doc_id": "sop-030",
+    "source_type": "sop",
+    "title": "权限审批SOP#030",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步内控队列，步骤4回写resolution与close_reason。SOP-030。",
+    "tags": [
+      "approval",
+      "内控队列",
+      "SOP"
+    ]
   }
 ]

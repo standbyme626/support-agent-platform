@@ -15,6 +15,8 @@ LifecycleStage = Literal[
     "resolved",
     "closed",
 ]
+HandoffState = Literal["none", "requested", "accepted", "completed"]
+RiskLevel = Literal["low", "medium", "high"]
 
 
 @dataclass(frozen=True)
@@ -65,6 +67,12 @@ class Ticket:
     resolved_at: datetime | None = None
     closed_at: datetime | None = None
     resolution_note: str | None = None
+    resolution_code: str | None = None
+    close_reason: str | None = None
+    source_channel: str = ""
+    handoff_state: HandoffState = "none"
+    last_agent_action: str | None = None
+    risk_level: RiskLevel = "medium"
     metadata: dict[str, Any] = field(default_factory=dict)
     created_at: datetime | None = None
     updated_at: datetime | None = None

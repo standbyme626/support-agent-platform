@@ -61,6 +61,9 @@ def test_support_intake_faq_reply_and_no_collab_push(tmp_path: Path) -> None:
     assert result.ticket_id.startswith("TCK-")
     assert "参考" in result.reply_text
     assert result.collab_push is None
+    assert result.ticket_action == "faq_reply"
+    assert result.handoff_required is False
+    assert "direct_reply" in result.trace_events
 
 
 def test_support_intake_repair_creates_ticket_and_pushes_collab(tmp_path: Path) -> None:
@@ -78,9 +81,12 @@ def test_support_intake_repair_creates_ticket_and_pushes_collab(tmp_path: Path) 
     assert result.collab_push is not None
     assert "/claim" in result.collab_push["message"]
     assert "/resolve" in result.collab_push["message"]
+    assert result.ticket_action == "create_ticket"
+    assert result.queue == "support"
+    assert result.priority in {"P1", "P2", "P3", "P4"}
 
     events = ticket_api.list_events(result.ticket_id)
     event_types = {event.event_type for event in events}
-    assert "classify_decision" in event_types
-    assert "retrieve_context" in event_types
-    assert "draft_response" in event_types
+    assert "ticket_classified" in event_types
+    assert "ticket_context_retrieved" in event_types
+    assert "ticket_draft_generated" in event_types

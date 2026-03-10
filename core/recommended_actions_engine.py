@@ -61,8 +61,8 @@ class RecommendedActionsEngine:
             actions.append(
                 RecommendedAction(
                     action=f"参考文档: {top_doc.title}",
-                    reason="检索到相似知识条目",
-                    source=top_doc.source_type,
+                    reason=f"检索到相似知识条目 evidence={top_doc.source_type}:{top_doc.doc_id}",
+                    source=f"{top_doc.source_type}:{top_doc.doc_id}",
                     risk="知识过期风险",
                 )
             )

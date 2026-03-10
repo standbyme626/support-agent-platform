@@ -8,7 +8,15 @@ from pathlib import Path
 from typing import Any, cast
 
 from .migration_manager import MigrationManager
-from .models import LifecycleStage, Ticket, TicketEvent, TicketPriority, TicketStatus
+from .models import (
+    HandoffState,
+    LifecycleStage,
+    RiskLevel,
+    Ticket,
+    TicketEvent,
+    TicketPriority,
+    TicketStatus,
+)
 
 
 class TicketRepository:
@@ -53,6 +61,12 @@ class TicketRepository:
         resolved_at: datetime | None = None,
         closed_at: datetime | None = None,
         resolution_note: str | None = None,
+        resolution_code: str | None = None,
+        close_reason: str | None = None,
+        source_channel: str | None = None,
+        handoff_state: str = "none",
+        last_agent_action: str | None = None,
+        risk_level: str = "medium",
         metadata: dict[str, Any] | None = None,
         ticket_id: str | None = None,
     ) -> Ticket:
@@ -80,6 +94,12 @@ class TicketRepository:
             "resolved_at": self._to_db_datetime(resolved_at),
             "closed_at": self._to_db_datetime(closed_at),
             "resolution_note": resolution_note,
+            "resolution_code": resolution_code,
+            "close_reason": close_reason,
+            "source_channel": source_channel or channel,
+            "handoff_state": handoff_state,
+            "last_agent_action": last_agent_action,
+            "risk_level": risk_level,
             "metadata_json": json.dumps(metadata or {}, ensure_ascii=False, sort_keys=True),
             "created_at": created_at.isoformat(),
             "updated_at": created_at.isoformat(),
@@ -93,14 +113,18 @@ class TicketRepository:
                   title, latest_message, intent, priority, status,
                   queue, assignee, needs_handoff, inbox, lifecycle_stage,
                   first_response_due_at, resolution_due_at, escalated_at, resolved_at,
-                  closed_at, resolution_note, metadata_json, created_at, updated_at
+                  closed_at, resolution_note, resolution_code, close_reason,
+                  source_channel, handoff_state, last_agent_action, risk_level,
+                  metadata_json, created_at, updated_at
                 )
                 VALUES(
                   :ticket_id, :channel, :session_id, :thread_id, :customer_id,
                   :title, :latest_message, :intent, :priority, :status,
                   :queue, :assignee, :needs_handoff, :inbox, :lifecycle_stage,
                   :first_response_due_at, :resolution_due_at, :escalated_at, :resolved_at,
-                  :closed_at, :resolution_note, :metadata_json, :created_at, :updated_at
+                  :closed_at, :resolution_note, :resolution_code, :close_reason,
+                  :source_channel, :handoff_state, :last_agent_action, :risk_level,
+                  :metadata_json, :created_at, :updated_at
                 )
                 """,
                 payload,
@@ -130,6 +154,12 @@ class TicketRepository:
             "resolved_at",
             "closed_at",
             "resolution_note",
+            "resolution_code",
+            "close_reason",
+            "source_channel",
+            "handoff_state",
+            "last_agent_action",
+            "risk_level",
             "metadata",
         }
 
@@ -364,6 +394,38 @@ class TicketRepository:
                 str(row["resolution_note"])
                 if "resolution_note" in row_keys and row["resolution_note"] is not None
                 else None
+            ),
+            resolution_code=(
+                str(row["resolution_code"])
+                if "resolution_code" in row_keys and row["resolution_code"] is not None
+                else None
+            ),
+            close_reason=(
+                str(row["close_reason"])
+                if "close_reason" in row_keys and row["close_reason"] is not None
+                else None
+            ),
+            source_channel=(
+                str(row["source_channel"])
+                if "source_channel" in row_keys and row["source_channel"] is not None
+                else str(row["channel"])
+            ),
+            handoff_state=cast(
+                HandoffState,
+                str(row["handoff_state"])
+                if "handoff_state" in row_keys and row["handoff_state"] is not None
+                else "none",
+            ),
+            last_agent_action=(
+                str(row["last_agent_action"])
+                if "last_agent_action" in row_keys and row["last_agent_action"] is not None
+                else None
+            ),
+            risk_level=cast(
+                RiskLevel,
+                str(row["risk_level"])
+                if "risk_level" in row_keys and row["risk_level"] is not None
+                else "medium",
             ),
             metadata=json.loads(str(row["metadata_json"])),
             created_at=datetime.fromisoformat(str(row["created_at"])),

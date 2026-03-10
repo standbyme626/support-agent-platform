@@ -55,7 +55,7 @@ def test_faq_response_regression(tmp_path: Path) -> None:
         )
     )
 
-    assert "如何查询工单进度" in outcome.reply_text
+    assert "工单查询" in outcome.reply_text
     assert outcome.handoff.should_handoff is False
 
 

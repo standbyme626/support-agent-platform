@@ -2,15 +2,1101 @@
   {
     "doc_id": "case-001",
     "source_type": "history_case",
-    "title": "支付重复扣费案例",
-    "content": "用户反馈重复扣费，先冻结支付通道并核对账单，最后发起退款。",
-    "tags": ["支付", "扣费", "退款"]
+    "title": "支付重复扣费案例#001",
+    "content": "历史案例001：先冻结通道后退款并告知用户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-1"
+    ]
   },
   {
     "doc_id": "case-002",
     "source_type": "history_case",
-    "title": "服务中断案例",
-    "content": "监控发现服务中断，先进行故障隔离，再通知值班工程师处理。",
-    "tags": ["故障", "中断", "值班"]
+    "title": "设备离线故障案例#002",
+    "content": "历史案例002：远程诊断后派单现场处理，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-1"
+    ]
+  },
+  {
+    "doc_id": "case-003",
+    "source_type": "history_case",
+    "title": "客户投诉升级案例#003",
+    "content": "历史案例003：2小时内首响并触发人工接管，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "complaint",
+      "history",
+      "batch-1"
+    ]
+  },
+  {
+    "doc_id": "case-004",
+    "source_type": "history_case",
+    "title": "服务中断告警案例#004",
+    "content": "历史案例004：隔离故障并升级值班工程师，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "incident",
+      "history",
+      "batch-1"
+    ]
+  },
+  {
+    "doc_id": "case-005",
+    "source_type": "history_case",
+    "title": "发票争议案例#005",
+    "content": "历史案例005：核对交易记录后补开发票，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-1"
+    ]
+  },
+  {
+    "doc_id": "case-006",
+    "source_type": "history_case",
+    "title": "账号锁定案例#006",
+    "content": "历史案例006：完成身份核验后重置凭据，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "account",
+      "history",
+      "batch-1"
+    ]
+  },
+  {
+    "doc_id": "case-007",
+    "source_type": "history_case",
+    "title": "权限误配案例#007",
+    "content": "历史案例007：回滚权限并补充审批链，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "permission",
+      "history",
+      "batch-1"
+    ]
+  },
+  {
+    "doc_id": "case-008",
+    "source_type": "history_case",
+    "title": "物流延迟案例#008",
+    "content": "历史案例008：同步时效并触发补偿流程，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "delivery",
+      "history",
+      "batch-1"
+    ]
+  },
+  {
+    "doc_id": "case-009",
+    "source_type": "history_case",
+    "title": "消息丢失案例#009",
+    "content": "历史案例009：重放消息并校验幂等键，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "notification",
+      "history",
+      "batch-1"
+    ]
+  },
+  {
+    "doc_id": "case-010",
+    "source_type": "history_case",
+    "title": "现场维修延期案例#010",
+    "content": "历史案例010：更新SLA并主动告知客户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-1"
+    ]
+  },
+  {
+    "doc_id": "case-011",
+    "source_type": "history_case",
+    "title": "支付重复扣费案例#011",
+    "content": "历史案例011：先冻结通道后退款并告知用户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-2"
+    ]
+  },
+  {
+    "doc_id": "case-012",
+    "source_type": "history_case",
+    "title": "设备离线故障案例#012",
+    "content": "历史案例012：远程诊断后派单现场处理，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-2"
+    ]
+  },
+  {
+    "doc_id": "case-013",
+    "source_type": "history_case",
+    "title": "客户投诉升级案例#013",
+    "content": "历史案例013：2小时内首响并触发人工接管，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "complaint",
+      "history",
+      "batch-2"
+    ]
+  },
+  {
+    "doc_id": "case-014",
+    "source_type": "history_case",
+    "title": "服务中断告警案例#014",
+    "content": "历史案例014：隔离故障并升级值班工程师，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "incident",
+      "history",
+      "batch-2"
+    ]
+  },
+  {
+    "doc_id": "case-015",
+    "source_type": "history_case",
+    "title": "发票争议案例#015",
+    "content": "历史案例015：核对交易记录后补开发票，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-2"
+    ]
+  },
+  {
+    "doc_id": "case-016",
+    "source_type": "history_case",
+    "title": "账号锁定案例#016",
+    "content": "历史案例016：完成身份核验后重置凭据，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "account",
+      "history",
+      "batch-2"
+    ]
+  },
+  {
+    "doc_id": "case-017",
+    "source_type": "history_case",
+    "title": "权限误配案例#017",
+    "content": "历史案例017：回滚权限并补充审批链，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "permission",
+      "history",
+      "batch-2"
+    ]
+  },
+  {
+    "doc_id": "case-018",
+    "source_type": "history_case",
+    "title": "物流延迟案例#018",
+    "content": "历史案例018：同步时效并触发补偿流程，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "delivery",
+      "history",
+      "batch-2"
+    ]
+  },
+  {
+    "doc_id": "case-019",
+    "source_type": "history_case",
+    "title": "消息丢失案例#019",
+    "content": "历史案例019：重放消息并校验幂等键，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "notification",
+      "history",
+      "batch-2"
+    ]
+  },
+  {
+    "doc_id": "case-020",
+    "source_type": "history_case",
+    "title": "现场维修延期案例#020",
+    "content": "历史案例020：更新SLA并主动告知客户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-2"
+    ]
+  },
+  {
+    "doc_id": "case-021",
+    "source_type": "history_case",
+    "title": "支付重复扣费案例#021",
+    "content": "历史案例021：先冻结通道后退款并告知用户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-3"
+    ]
+  },
+  {
+    "doc_id": "case-022",
+    "source_type": "history_case",
+    "title": "设备离线故障案例#022",
+    "content": "历史案例022：远程诊断后派单现场处理，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-3"
+    ]
+  },
+  {
+    "doc_id": "case-023",
+    "source_type": "history_case",
+    "title": "客户投诉升级案例#023",
+    "content": "历史案例023：2小时内首响并触发人工接管，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "complaint",
+      "history",
+      "batch-3"
+    ]
+  },
+  {
+    "doc_id": "case-024",
+    "source_type": "history_case",
+    "title": "服务中断告警案例#024",
+    "content": "历史案例024：隔离故障并升级值班工程师，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "incident",
+      "history",
+      "batch-3"
+    ]
+  },
+  {
+    "doc_id": "case-025",
+    "source_type": "history_case",
+    "title": "发票争议案例#025",
+    "content": "历史案例025：核对交易记录后补开发票，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-3"
+    ]
+  },
+  {
+    "doc_id": "case-026",
+    "source_type": "history_case",
+    "title": "账号锁定案例#026",
+    "content": "历史案例026：完成身份核验后重置凭据，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "account",
+      "history",
+      "batch-3"
+    ]
+  },
+  {
+    "doc_id": "case-027",
+    "source_type": "history_case",
+    "title": "权限误配案例#027",
+    "content": "历史案例027：回滚权限并补充审批链，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "permission",
+      "history",
+      "batch-3"
+    ]
+  },
+  {
+    "doc_id": "case-028",
+    "source_type": "history_case",
+    "title": "物流延迟案例#028",
+    "content": "历史案例028：同步时效并触发补偿流程，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "delivery",
+      "history",
+      "batch-3"
+    ]
+  },
+  {
+    "doc_id": "case-029",
+    "source_type": "history_case",
+    "title": "消息丢失案例#029",
+    "content": "历史案例029：重放消息并校验幂等键，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "notification",
+      "history",
+      "batch-3"
+    ]
+  },
+  {
+    "doc_id": "case-030",
+    "source_type": "history_case",
+    "title": "现场维修延期案例#030",
+    "content": "历史案例030：更新SLA并主动告知客户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-3"
+    ]
+  },
+  {
+    "doc_id": "case-031",
+    "source_type": "history_case",
+    "title": "支付重复扣费案例#031",
+    "content": "历史案例031：先冻结通道后退款并告知用户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-4"
+    ]
+  },
+  {
+    "doc_id": "case-032",
+    "source_type": "history_case",
+    "title": "设备离线故障案例#032",
+    "content": "历史案例032：远程诊断后派单现场处理，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-4"
+    ]
+  },
+  {
+    "doc_id": "case-033",
+    "source_type": "history_case",
+    "title": "客户投诉升级案例#033",
+    "content": "历史案例033：2小时内首响并触发人工接管，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "complaint",
+      "history",
+      "batch-4"
+    ]
+  },
+  {
+    "doc_id": "case-034",
+    "source_type": "history_case",
+    "title": "服务中断告警案例#034",
+    "content": "历史案例034：隔离故障并升级值班工程师，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "incident",
+      "history",
+      "batch-4"
+    ]
+  },
+  {
+    "doc_id": "case-035",
+    "source_type": "history_case",
+    "title": "发票争议案例#035",
+    "content": "历史案例035：核对交易记录后补开发票，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-4"
+    ]
+  },
+  {
+    "doc_id": "case-036",
+    "source_type": "history_case",
+    "title": "账号锁定案例#036",
+    "content": "历史案例036：完成身份核验后重置凭据，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "account",
+      "history",
+      "batch-4"
+    ]
+  },
+  {
+    "doc_id": "case-037",
+    "source_type": "history_case",
+    "title": "权限误配案例#037",
+    "content": "历史案例037：回滚权限并补充审批链，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "permission",
+      "history",
+      "batch-4"
+    ]
+  },
+  {
+    "doc_id": "case-038",
+    "source_type": "history_case",
+    "title": "物流延迟案例#038",
+    "content": "历史案例038：同步时效并触发补偿流程，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "delivery",
+      "history",
+      "batch-4"
+    ]
+  },
+  {
+    "doc_id": "case-039",
+    "source_type": "history_case",
+    "title": "消息丢失案例#039",
+    "content": "历史案例039：重放消息并校验幂等键，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "notification",
+      "history",
+      "batch-4"
+    ]
+  },
+  {
+    "doc_id": "case-040",
+    "source_type": "history_case",
+    "title": "现场维修延期案例#040",
+    "content": "历史案例040：更新SLA并主动告知客户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-4"
+    ]
+  },
+  {
+    "doc_id": "case-041",
+    "source_type": "history_case",
+    "title": "支付重复扣费案例#041",
+    "content": "历史案例041：先冻结通道后退款并告知用户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-5"
+    ]
+  },
+  {
+    "doc_id": "case-042",
+    "source_type": "history_case",
+    "title": "设备离线故障案例#042",
+    "content": "历史案例042：远程诊断后派单现场处理，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-5"
+    ]
+  },
+  {
+    "doc_id": "case-043",
+    "source_type": "history_case",
+    "title": "客户投诉升级案例#043",
+    "content": "历史案例043：2小时内首响并触发人工接管，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "complaint",
+      "history",
+      "batch-5"
+    ]
+  },
+  {
+    "doc_id": "case-044",
+    "source_type": "history_case",
+    "title": "服务中断告警案例#044",
+    "content": "历史案例044：隔离故障并升级值班工程师，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "incident",
+      "history",
+      "batch-5"
+    ]
+  },
+  {
+    "doc_id": "case-045",
+    "source_type": "history_case",
+    "title": "发票争议案例#045",
+    "content": "历史案例045：核对交易记录后补开发票，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-5"
+    ]
+  },
+  {
+    "doc_id": "case-046",
+    "source_type": "history_case",
+    "title": "账号锁定案例#046",
+    "content": "历史案例046：完成身份核验后重置凭据，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "account",
+      "history",
+      "batch-5"
+    ]
+  },
+  {
+    "doc_id": "case-047",
+    "source_type": "history_case",
+    "title": "权限误配案例#047",
+    "content": "历史案例047：回滚权限并补充审批链，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "permission",
+      "history",
+      "batch-5"
+    ]
+  },
+  {
+    "doc_id": "case-048",
+    "source_type": "history_case",
+    "title": "物流延迟案例#048",
+    "content": "历史案例048：同步时效并触发补偿流程，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "delivery",
+      "history",
+      "batch-5"
+    ]
+  },
+  {
+    "doc_id": "case-049",
+    "source_type": "history_case",
+    "title": "消息丢失案例#049",
+    "content": "历史案例049：重放消息并校验幂等键，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "notification",
+      "history",
+      "batch-5"
+    ]
+  },
+  {
+    "doc_id": "case-050",
+    "source_type": "history_case",
+    "title": "现场维修延期案例#050",
+    "content": "历史案例050：更新SLA并主动告知客户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-5"
+    ]
+  },
+  {
+    "doc_id": "case-051",
+    "source_type": "history_case",
+    "title": "支付重复扣费案例#051",
+    "content": "历史案例051：先冻结通道后退款并告知用户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-6"
+    ]
+  },
+  {
+    "doc_id": "case-052",
+    "source_type": "history_case",
+    "title": "设备离线故障案例#052",
+    "content": "历史案例052：远程诊断后派单现场处理，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-6"
+    ]
+  },
+  {
+    "doc_id": "case-053",
+    "source_type": "history_case",
+    "title": "客户投诉升级案例#053",
+    "content": "历史案例053：2小时内首响并触发人工接管，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "complaint",
+      "history",
+      "batch-6"
+    ]
+  },
+  {
+    "doc_id": "case-054",
+    "source_type": "history_case",
+    "title": "服务中断告警案例#054",
+    "content": "历史案例054：隔离故障并升级值班工程师，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "incident",
+      "history",
+      "batch-6"
+    ]
+  },
+  {
+    "doc_id": "case-055",
+    "source_type": "history_case",
+    "title": "发票争议案例#055",
+    "content": "历史案例055：核对交易记录后补开发票，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-6"
+    ]
+  },
+  {
+    "doc_id": "case-056",
+    "source_type": "history_case",
+    "title": "账号锁定案例#056",
+    "content": "历史案例056：完成身份核验后重置凭据，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "account",
+      "history",
+      "batch-6"
+    ]
+  },
+  {
+    "doc_id": "case-057",
+    "source_type": "history_case",
+    "title": "权限误配案例#057",
+    "content": "历史案例057：回滚权限并补充审批链，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "permission",
+      "history",
+      "batch-6"
+    ]
+  },
+  {
+    "doc_id": "case-058",
+    "source_type": "history_case",
+    "title": "物流延迟案例#058",
+    "content": "历史案例058：同步时效并触发补偿流程，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "delivery",
+      "history",
+      "batch-6"
+    ]
+  },
+  {
+    "doc_id": "case-059",
+    "source_type": "history_case",
+    "title": "消息丢失案例#059",
+    "content": "历史案例059：重放消息并校验幂等键，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "notification",
+      "history",
+      "batch-6"
+    ]
+  },
+  {
+    "doc_id": "case-060",
+    "source_type": "history_case",
+    "title": "现场维修延期案例#060",
+    "content": "历史案例060：更新SLA并主动告知客户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-6"
+    ]
+  },
+  {
+    "doc_id": "case-061",
+    "source_type": "history_case",
+    "title": "支付重复扣费案例#061",
+    "content": "历史案例061：先冻结通道后退款并告知用户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-7"
+    ]
+  },
+  {
+    "doc_id": "case-062",
+    "source_type": "history_case",
+    "title": "设备离线故障案例#062",
+    "content": "历史案例062：远程诊断后派单现场处理，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-7"
+    ]
+  },
+  {
+    "doc_id": "case-063",
+    "source_type": "history_case",
+    "title": "客户投诉升级案例#063",
+    "content": "历史案例063：2小时内首响并触发人工接管，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "complaint",
+      "history",
+      "batch-7"
+    ]
+  },
+  {
+    "doc_id": "case-064",
+    "source_type": "history_case",
+    "title": "服务中断告警案例#064",
+    "content": "历史案例064：隔离故障并升级值班工程师，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "incident",
+      "history",
+      "batch-7"
+    ]
+  },
+  {
+    "doc_id": "case-065",
+    "source_type": "history_case",
+    "title": "发票争议案例#065",
+    "content": "历史案例065：核对交易记录后补开发票，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-7"
+    ]
+  },
+  {
+    "doc_id": "case-066",
+    "source_type": "history_case",
+    "title": "账号锁定案例#066",
+    "content": "历史案例066：完成身份核验后重置凭据，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "account",
+      "history",
+      "batch-7"
+    ]
+  },
+  {
+    "doc_id": "case-067",
+    "source_type": "history_case",
+    "title": "权限误配案例#067",
+    "content": "历史案例067：回滚权限并补充审批链，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "permission",
+      "history",
+      "batch-7"
+    ]
+  },
+  {
+    "doc_id": "case-068",
+    "source_type": "history_case",
+    "title": "物流延迟案例#068",
+    "content": "历史案例068：同步时效并触发补偿流程，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "delivery",
+      "history",
+      "batch-7"
+    ]
+  },
+  {
+    "doc_id": "case-069",
+    "source_type": "history_case",
+    "title": "消息丢失案例#069",
+    "content": "历史案例069：重放消息并校验幂等键，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "notification",
+      "history",
+      "batch-7"
+    ]
+  },
+  {
+    "doc_id": "case-070",
+    "source_type": "history_case",
+    "title": "现场维修延期案例#070",
+    "content": "历史案例070：更新SLA并主动告知客户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-7"
+    ]
+  },
+  {
+    "doc_id": "case-071",
+    "source_type": "history_case",
+    "title": "支付重复扣费案例#071",
+    "content": "历史案例071：先冻结通道后退款并告知用户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-8"
+    ]
+  },
+  {
+    "doc_id": "case-072",
+    "source_type": "history_case",
+    "title": "设备离线故障案例#072",
+    "content": "历史案例072：远程诊断后派单现场处理，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-8"
+    ]
+  },
+  {
+    "doc_id": "case-073",
+    "source_type": "history_case",
+    "title": "客户投诉升级案例#073",
+    "content": "历史案例073：2小时内首响并触发人工接管，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "complaint",
+      "history",
+      "batch-8"
+    ]
+  },
+  {
+    "doc_id": "case-074",
+    "source_type": "history_case",
+    "title": "服务中断告警案例#074",
+    "content": "历史案例074：隔离故障并升级值班工程师，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "incident",
+      "history",
+      "batch-8"
+    ]
+  },
+  {
+    "doc_id": "case-075",
+    "source_type": "history_case",
+    "title": "发票争议案例#075",
+    "content": "历史案例075：核对交易记录后补开发票，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-8"
+    ]
+  },
+  {
+    "doc_id": "case-076",
+    "source_type": "history_case",
+    "title": "账号锁定案例#076",
+    "content": "历史案例076：完成身份核验后重置凭据，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "account",
+      "history",
+      "batch-8"
+    ]
+  },
+  {
+    "doc_id": "case-077",
+    "source_type": "history_case",
+    "title": "权限误配案例#077",
+    "content": "历史案例077：回滚权限并补充审批链，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "permission",
+      "history",
+      "batch-8"
+    ]
+  },
+  {
+    "doc_id": "case-078",
+    "source_type": "history_case",
+    "title": "物流延迟案例#078",
+    "content": "历史案例078：同步时效并触发补偿流程，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "delivery",
+      "history",
+      "batch-8"
+    ]
+  },
+  {
+    "doc_id": "case-079",
+    "source_type": "history_case",
+    "title": "消息丢失案例#079",
+    "content": "历史案例079：重放消息并校验幂等键，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "notification",
+      "history",
+      "batch-8"
+    ]
+  },
+  {
+    "doc_id": "case-080",
+    "source_type": "history_case",
+    "title": "现场维修延期案例#080",
+    "content": "历史案例080：更新SLA并主动告知客户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-8"
+    ]
+  },
+  {
+    "doc_id": "case-081",
+    "source_type": "history_case",
+    "title": "支付重复扣费案例#081",
+    "content": "历史案例081：先冻结通道后退款并告知用户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-9"
+    ]
+  },
+  {
+    "doc_id": "case-082",
+    "source_type": "history_case",
+    "title": "设备离线故障案例#082",
+    "content": "历史案例082：远程诊断后派单现场处理，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-9"
+    ]
+  },
+  {
+    "doc_id": "case-083",
+    "source_type": "history_case",
+    "title": "客户投诉升级案例#083",
+    "content": "历史案例083：2小时内首响并触发人工接管，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "complaint",
+      "history",
+      "batch-9"
+    ]
+  },
+  {
+    "doc_id": "case-084",
+    "source_type": "history_case",
+    "title": "服务中断告警案例#084",
+    "content": "历史案例084：隔离故障并升级值班工程师，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "incident",
+      "history",
+      "batch-9"
+    ]
+  },
+  {
+    "doc_id": "case-085",
+    "source_type": "history_case",
+    "title": "发票争议案例#085",
+    "content": "历史案例085：核对交易记录后补开发票，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-9"
+    ]
+  },
+  {
+    "doc_id": "case-086",
+    "source_type": "history_case",
+    "title": "账号锁定案例#086",
+    "content": "历史案例086：完成身份核验后重置凭据，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "account",
+      "history",
+      "batch-9"
+    ]
+  },
+  {
+    "doc_id": "case-087",
+    "source_type": "history_case",
+    "title": "权限误配案例#087",
+    "content": "历史案例087：回滚权限并补充审批链，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "permission",
+      "history",
+      "batch-9"
+    ]
+  },
+  {
+    "doc_id": "case-088",
+    "source_type": "history_case",
+    "title": "物流延迟案例#088",
+    "content": "历史案例088：同步时效并触发补偿流程，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "delivery",
+      "history",
+      "batch-9"
+    ]
+  },
+  {
+    "doc_id": "case-089",
+    "source_type": "history_case",
+    "title": "消息丢失案例#089",
+    "content": "历史案例089：重放消息并校验幂等键，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "notification",
+      "history",
+      "batch-9"
+    ]
+  },
+  {
+    "doc_id": "case-090",
+    "source_type": "history_case",
+    "title": "现场维修延期案例#090",
+    "content": "历史案例090：更新SLA并主动告知客户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-9"
+    ]
+  },
+  {
+    "doc_id": "case-091",
+    "source_type": "history_case",
+    "title": "支付重复扣费案例#091",
+    "content": "历史案例091：先冻结通道后退款并告知用户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-10"
+    ]
+  },
+  {
+    "doc_id": "case-092",
+    "source_type": "history_case",
+    "title": "设备离线故障案例#092",
+    "content": "历史案例092：远程诊断后派单现场处理，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-10"
+    ]
+  },
+  {
+    "doc_id": "case-093",
+    "source_type": "history_case",
+    "title": "客户投诉升级案例#093",
+    "content": "历史案例093：2小时内首响并触发人工接管，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "complaint",
+      "history",
+      "batch-10"
+    ]
+  },
+  {
+    "doc_id": "case-094",
+    "source_type": "history_case",
+    "title": "服务中断告警案例#094",
+    "content": "历史案例094：隔离故障并升级值班工程师，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "incident",
+      "history",
+      "batch-10"
+    ]
+  },
+  {
+    "doc_id": "case-095",
+    "source_type": "history_case",
+    "title": "发票争议案例#095",
+    "content": "历史案例095：核对交易记录后补开发票，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-10"
+    ]
+  },
+  {
+    "doc_id": "case-096",
+    "source_type": "history_case",
+    "title": "账号锁定案例#096",
+    "content": "历史案例096：完成身份核验后重置凭据，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "account",
+      "history",
+      "batch-10"
+    ]
+  },
+  {
+    "doc_id": "case-097",
+    "source_type": "history_case",
+    "title": "权限误配案例#097",
+    "content": "历史案例097：回滚权限并补充审批链，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "permission",
+      "history",
+      "batch-10"
+    ]
+  },
+  {
+    "doc_id": "case-098",
+    "source_type": "history_case",
+    "title": "物流延迟案例#098",
+    "content": "历史案例098：同步时效并触发补偿流程，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "delivery",
+      "history",
+      "batch-10"
+    ]
+  },
+  {
+    "doc_id": "case-099",
+    "source_type": "history_case",
+    "title": "消息丢失案例#099",
+    "content": "历史案例099：重放消息并校验幂等键，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "notification",
+      "history",
+      "batch-10"
+    ]
+  },
+  {
+    "doc_id": "case-100",
+    "source_type": "history_case",
+    "title": "现场维修延期案例#100",
+    "content": "历史案例100：更新SLA并主动告知客户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-10"
+    ]
   }
 ]

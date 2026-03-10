@@ -26,6 +26,8 @@ def test_ticket_api_full_lifecycle(tmp_path: Path) -> None:
 
     assert ticket.status == "open"
     assert ticket.inbox == "telegram"
+    assert ticket.source_channel == "telegram"
+    assert ticket.risk_level == "medium"
 
     assigned = api.assign_ticket(ticket.ticket_id, assignee="agent-a", actor_id="lead")
     assert assigned.assignee == "agent-a"
@@ -45,11 +47,25 @@ def test_ticket_api_full_lifecycle(tmp_path: Path) -> None:
     assert escalated.lifecycle_stage == "awaiting_human"
     assert escalated.escalated_at is not None
 
-    closed = api.close_ticket(ticket.ticket_id, actor_id="agent-a", resolution_note="已退款")
+    closed = api.close_ticket(
+        ticket.ticket_id,
+        actor_id="agent-a",
+        resolution_note="已退款",
+        close_reason="refund_completed",
+        resolution_code="BILLING_REFUND",
+    )
     assert closed.status == "closed"
     assert closed.lifecycle_stage == "closed"
     assert closed.resolution_note == "已退款"
+    assert closed.close_reason == "refund_completed"
+    assert closed.resolution_code == "BILLING_REFUND"
     assert closed.closed_at is not None
 
     events = api.list_events(ticket.ticket_id)
     assert len(events) >= 6
+    event_types = [event.event_type for event in events]
+    assert "ticket_created" in event_types
+    assert "ticket_assigned" in event_types
+    assert "ticket_escalated" in event_types
+    assert "ticket_resolved" in event_types
+    assert "ticket_closed" in event_types

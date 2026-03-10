@@ -41,6 +41,15 @@ def test_gateway_ingress_and_ticket_mapping(tmp_path: Path) -> None:
     assert first["inbound"]["metadata"]["ticket_id"] is None
     assert first["inbound"]["metadata"]["inbox"] == "telegram.default"
 
+    duplicated = gateway.receive(
+        "telegram",
+        {
+            "update_id": 10,
+            "message": {"chat": {"id": 12345, "username": "demo"}, "text": "need help"},
+        },
+    )
+    assert duplicated["status"] == "duplicate_ignored"
+
     gateway.bind_ticket("12345", "TICKET-9", metadata={"bound_by": "integration-test"})
 
     second = gateway.receive(
