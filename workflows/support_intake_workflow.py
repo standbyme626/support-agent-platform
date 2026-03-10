@@ -18,7 +18,7 @@ class SupportIntakeResult:
     outcome: WorkflowOutcome
     ticket_action: str
     summary: str
-    recommended_actions: list[str]
+    recommended_actions: list[dict[str, object]]
     handoff_required: bool
     queue: str
     priority: str
@@ -64,7 +64,7 @@ class SupportIntakeWorkflow:
             collab_push = self._case_collab_workflow.push_new_ticket(outcome.ticket.ticket_id)
 
         ticket_action, trace_events = self._derive_ticket_action(outcome)
-        recommended_actions = [item.action for item in outcome.recommendations]
+        recommended_actions = [item.as_dict() for item in outcome.recommendations]
 
         return SupportIntakeResult(
             ticket_id=outcome.ticket.ticket_id,
@@ -109,6 +109,30 @@ class SupportIntakeWorkflow:
                 "lifecycle_stage": lifecycle_stage,
                 "first_response_due_at": outcome.sla.first_response_due_at,
                 "resolution_due_at": outcome.sla.resolution_due_at,
+                "metadata": {
+                    "similar_case_ids": [
+                        doc.doc_id
+                        for doc in outcome.retrieved_docs
+                        if doc.source_type == "history_case"
+                    ][:5],
+                    "similar_cases": [
+                        {
+                            "doc_id": doc.doc_id,
+                            "source_type": doc.source_type,
+                            "title": doc.title,
+                            "score": doc.score,
+                        }
+                        for doc in outcome.retrieved_docs
+                        if doc.source_type == "history_case"
+                    ][:5],
+                    "recommended_action_cards": [
+                        item.as_dict() for item in outcome.recommendations
+                    ],
+                    "next_steps": [item.action for item in outcome.recommendations],
+                    "risk_flags": sorted(
+                        {item.risk for item in outcome.recommendations if item.risk}
+                    ),
+                },
             },
             actor_id="support-intake",
         )
@@ -143,6 +167,15 @@ class SupportIntakeWorkflow:
             payload={
                 "reply_preview": outcome.reply_text[:200],
                 "should_handoff": outcome.handoff.should_handoff,
+            },
+        )
+        self._ticket_api.add_event(
+            ticket_id,
+            event_type="ticket_recommendations_generated",
+            actor_type="agent",
+            actor_id="support-intake",
+            payload={
+                "actions": [item.as_dict() for item in outcome.recommendations],
             },
         )
         if outcome.handoff.should_handoff:

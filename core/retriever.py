@@ -2,12 +2,24 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import ClassVar
 
 from storage.models import KBDocument
 
 
 class Retriever:
     """Local lexical retriever for FAQ/SOP/history-case documents."""
+
+    _GROUND_SOURCE_BOOST: ClassVar[dict[str, float]] = {
+        "history_case": 0.45,
+        "sop": 0.18,
+        "faq": 0.08,
+    }
+    _GROUND_SOURCE_PRIORITY: ClassVar[dict[str, int]] = {
+        "history_case": 3,
+        "sop": 2,
+        "faq": 1,
+    }
 
     def __init__(self, seed_root: Path) -> None:
         self._seed_root = seed_root
@@ -23,12 +35,49 @@ class Retriever:
         return self.search("history_case", query, top_k=top_k)
 
     def search_grounded(self, query: str, *, top_k: int = 5) -> list[KBDocument]:
-        history = self.search("history_case", query, top_k=max(top_k, 5), source_boost=0.30)
-        sop = self.search("sop", query, top_k=max(top_k, 5), source_boost=0.10)
-        faq = self.search("faq", query, top_k=max(top_k, 5), source_boost=0.00)
+        fan_out = max(top_k, 6)
+        history = self.search(
+            "history_case",
+            query,
+            top_k=fan_out,
+            source_boost=self._GROUND_SOURCE_BOOST["history_case"],
+        )
+        sop = self.search(
+            "sop",
+            query,
+            top_k=fan_out,
+            source_boost=self._GROUND_SOURCE_BOOST["sop"],
+        )
+        faq = self.search(
+            "faq",
+            query,
+            top_k=fan_out,
+            source_boost=self._GROUND_SOURCE_BOOST["faq"],
+        )
         merged = [*history, *sop, *faq]
-        merged.sort(key=lambda item: item.score, reverse=True)
-        return merged[:top_k]
+        query_terms = self._tokenize(query)
+        ranked: list[KBDocument] = []
+        for item in merged:
+            ranking_score = self._grounded_score(item, query_terms=query_terms)
+            ranked.append(
+                KBDocument(
+                    doc_id=item.doc_id,
+                    source_type=item.source_type,
+                    title=item.title,
+                    content=item.content,
+                    tags=list(item.tags),
+                    score=ranking_score,
+                )
+            )
+
+        ranked.sort(
+            key=lambda doc: (
+                doc.score,
+                self._GROUND_SOURCE_PRIORITY.get(doc.source_type, 0),
+            ),
+            reverse=True,
+        )
+        return ranked[:top_k]
 
     def search(
         self, source_type: str, query: str, *, top_k: int = 3, source_boost: float = 0.0
@@ -95,3 +144,15 @@ class Retriever:
             if term in haystack:
                 score += 1.0
         return score / len(terms)
+
+    def _grounded_score(self, doc: KBDocument, *, query_terms: set[str]) -> float:
+        base = doc.score
+        source_priority = self._GROUND_SOURCE_PRIORITY.get(doc.source_type, 0)
+        priority_bonus = source_priority * 0.05
+        if not query_terms:
+            return base + priority_bonus
+
+        title_text = doc.title.lower()
+        title_hit_count = sum(1 for term in query_terms if term in title_text)
+        title_bonus = (title_hit_count / len(query_terms)) * 0.2
+        return base + priority_bonus + title_bonus

@@ -138,6 +138,13 @@ class WorkflowEngine:
             retrieved_docs=retrieved_docs,
             sla_breaches=sla_result.breached_items,
         )
+        self._log(
+            "recommended_actions",
+            {"actions": [item.as_dict() for item in recommendations]},
+            trace_id=trace_id,
+            ticket_id=ticket.ticket_id,
+            session_id=ticket.session_id,
+        )
 
         handoff_decision = self._handoff_manager.evaluate(
             ticket=ticket,

@@ -85,6 +85,8 @@ def test_support_intake_repair_creates_ticket_and_pushes_collab(tmp_path: Path) 
     assert result.ticket_action == "create_ticket"
     assert result.queue == "support"
     assert result.priority in {"P1", "P2", "P3", "P4"}
+    assert result.recommended_actions
+    assert "evidence" in result.recommended_actions[0]
 
     events = ticket_api.list_events(result.ticket_id)
     event_types = {event.event_type for event in events}

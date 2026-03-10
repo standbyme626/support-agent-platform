@@ -53,3 +53,5 @@ def test_tool_router_dispatches_core_tools(tmp_path: Path) -> None:
     )
     assert grounded.output
     assert any(item["source_type"] == "history_case" for item in grounded.output)
+    assert all("ranking_reason" in item for item in grounded.output)
+    assert all("rank" in item for item in grounded.output)

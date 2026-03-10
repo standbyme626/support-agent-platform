@@ -21,14 +21,34 @@ def search_kb(
     else:
         raise ValueError(f"Unsupported source_type: {source_type}")
 
-    return [
-        {
-            "doc_id": doc.doc_id,
-            "source_type": doc.source_type,
-            "title": doc.title,
-            "content": doc.content,
-            "tags": doc.tags,
-            "score": doc.score,
-        }
-        for doc in docs
-    ]
+    normalized_source = source_type.lower()
+    output: list[dict[str, object]] = []
+    for idx, doc in enumerate(docs, start=1):
+        output.append(
+            {
+                "doc_id": doc.doc_id,
+                "source_type": doc.source_type,
+                "title": doc.title,
+                "content": doc.content,
+                "tags": doc.tags,
+                "score": doc.score,
+                "rank": idx,
+                "ranking_reason": _ranking_reason(
+                    requested_source=normalized_source,
+                    doc_source=doc.source_type,
+                ),
+            }
+        )
+    return output
+
+
+def _ranking_reason(*, requested_source: str, doc_source: str) -> str:
+    if requested_source in {"grounded", "hybrid"}:
+        if doc_source == "history_case":
+            return "grounded_rank:history_case_priority"
+        if doc_source == "sop":
+            return "grounded_rank:sop_secondary"
+        if doc_source == "faq":
+            return "grounded_rank:faq_fallback"
+        return "grounded_rank:other_source"
+    return "lexical_rank:score_desc"

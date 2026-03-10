@@ -212,8 +212,16 @@ class CaseCollabWorkflow:
     def _build_collab_payload(self, ticket: Ticket) -> dict[str, object]:
         recent_events = self._ticket_api.list_events(ticket.ticket_id)
         summary = f"{ticket.title} | latest={ticket.latest_message[:80]}"
-        similar_cases = ticket.metadata.get("similar_case_ids", [])[:3]
+        similar_case_cards = list(ticket.metadata.get("similar_cases", []))[:3]
+        similar_cases = (
+            [str(item.get("doc_id", "")) for item in similar_case_cards if isinstance(item, dict)]
+            if similar_case_cards
+            else list(ticket.metadata.get("similar_case_ids", []))[:3]
+        )
         risk_flags: list[str] = []
+        metadata_risks = ticket.metadata.get("risk_flags", [])
+        if isinstance(metadata_risks, list):
+            risk_flags.extend(str(item) for item in metadata_risks[:5])
         if ticket.risk_level in {"high", "medium"}:
             risk_flags.append(f"risk={ticket.risk_level}")
         if ticket.status == "escalated":
@@ -221,18 +229,30 @@ class CaseCollabWorkflow:
         if ticket.intent == "complaint":
             risk_flags.append("complaint")
 
-        recommended_steps = [
+        default_steps = [
             "先 /claim 认领",
             "确认上下文后 /resolve 或 /escalate",
         ]
+        metadata_steps = ticket.metadata.get("next_steps", [])
+        recommended_steps = (
+            [str(item) for item in metadata_steps if str(item).strip()][:4]
+            if isinstance(metadata_steps, list) and metadata_steps
+            else default_steps
+        )
         if ticket.priority == "P1":
             recommended_steps.insert(0, "优先升级处理")
+
+        deduped_risk_flags: list[str] = []
+        for item in risk_flags:
+            if item not in deduped_risk_flags:
+                deduped_risk_flags.append(item)
 
         return {
             "summary": summary,
             "similar_cases": similar_cases,
+            "similar_case_cards": similar_case_cards,
             "recommended_steps": recommended_steps,
-            "risk_flags": risk_flags,
+            "risk_flags": deduped_risk_flags,
             "sla_remaining": self._sla_remaining(ticket),
             "recent_events": [item.event_type for item in recent_events[-5:]],
         }
@@ -260,8 +280,9 @@ class CaseCollabWorkflow:
             f"intent={ticket.intent} | priority={ticket.priority} | "
             f"status={ticket.status}/{ticket.lifecycle_stage}/{ticket.handoff_state} | "
             f"sla(first={first_response_due}, resolution={resolution_due}) | "
-            f"summary={payload['summary']} | risk={payload['risk_flags']} | "
-            f"similar={payload['similar_cases']} | next={payload['recommended_steps']} | "
+            f"sla_remaining={payload['sla_remaining']} | summary={payload['summary']} | "
+            f"risk={payload['risk_flags']} | similar={payload['similar_cases']} | "
+            f"next={payload['recommended_steps']} | "
             f"commands: /claim /reassign <user> /escalate <reason> /resolve <note> "
             f"/close <note> /state <state>"
         )

@@ -32,6 +32,10 @@ def test_case_collab_commands_end_to_end(tmp_path: Path) -> None:
     pushed = collab.push_new_ticket(ticket_id)
     assert "/claim" in pushed["message"]
     assert "summary=" in pushed["message"]
+    assert "similar=" in pushed["message"]
+    assert "next=" in pushed["message"]
+    assert "risk=" in pushed["message"]
+    assert "sla_remaining=" in pushed["message"]
 
     claim = collab.handle_command(ticket_id=ticket_id, actor_id="agent-a", command_line="/claim")
     assert claim.ticket.assignee == "agent-a"

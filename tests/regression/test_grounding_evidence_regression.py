@@ -47,6 +47,13 @@ def test_grounding_evidence_is_attached_regression(tmp_path: Path) -> None:
     )
 
     assert outcome.retrieved_docs
+    assert outcome.retrieved_docs[0].source_type == "history_case"
     assert any(doc.source_type == "history_case" for doc in outcome.retrieved_docs)
     assert "参考证据：" in outcome.reply_text
-    assert any("evidence=" in action.reason for action in outcome.recommendations)
+    assert outcome.recommendations
+    assert all(action.evidence for action in outcome.recommendations)
+    assert all(
+        evidence.doc_id and evidence.source_type
+        for action in outcome.recommendations
+        for evidence in action.evidence
+    )
