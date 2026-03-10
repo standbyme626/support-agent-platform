@@ -20,6 +20,7 @@ def test_feishu_adapter_builds_inbound() -> None:
     assert inbound.channel == "feishu"
     assert inbound.session_id == "ou_xxx"
     assert inbound.message_text == "hello"
+    assert inbound.metadata["inbox"] == "feishu.default"
 
 
 def test_telegram_adapter_builds_inbound() -> None:
@@ -31,6 +32,7 @@ def test_telegram_adapter_builds_inbound() -> None:
     assert inbound.channel == "telegram"
     assert inbound.session_id == "99"
     assert inbound.message_text == "hi"
+    assert inbound.metadata["inbox"] == "telegram.default"
 
 
 def test_wecom_adapter_builds_inbound() -> None:
@@ -40,3 +42,4 @@ def test_wecom_adapter_builds_inbound() -> None:
     assert inbound.channel == "wecom"
     assert inbound.session_id == "user_a"
     assert inbound.message_text == "报修"
+    assert inbound.metadata["inbox"] == "wecom.default"

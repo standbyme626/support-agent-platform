@@ -47,6 +47,7 @@ def test_message_ingress_to_ticket_creation(tmp_path: Path) -> None:
     )
 
     inbound_raw = ingress["inbound"]
+    assert inbound_raw["metadata"]["inbox"] == "telegram.default"
     envelope = InboundEnvelope(
         channel=str(inbound_raw["channel"]),
         session_id=str(inbound_raw["session_id"]),
@@ -82,6 +83,8 @@ def test_message_ingress_to_ticket_creation(tmp_path: Path) -> None:
     result = workflow.run(envelope)
 
     assert result.ticket_id.startswith("TCK-")
+    events = ticket_api.list_events(result.ticket_id)
+    assert any(event.event_type == "classify_decision" for event in events)
     bound = bindings.session_mapper.get("67890")
     assert bound is not None
     assert bound.ticket_id == result.ticket_id

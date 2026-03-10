@@ -14,9 +14,12 @@ class TelegramAdapter(BaseChannelAdapter):
         chat = message.get("chat", {})
         session_id = str(chat.get("id") or payload.get("session_id") or "")
         message_text = str(message.get("text") or payload.get("text") or "")
+        inbox = str(payload.get("inbox") or f"{self.channel}.default")
         metadata = {
             "update_id": payload.get("update_id"),
             "username": chat.get("username"),
+            "inbox": inbox,
+            "conversation_id": session_id,
         }
         return InboundEnvelope(
             channel=self.channel,

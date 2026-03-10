@@ -17,9 +17,16 @@ class FeishuAdapter(BaseChannelAdapter):
             sender_id.get("open_id") or sender_id.get("union_id") or payload.get("session_id") or ""
         )
         message_text = str(event.get("message", {}).get("text") or payload.get("text") or "")
+        inbox = str(
+            payload.get("inbox")
+            or event.get("chat_id")
+            or f"{self.channel}.default"
+        )
         metadata = {
             "message_id": event.get("message", {}).get("message_id"),
             "tenant_key": payload.get("tenant_key"),
+            "inbox": inbox,
+            "conversation_id": session_id,
         }
         return InboundEnvelope(
             channel=self.channel,

@@ -6,6 +6,15 @@ from typing import Any, Literal
 
 TicketPriority = Literal["P1", "P2", "P3", "P4"]
 TicketStatus = Literal["open", "pending", "escalated", "handoff", "resolved", "closed"]
+LifecycleStage = Literal[
+    "intake",
+    "classified",
+    "retrieved",
+    "drafted",
+    "awaiting_human",
+    "resolved",
+    "closed",
+]
 
 
 @dataclass(frozen=True)
@@ -48,6 +57,14 @@ class Ticket:
     queue: str
     assignee: str | None
     needs_handoff: bool
+    inbox: str = "default"
+    lifecycle_stage: LifecycleStage = "intake"
+    first_response_due_at: datetime | None = None
+    resolution_due_at: datetime | None = None
+    escalated_at: datetime | None = None
+    resolved_at: datetime | None = None
+    closed_at: datetime | None = None
+    resolution_note: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
     created_at: datetime | None = None
     updated_at: datetime | None = None

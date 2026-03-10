@@ -21,14 +21,21 @@ class InboundHandler:
         trace_id = str(
             payload.get("trace_id") or inbound.metadata.get("trace_id") or new_trace_id()
         )
+        inbox = str(inbound.metadata.get("inbox") or f"{inbound.channel}.default")
 
         binding = self._bindings.session_mapper.get_or_create(
             session_id=inbound.session_id,
-            metadata={"channel": inbound.channel, "trace_id": trace_id, **inbound.metadata},
+            metadata={
+                "channel": inbound.channel,
+                "trace_id": trace_id,
+                "inbox": inbox,
+                **inbound.metadata,
+            },
         )
         passthrough_metadata = {
             **inbound.metadata,
             "trace_id": trace_id,
+            "inbox": inbox,
             "thread_id": binding.thread_id,
             "ticket_id": binding.ticket_id,
         }
@@ -41,6 +48,7 @@ class InboundHandler:
                 "session_id": inbound.session_id,
                 "thread_id": binding.thread_id,
                 "ticket_id": binding.ticket_id,
+                "inbox": inbox,
             },
             trace_id=trace_id,
             ticket_id=binding.ticket_id,

@@ -21,10 +21,16 @@ class CaseCollabWorkflow:
 
     def push_new_ticket(self, ticket_id: str) -> dict[str, str]:
         ticket = self._ticket_api.require_ticket(ticket_id)
+        first_response_due = (
+            ticket.first_response_due_at.isoformat() if ticket.first_response_due_at else "-"
+        )
+        resolution_due = ticket.resolution_due_at.isoformat() if ticket.resolution_due_at else "-"
         push_message = (
-            f"[new-ticket] {ticket.ticket_id} | queue={ticket.queue} | "
+            f"[new-ticket] {ticket.ticket_id} | inbox={ticket.inbox} | queue={ticket.queue} | "
             f"intent={ticket.intent} | priority={ticket.priority} | "
-            f"commands: /claim /reassign <user> /escalate <reason> /close <note>"
+            f"status={ticket.status}/{ticket.lifecycle_stage} | "
+            f"sla(first={first_response_due}, resolution={resolution_due}) | "
+            f"commands: /claim /reassign <user> /escalate <reason> /resolve <note> /close <note>"
         )
         self._ticket_api.add_event(
             ticket.ticket_id,
@@ -106,6 +112,24 @@ class CaseCollabWorkflow:
                 payload={"resolution_note": resolution_note, "command": command_line},
             )
             return CaseCollabAction("close", updated, f"{ticket_id} closed")
+
+        if command == "resolve":
+            resolution_note = " ".join(args).strip()
+            if not resolution_note:
+                raise ValueError("/resolve requires resolution note")
+            updated = self._ticket_api.resolve_ticket(
+                ticket_id,
+                actor_id=actor_id,
+                resolution_note=resolution_note,
+            )
+            self._ticket_api.add_event(
+                ticket_id,
+                event_type="collab_resolve",
+                actor_type="agent",
+                actor_id=actor_id,
+                payload={"resolution_note": resolution_note, "command": command_line},
+            )
+            return CaseCollabAction("resolve", updated, f"{ticket_id} resolved")
 
         raise ValueError(f"Unsupported command: /{command}")
 

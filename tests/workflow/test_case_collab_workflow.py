@@ -49,6 +49,13 @@ def test_case_collab_commands_end_to_end(tmp_path: Path) -> None:
     )
     assert escalate.ticket.status == "escalated"
 
+    resolved = collab.handle_command(
+        ticket_id=ticket_id,
+        actor_id="agent-b",
+        command_line="/resolve fix prepared and verified",
+    )
+    assert resolved.ticket.status == "resolved"
+
     closed = collab.handle_command(
         ticket_id=ticket_id,
         actor_id="agent-b",

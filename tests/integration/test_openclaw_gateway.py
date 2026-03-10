@@ -39,6 +39,7 @@ def test_gateway_ingress_and_ticket_mapping(tmp_path: Path) -> None:
     assert first["status"] == "ok"
     assert first["inbound"]["metadata"]["thread_id"]
     assert first["inbound"]["metadata"]["ticket_id"] is None
+    assert first["inbound"]["metadata"]["inbox"] == "telegram.default"
 
     gateway.bind_ticket("12345", "TICKET-9", metadata={"bound_by": "integration-test"})
 
@@ -50,6 +51,7 @@ def test_gateway_ingress_and_ticket_mapping(tmp_path: Path) -> None:
         },
     )
     assert second["inbound"]["metadata"]["ticket_id"] == "TICKET-9"
+    assert second["inbound"]["metadata"]["inbox"] == "telegram.default"
 
     traces = JsonTraceLogger(log_path).read_recent(limit=10)
     assert any(event["event_type"] == "ingress_normalized" for event in traces)

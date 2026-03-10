@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from .migration_manager import MigrationManager
-from .models import Ticket, TicketEvent, TicketPriority, TicketStatus
+from .models import LifecycleStage, Ticket, TicketEvent, TicketPriority, TicketStatus
 
 
 class TicketRepository:
@@ -45,6 +45,14 @@ class TicketRepository:
         assignee: str | None = None,
         status: TicketStatus = "open",
         needs_handoff: bool = False,
+        inbox: str = "default",
+        lifecycle_stage: LifecycleStage = "intake",
+        first_response_due_at: datetime | None = None,
+        resolution_due_at: datetime | None = None,
+        escalated_at: datetime | None = None,
+        resolved_at: datetime | None = None,
+        closed_at: datetime | None = None,
+        resolution_note: str | None = None,
         metadata: dict[str, Any] | None = None,
         ticket_id: str | None = None,
     ) -> Ticket:
@@ -64,6 +72,14 @@ class TicketRepository:
             "queue": queue,
             "assignee": assignee,
             "needs_handoff": int(needs_handoff),
+            "inbox": inbox,
+            "lifecycle_stage": lifecycle_stage,
+            "first_response_due_at": self._to_db_datetime(first_response_due_at),
+            "resolution_due_at": self._to_db_datetime(resolution_due_at),
+            "escalated_at": self._to_db_datetime(escalated_at),
+            "resolved_at": self._to_db_datetime(resolved_at),
+            "closed_at": self._to_db_datetime(closed_at),
+            "resolution_note": resolution_note,
             "metadata_json": json.dumps(metadata or {}, ensure_ascii=False, sort_keys=True),
             "created_at": created_at.isoformat(),
             "updated_at": created_at.isoformat(),
@@ -75,12 +91,16 @@ class TicketRepository:
                 INSERT INTO tickets(
                   ticket_id, channel, session_id, thread_id, customer_id,
                   title, latest_message, intent, priority, status,
-                  queue, assignee, needs_handoff, metadata_json, created_at, updated_at
+                  queue, assignee, needs_handoff, inbox, lifecycle_stage,
+                  first_response_due_at, resolution_due_at, escalated_at, resolved_at,
+                  closed_at, resolution_note, metadata_json, created_at, updated_at
                 )
                 VALUES(
                   :ticket_id, :channel, :session_id, :thread_id, :customer_id,
                   :title, :latest_message, :intent, :priority, :status,
-                  :queue, :assignee, :needs_handoff, :metadata_json, :created_at, :updated_at
+                  :queue, :assignee, :needs_handoff, :inbox, :lifecycle_stage,
+                  :first_response_due_at, :resolution_due_at, :escalated_at, :resolved_at,
+                  :closed_at, :resolution_note, :metadata_json, :created_at, :updated_at
                 )
                 """,
                 payload,
@@ -102,6 +122,14 @@ class TicketRepository:
             "queue",
             "assignee",
             "needs_handoff",
+            "inbox",
+            "lifecycle_stage",
+            "first_response_due_at",
+            "resolution_due_at",
+            "escalated_at",
+            "resolved_at",
+            "closed_at",
+            "resolution_note",
             "metadata",
         }
 
@@ -110,6 +138,13 @@ class TicketRepository:
             raise ValueError(f"Unsupported update fields: {sorted(unknown)}")
 
         db_updates: dict[str, Any] = {}
+        datetime_fields = {
+            "first_response_due_at",
+            "resolution_due_at",
+            "escalated_at",
+            "resolved_at",
+            "closed_at",
+        }
         for key, value in updates.items():
             if key == "metadata":
                 db_updates["metadata_json"] = json.dumps(
@@ -117,6 +152,8 @@ class TicketRepository:
                 )
             elif key == "needs_handoff":
                 db_updates[key] = int(bool(value))
+            elif key in datetime_fields:
+                db_updates[key] = self._to_db_datetime(value)
             else:
                 db_updates[key] = value
 
@@ -273,12 +310,24 @@ class TicketRepository:
 
     @staticmethod
     def _row_to_ticket(row: sqlite3.Row) -> Ticket:
+        row_keys = set(row.keys())
         priority = str(row["priority"])
         status = str(row["status"])
+        lifecycle_stage = str(row["lifecycle_stage"]) if "lifecycle_stage" in row_keys else "intake"
         if priority not in {"P1", "P2", "P3", "P4"}:
             raise ValueError(f"Invalid priority in DB: {priority}")
         if status not in {"open", "pending", "escalated", "handoff", "resolved", "closed"}:
             raise ValueError(f"Invalid status in DB: {status}")
+        if lifecycle_stage not in {
+            "intake",
+            "classified",
+            "retrieved",
+            "drafted",
+            "awaiting_human",
+            "resolved",
+            "closed",
+        }:
+            raise ValueError(f"Invalid lifecycle_stage in DB: {lifecycle_stage}")
 
         return Ticket(
             ticket_id=str(row["ticket_id"]),
@@ -294,6 +343,28 @@ class TicketRepository:
             queue=str(row["queue"]),
             assignee=row["assignee"],
             needs_handoff=bool(row["needs_handoff"]),
+            inbox=str(row["inbox"]) if "inbox" in row_keys else "default",
+            lifecycle_stage=cast(LifecycleStage, lifecycle_stage),
+            first_response_due_at=TicketRepository._parse_optional_datetime(
+                row["first_response_due_at"] if "first_response_due_at" in row_keys else None
+            ),
+            resolution_due_at=TicketRepository._parse_optional_datetime(
+                row["resolution_due_at"] if "resolution_due_at" in row_keys else None
+            ),
+            escalated_at=TicketRepository._parse_optional_datetime(
+                row["escalated_at"] if "escalated_at" in row_keys else None
+            ),
+            resolved_at=TicketRepository._parse_optional_datetime(
+                row["resolved_at"] if "resolved_at" in row_keys else None
+            ),
+            closed_at=TicketRepository._parse_optional_datetime(
+                row["closed_at"] if "closed_at" in row_keys else None
+            ),
+            resolution_note=(
+                str(row["resolution_note"])
+                if "resolution_note" in row_keys and row["resolution_note"] is not None
+                else None
+            ),
             metadata=json.loads(str(row["metadata_json"])),
             created_at=datetime.fromisoformat(str(row["created_at"])),
             updated_at=datetime.fromisoformat(str(row["updated_at"])),
@@ -310,3 +381,17 @@ class TicketRepository:
             payload=json.loads(str(row["payload_json"])),
             created_at=datetime.fromisoformat(str(row["created_at"])),
         )
+
+    @staticmethod
+    def _parse_optional_datetime(value: Any) -> datetime | None:
+        if value in (None, ""):
+            return None
+        return datetime.fromisoformat(str(value))
+
+    @staticmethod
+    def _to_db_datetime(value: Any) -> str | None:
+        if value is None:
+            return None
+        if isinstance(value, str):
+            return value
+        return value.isoformat()

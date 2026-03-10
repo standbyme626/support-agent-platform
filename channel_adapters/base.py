@@ -11,7 +11,10 @@ class BaseChannelAdapter(ABC):
 
     @abstractmethod
     def build_inbound(self, payload: dict[str, Any]) -> InboundEnvelope:
-        """Normalize raw channel payload into an inbound envelope."""
+        """Normalize raw channel payload into an inbound envelope.
+
+        Adapters only shape ingress/session metadata and must not apply business rules.
+        """
 
     @abstractmethod
     def build_outbound(self, envelope: OutboundEnvelope) -> dict[str, object]:

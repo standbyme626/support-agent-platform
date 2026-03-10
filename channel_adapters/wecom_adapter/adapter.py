@@ -12,9 +12,12 @@ class WeComAdapter(BaseChannelAdapter):
     def build_inbound(self, payload: dict[str, Any]) -> InboundEnvelope:
         session_id = str(payload.get("FromUserName") or payload.get("session_id") or "")
         message_text = str(payload.get("Content") or payload.get("text") or "")
+        inbox = str(payload.get("inbox") or f"{self.channel}.default")
         metadata = {
             "msg_id": payload.get("MsgId"),
             "agent_id": payload.get("AgentID"),
+            "inbox": inbox,
+            "conversation_id": session_id,
         }
         return InboundEnvelope(
             channel=self.channel,

@@ -72,4 +72,5 @@ def test_ticket_to_collab_update_chain(tmp_path: Path) -> None:
     event_types = [event.event_type for event in events]
     assert "collab_claim" in event_types
     assert "collab_reassign" in event_types
+    assert "resolved" in event_types
     assert "collab_close" in event_types
