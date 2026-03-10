@@ -20,6 +20,10 @@ REQUIRED_DIRS = [
 REQUIRED_FILES = [
     ".env.example",
     "pyproject.toml",
+    "Dockerfile",
+    "docker-compose.yml",
+    ".dockerignore",
+    ".github/workflows/ci.yml",
     "config/settings.py",
     "config/secrets.py",
     "openclaw_adapter/inbound_handler.py",

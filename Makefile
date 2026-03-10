@@ -1,4 +1,4 @@
-.PHONY: format lint typecheck test test-unit test-workflow test-regression test-integration smoke-replay acceptance trace-kpi check validate-structure
+.PHONY: format lint typecheck test test-unit test-workflow test-regression test-integration smoke-replay acceptance acceptance-gate trace-kpi ci container-smoke check validate-structure
 
 format:
 	python -m ruff format .
@@ -30,8 +30,15 @@ smoke-replay:
 acceptance:
 	python -m scripts.run_acceptance --env dev
 
+acceptance-gate: acceptance trace-kpi
+
 trace-kpi:
 	python -m scripts.trace_kpi --env dev --output storage/acceptance/trace_kpi_from_log.json
+
+ci: validate-structure lint typecheck test-unit test-workflow test-regression test-integration smoke-replay
+
+container-smoke:
+	docker compose run --rm smoke
 
 validate-structure:
 	python scripts/validate_structure.py

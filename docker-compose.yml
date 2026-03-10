@@ -1,0 +1,22 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      SUPPORT_AGENT_ENV: dev
+      SUPPORT_AGENT_SQLITE_PATH: /app/storage/support-agent.db
+    volumes:
+      - ./storage:/app/storage
+    command: ["python", "scripts/healthcheck.py", "--env", "dev"]
+
+  smoke:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      SUPPORT_AGENT_ENV: dev
+      SUPPORT_AGENT_SQLITE_PATH: /app/storage/support-agent.db
+    volumes:
+      - ./storage:/app/storage
+    command: ["python", "-m", "pytest", "tests/integration/test_openclaw_gateway.py", "-q"]

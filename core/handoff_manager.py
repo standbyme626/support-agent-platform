@@ -373,7 +373,15 @@ def _parse_keyword_list(raw: object) -> list[str]:
 def _safe_float(raw: object) -> float | None:
     if raw is None:
         return None
-    try:
+    if isinstance(raw, (int, float)):
         return float(raw)
+    if isinstance(raw, str):
+        try:
+            return float(raw)
+        except ValueError:
+            return None
+
+    try:
+        return float(str(raw))
     except (TypeError, ValueError):
         return None

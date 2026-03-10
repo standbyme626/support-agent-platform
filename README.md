@@ -29,6 +29,7 @@
    - 可选：`export SUPPORT_AGENT_SQLITE_PATH=/absolute/path/tickets.db`
 4. 执行质量闸门
    - `make check`
+   - `make ci`
 5. 运行常用运维脚本
    - `python scripts/healthcheck.py --env dev`
    - `python scripts/gateway_status.py --env dev`
@@ -62,7 +63,10 @@
 - `make test-integration`：运行集成测试。
 - `make smoke-replay`：运行入口回放烟雾测试。
 - `make acceptance`：运行固定样本自动验收并产出 `storage/acceptance` 报告。
+- `make acceptance-gate`：独立执行 acceptance + trace-kpi（不强耦合 `make check`）。
 - `make trace-kpi`：从 trace 日志计算链路 KPI 并写入文件。
+- `make ci`：CI 同步质量闸门（validate + lint + typecheck + unit + workflow + regression + integration + smoke）。
+- `make container-smoke`：在容器内执行 smoke replay（`docker compose run --rm smoke`）。
 - `make validate-structure`：校验目录与关键文件结构。
 - `make check`：完整质量闸门（validate + lint + typecheck + unit + workflow + regression + integration + smoke）。
 - 若本地存在 `refs/` 参考仓，建议对本仓代码做路径限定 lint：  
@@ -102,3 +106,11 @@
 
 - `refs/` 是第三方参考代码，不受本仓编码规范约束。
 - 提交前请使用路径限定 lint，仅检查本仓业务代码目录。
+
+## 容器与 CI
+
+- 本地容器 smoke（干净环境）：
+  - `docker compose run --rm smoke`
+- CI 定义：
+  - `.github/workflows/ci.yml` 包含 `quality`、`smoke-container`、`acceptance` 三个阶段。
+  - `acceptance` 为独立 job，不强耦合 `check` 目标。

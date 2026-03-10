@@ -5,7 +5,7 @@ from scripts.trace_kpi import compute_trace_kpi, group_trace_events
 
 
 def test_trace_kpi_computes_chain_and_missing_rates() -> None:
-    events = [
+    events: list[dict[str, object]] = [
         {"trace_id": "trace-a", "event_type": "ingress_normalized"},
         {"trace_id": "trace-a", "event_type": "egress_rendered"},
         {"trace_id": "trace-a", "event_type": "route_decision"},
@@ -21,7 +21,9 @@ def test_trace_kpi_computes_chain_and_missing_rates() -> None:
     assert report["trace_count"] == 2
     assert report["complete_trace_count"] == 1
     assert report["chain_complete_rate"] == 0.5
-    assert report["critical_missing_rate"] > 0.0
+    critical_missing_rate = report["critical_missing_rate"]
+    assert isinstance(critical_missing_rate, float)
+    assert critical_missing_rate > 0.0
 
 
 def test_markdown_includes_failure_replay_command() -> None:

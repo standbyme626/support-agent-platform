@@ -271,8 +271,18 @@ def _matches(selector: frozenset[str], value: str) -> bool:
 
 
 def _safe_int(raw: object, *, default: int) -> int:
-    try:
+    if isinstance(raw, int):
+        return max(1, raw)
+    if isinstance(raw, float):
         return max(1, int(raw))
+    if isinstance(raw, str):
+        try:
+            return max(1, int(raw))
+        except ValueError:
+            return default
+
+    try:
+        return max(1, int(str(raw)))
     except (TypeError, ValueError):
         return default
 

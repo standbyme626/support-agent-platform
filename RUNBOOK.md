@@ -18,6 +18,9 @@
 3. 配置环境：
    - `export SUPPORT_AGENT_ENV=dev`
    - 可选：`export SUPPORT_AGENT_SQLITE_PATH=/absolute/path/tickets.db`
+4. 若使用容器 smoke：
+   - 安装 Docker 与 Docker Compose
+   - 执行 `docker compose build`
 
 ## 3. 脚本使用说明
 
@@ -119,6 +122,25 @@ python -m scripts.trace_kpi --env dev --output storage/acceptance/trace_kpi_from
 
 - `--trace-ids trace_a,trace_b`
 - `--required-events ingress_normalized,egress_rendered,route_decision,sla_evaluated,recommended_actions,handoff_decision`
+
+### 3.7 container smoke（干净环境链路）
+
+命令：
+
+```bash
+docker compose run --rm smoke
+```
+
+预期：
+
+- 命令退出码为 0
+- 输出包含 `1 passed`（`tests/integration/test_openclaw_gateway.py`）
+
+### 3.8 CI 阶段
+
+- `quality`：`make ci`
+- `smoke-container`：`docker compose run --rm smoke`
+- `acceptance`：`make acceptance-gate`（独立 job，不强耦合 `check`）
 
 ## 4. 故障排查步骤
 

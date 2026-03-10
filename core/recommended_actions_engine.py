@@ -92,14 +92,14 @@ class RecommendedActionsEngine:
             )
 
         if ticket.intent == "complaint":
-            evidence: list[ActionEvidence] = [
+            complaint_evidence: list[ActionEvidence] = [
                 ActionEvidence(
                     doc_id=f"intent:{ticket.intent}",
                     source_type="ticket_field",
                 )
             ]
             if primary_doc is not None:
-                evidence.append(
+                complaint_evidence.append(
                     ActionEvidence(doc_id=primary_doc.doc_id, source_type=primary_doc.source_type)
                 )
             actions.append(
@@ -109,7 +109,7 @@ class RecommendedActionsEngine:
                     source="handoff_policy",
                     risk="客户满意度风险",
                     confidence=0.88,
-                    evidence=tuple(evidence),
+                    evidence=tuple(complaint_evidence),
                 )
             )
 
