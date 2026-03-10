@@ -1,0 +1,40 @@
+{
+  "samples": [
+    {
+      "id": "faq_direct_reply",
+      "channel": "telegram",
+      "session_id": "accept-faq-001",
+      "text": "如何 查询 工单 进度",
+      "trace_id": "trace_accept_faq_001",
+      "expected_status": "ok",
+      "expected_ticket_action": "faq_reply",
+      "expected_handoff": false,
+      "expected_reply_contains": "参考",
+      "require_recommendation_evidence": true
+    },
+    {
+      "id": "billing_history_case",
+      "channel": "wecom",
+      "session_id": "accept-billing-001",
+      "text": "支付重复扣费需要退款",
+      "trace_id": "trace_accept_billing_001",
+      "expected_status": "ok",
+      "expected_ticket_action": "create_ticket",
+      "expected_handoff": false,
+      "expect_history_case_top": true,
+      "require_recommendation_evidence": true
+    },
+    {
+      "id": "complaint_handoff",
+      "channel": "wecom",
+      "session_id": "accept-complaint-001",
+      "text": "我要投诉并要求人工客服马上处理",
+      "trace_id": "trace_accept_complaint_001",
+      "expected_status": "ok",
+      "expected_ticket_action": "handoff",
+      "expected_handoff": true,
+      "expected_reply_contains": "人工客服",
+      "require_recommendation_evidence": true
+    }
+  ]
+}

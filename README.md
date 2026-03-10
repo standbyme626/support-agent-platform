@@ -34,6 +34,8 @@
    - `python scripts/gateway_status.py --env dev`
    - `python scripts/replay_gateway_event.py --env dev --channel telegram --session-id demo-001 --text "设备故障需要处理" --trace-id trace_demo_001`
    - `python scripts/trace_debug.py --env dev --trace-id trace_demo_001 --limit 20`
+   - `python -m scripts.run_acceptance --env dev`
+   - `python -m scripts.trace_kpi --env dev --output storage/acceptance/trace_kpi_from_log.json`
 
 ## 目录结构
 
@@ -59,6 +61,8 @@
 - `make test-regression`：运行回归测试。
 - `make test-integration`：运行集成测试。
 - `make smoke-replay`：运行入口回放烟雾测试。
+- `make acceptance`：运行固定样本自动验收并产出 `storage/acceptance` 报告。
+- `make trace-kpi`：从 trace 日志计算链路 KPI 并写入文件。
 - `make validate-structure`：校验目录与关键文件结构。
 - `make check`：完整质量闸门（validate + lint + typecheck + unit + workflow + regression + integration + smoke）。
 - 若本地存在 `refs/` 参考仓，建议对本仓代码做路径限定 lint：  

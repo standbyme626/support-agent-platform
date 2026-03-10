@@ -1,4 +1,4 @@
-.PHONY: format lint typecheck test test-unit test-workflow test-regression test-integration smoke-replay check validate-structure
+.PHONY: format lint typecheck test test-unit test-workflow test-regression test-integration smoke-replay acceptance trace-kpi check validate-structure
 
 format:
 	python -m ruff format .
@@ -26,6 +26,12 @@ test-integration:
 
 smoke-replay:
 	python -m pytest tests/integration/test_openclaw_gateway.py -q
+
+acceptance:
+	python -m scripts.run_acceptance --env dev
+
+trace-kpi:
+	python -m scripts.trace_kpi --env dev --output storage/acceptance/trace_kpi_from_log.json
 
 validate-structure:
 	python scripts/validate_structure.py

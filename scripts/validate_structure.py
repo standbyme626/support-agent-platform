@@ -29,6 +29,9 @@ REQUIRED_FILES = [
     "scripts/healthcheck.py",
     "scripts/trace_debug.py",
     "scripts/replay_gateway_event.py",
+    "scripts/run_acceptance.py",
+    "scripts/trace_kpi.py",
+    "seed_data/acceptance_samples/default_samples.json",
 ]
 
 

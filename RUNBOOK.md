@@ -8,6 +8,8 @@
 - `scripts/gateway_status.py`
 - `scripts/replay_gateway_event.py`
 - `scripts/trace_debug.py`
+- `scripts/run_acceptance.py`
+- `scripts/trace_kpi.py`
 
 ## 2. 运行前检查
 
@@ -84,6 +86,39 @@ python scripts/trace_debug.py --env dev --trace-id trace_demo_001 --limit 20
 - `--session-id <id>`
 
 预期：返回 JSON 数组，含 `event_type`、`trace_id`、`ticket_id`、`session_id`。
+
+### 3.5 acceptance（固定样本自动验收）
+
+命令：
+
+```bash
+python -m scripts.run_acceptance --env dev
+```
+
+输出文件：
+
+- `storage/acceptance/acceptance_summary.json`
+- `storage/acceptance/acceptance_summary.md`
+- `storage/acceptance/trace_kpi.json`
+
+验收摘要必须包含：
+
+- 通过/失败样本统计
+- 失败样本可复现命令（`replay_command`）
+- trace KPI（`chain_complete_rate`、`critical_missing_rate`）
+
+### 3.6 trace KPI（独立计算）
+
+命令：
+
+```bash
+python -m scripts.trace_kpi --env dev --output storage/acceptance/trace_kpi_from_log.json
+```
+
+可选参数：
+
+- `--trace-ids trace_a,trace_b`
+- `--required-events ingress_normalized,egress_rendered,route_decision,sla_evaluated,recommended_actions,handoff_decision`
 
 ## 4. 故障排查步骤
 

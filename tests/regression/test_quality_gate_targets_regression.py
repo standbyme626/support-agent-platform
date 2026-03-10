@@ -11,6 +11,8 @@ def test_makefile_quality_gate_targets_regression() -> None:
     assert "test-regression:" in makefile
     assert "test-integration:" in makefile
     assert "smoke-replay:" in makefile
+    assert "acceptance:" in makefile
+    assert "trace-kpi:" in makefile
     expected = (
         "check: validate-structure lint typecheck test-unit "
         "test-workflow test-regression test-integration smoke-replay"
