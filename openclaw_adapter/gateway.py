@@ -51,14 +51,15 @@ class OpenClawGateway:
                 trace_id=trace_id or None,
                 session_id=str(payload.get("session_id") or ""),
             )
-            if error.code == "duplicate_webhook":
+            status = self._map_error_status(error.code)
+            if status == "duplicate_ignored":
                 return {
-                    "status": "duplicate_ignored",
+                    "status": status,
                     "trace_id": trace_id,
                     "error": error.to_dict(),
                 }
             return {
-                "status": "error",
+                "status": status,
                 "trace_id": trace_id,
                 "error": error.to_dict(),
             }
@@ -74,3 +75,11 @@ class OpenClawGateway:
             ticket_id=ticket_id,
             session_id=session_id,
         )
+
+    @staticmethod
+    def _map_error_status(code: str) -> str:
+        if code == "duplicate_webhook":
+            return "duplicate_ignored"
+        if code.startswith("missing_") or code.startswith("invalid_"):
+            return "invalid_payload"
+        return "error"

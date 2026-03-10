@@ -59,6 +59,9 @@ class FeishuAdapter(BaseChannelAdapter):
         message_id = payload.get("event", {}).get("message", {}).get("message_id")
         if message_id:
             return f"{self.channel}:{message_id}"
+        event_id = payload.get("event_id")
+        if event_id:
+            return f"{self.channel}:{event_id}"
         return None
 
     def build_inbound(self, payload: dict[str, Any]) -> InboundEnvelope:
@@ -70,17 +73,37 @@ class FeishuAdapter(BaseChannelAdapter):
             sender_id.get("open_id") or sender_id.get("union_id") or payload.get("session_id") or ""
         )
         message_text = str(event.get("message", {}).get("text") or payload.get("text") or "")
+        if not session_id:
+            raise ChannelAdapterError(
+                channel=self.channel,
+                code="missing_session_id",
+                message="feishu inbound payload missing sender_id/session_id",
+                context={"required_fields": ["event.sender.sender_id.open_id", "session_id"]},
+            )
+        if not message_text:
+            raise ChannelAdapterError(
+                channel=self.channel,
+                code="missing_message_text",
+                message="feishu inbound payload missing message.text/text",
+                context={"required_fields": ["event.message.text", "text"]},
+            )
         inbox = str(
             payload.get("inbox")
             or event.get("chat_id")
             or f"{self.channel}.default"
         )
+        event_id = payload.get("event_id")
+        external_message_id = message_id or event_id
+        key_source = "message.message_id" if message_id else "event_id"
         metadata = {
             "message_id": message_id,
+            "event_id": event_id,
             "tenant_key": payload.get("tenant_key"),
             "inbox": inbox,
             "conversation_id": session_id,
-            "external_message_id": message_id,
+            "external_message_id": external_message_id,
+            "contract_version": "feishu.v2",
+            "idempotency_key_source": key_source,
         }
         return InboundEnvelope(
             channel=self.channel,

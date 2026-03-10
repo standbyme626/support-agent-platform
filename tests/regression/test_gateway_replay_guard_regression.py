@@ -24,6 +24,9 @@ def test_gateway_replay_guard_regression(tmp_path: Path) -> None:
     payload = {"update_id": 1001, "message": {"chat": {"id": 42}, "text": "hello"}}
     first = gateway.receive("telegram", payload)
     second = gateway.receive("telegram", payload)
+    invalid = gateway.receive("telegram", {"message": {"text": "missing chat"}})
 
     assert first["status"] == "ok"
     assert second["status"] == "duplicate_ignored"
+    assert invalid["status"] == "invalid_payload"
+    assert invalid["error"]["code"] == "missing_session_id"

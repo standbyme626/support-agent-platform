@@ -40,6 +40,8 @@ def test_gateway_ingress_and_ticket_mapping(tmp_path: Path) -> None:
     assert first["inbound"]["metadata"]["thread_id"]
     assert first["inbound"]["metadata"]["ticket_id"] is None
     assert first["inbound"]["metadata"]["inbox"] == "telegram.default"
+    assert first["inbound"]["metadata"]["contract_version"] == "telegram.v2"
+    assert first["inbound"]["metadata"]["idempotency_key_source"] == "update_id"
 
     duplicated = gateway.receive(
         "telegram",
@@ -61,6 +63,10 @@ def test_gateway_ingress_and_ticket_mapping(tmp_path: Path) -> None:
     )
     assert second["inbound"]["metadata"]["ticket_id"] == "TICKET-9"
     assert second["inbound"]["metadata"]["inbox"] == "telegram.default"
+
+    invalid = gateway.receive("telegram", {"message": {"text": "missing session"}})
+    assert invalid["status"] == "invalid_payload"
+    assert invalid["error"]["code"] == "missing_session_id"
 
     traces = JsonTraceLogger(log_path).read_recent(limit=10)
     assert any(event["event_type"] == "ingress_normalized" for event in traces)

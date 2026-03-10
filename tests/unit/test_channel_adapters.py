@@ -3,10 +3,11 @@ from __future__ import annotations
 import hashlib
 import hmac
 import time
+from typing import Any
 
 import pytest
 
-from channel_adapters.base import ChannelAdapterError
+from channel_adapters.base import BaseChannelAdapter, ChannelAdapterError
 from channel_adapters.feishu_adapter import FeishuAdapter
 from channel_adapters.telegram_adapter import TelegramAdapter
 from channel_adapters.wecom_adapter import WeComAdapter
@@ -29,6 +30,7 @@ def test_feishu_adapter_builds_inbound() -> None:
     assert inbound.message_text == "hello"
     assert inbound.metadata["inbox"] == "feishu.default"
     assert inbound.metadata["external_message_id"] == "m-1"
+    assert inbound.metadata["contract_version"] == "feishu.v2"
 
 
 def test_telegram_adapter_builds_inbound() -> None:
@@ -42,6 +44,7 @@ def test_telegram_adapter_builds_inbound() -> None:
     assert inbound.message_text == "hi"
     assert inbound.metadata["inbox"] == "telegram.default"
     assert inbound.metadata["external_message_id"] == 1
+    assert inbound.metadata["contract_version"] == "telegram.v2"
 
 
 def test_wecom_adapter_builds_inbound() -> None:
@@ -53,6 +56,7 @@ def test_wecom_adapter_builds_inbound() -> None:
     assert inbound.message_text == "报修"
     assert inbound.metadata["inbox"] == "wecom.default"
     assert inbound.metadata["external_message_id"] == "mid-1"
+    assert inbound.metadata["contract_version"] == "wecom.v2"
 
 
 def test_feishu_signature_verification() -> None:
@@ -103,3 +107,54 @@ def test_wecom_signature_verification() -> None:
             "nonce": nonce,
         }
     )
+
+
+def test_channel_idempotency_key_fallbacks() -> None:
+    telegram = TelegramAdapter()
+    assert (
+        telegram.idempotency_key(
+            {"message": {"chat": {"id": 88}, "message_id": 901, "text": "hi"}}
+        )
+        == "telegram:88:901"
+    )
+
+    feishu = FeishuAdapter()
+    assert (
+        feishu.idempotency_key(
+            {
+                "event_id": "evt_1",
+                "event": {"message": {"text": "hello"}, "sender": {"sender_id": {"open_id": "u1"}}},
+            }
+        )
+        == "feishu:evt_1"
+    )
+
+    wecom = WeComAdapter()
+    assert (
+        wecom.idempotency_key(
+            {"FromUserName": "user-a", "CreateTime": "1710000000", "Content": "ok"}
+        )
+        == "wecom:user-a:1710000000"
+    )
+
+
+@pytest.mark.parametrize(
+    ("adapter", "payload", "code"),
+    [
+        (TelegramAdapter(), {"message": {"text": "missing chat id"}}, "missing_session_id"),
+        (TelegramAdapter(), {"message": {"chat": {"id": 1}}}, "missing_message_text"),
+        (
+            FeishuAdapter(),
+            {"event": {"sender": {"sender_id": {"open_id": "ou_1"}}}},
+            "missing_message_text",
+        ),
+        (WeComAdapter(), {"Content": "missing sender"}, "missing_session_id"),
+    ],
+)
+def test_adapter_missing_required_fields_raise_contract_errors(
+    adapter: BaseChannelAdapter, payload: dict[str, Any], code: str
+) -> None:
+    with pytest.raises(ChannelAdapterError) as exc_info:
+        adapter.build_inbound(payload)
+
+    assert exc_info.value.code == code
