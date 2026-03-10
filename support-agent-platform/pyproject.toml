@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "support-agent-platform"
+version = "0.1.0"
+description = "Workflow-first support ticket platform ingress foundation"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "mypy>=1.11",
+  "pytest>=8.3",
+  "ruff>=0.6.9",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = [".", "tests", "scripts"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N", "RUF"]
+ignore = ["RUF001"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.11"
+warn_unused_configs = true
+check_untyped_defs = true
+disallow_untyped_defs = true
+strict_optional = true
+mypy_path = ["."]
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+[tool.setuptools]
+packages = [
+  "channel_adapters",
+  "channel_adapters.feishu_adapter",
+  "channel_adapters.telegram_adapter",
+  "channel_adapters.wecom_adapter",
+  "config",
+  "core",
+  "openclaw_adapter",
+  "storage",
+  "tools",
+  "workflows",
+]

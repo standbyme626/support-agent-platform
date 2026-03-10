@@ -1,0 +1,8 @@
+{
+  "rules": {
+    "P1": {"first_response_minutes": 15, "resolution_minutes": 120, "escalation": "immediate"},
+    "P2": {"first_response_minutes": 30, "resolution_minutes": 240, "escalation": "supervisor"},
+    "P3": {"first_response_minutes": 60, "resolution_minutes": 480, "escalation": "queue"},
+    "P4": {"first_response_minutes": 120, "resolution_minutes": 1440, "escalation": "queue"}
+  }
+}

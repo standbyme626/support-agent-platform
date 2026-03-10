@@ -1,0 +1,16 @@
+[
+  {
+    "doc_id": "case-001",
+    "source_type": "history_case",
+    "title": "支付重复扣费案例",
+    "content": "用户反馈重复扣费，先冻结支付通道并核对账单，最后发起退款。",
+    "tags": ["支付", "扣费", "退款"]
+  },
+  {
+    "doc_id": "case-002",
+    "source_type": "history_case",
+    "title": "服务中断案例",
+    "content": "监控发现服务中断，先进行故障隔离，再通知值班工程师处理。",
+    "tags": ["故障", "中断", "值班"]
+  }
+]

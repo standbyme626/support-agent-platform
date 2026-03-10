@@ -1,0 +1,16 @@
+[
+  {
+    "doc_id": "faq-001",
+    "source_type": "faq",
+    "title": "如何重置账号密码",
+    "content": "进入账号设置页面，点击忘记密码，通过手机验证码重置。",
+    "tags": ["账号", "密码", "登录"]
+  },
+  {
+    "doc_id": "faq-002",
+    "source_type": "faq",
+    "title": "如何查询工单进度",
+    "content": "通过工单号在工单查询接口查看状态，状态包括 open pending escalated closed。",
+    "tags": ["工单", "进度", "查询"]
+  }
+]

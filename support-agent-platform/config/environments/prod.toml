@@ -1,0 +1,22 @@
+[gateway]
+name = "openclaw-gateway-prod"
+log_path = "storage/gateway-prod.log"
+
+[storage]
+sqlite_path = "storage/tickets.db"
+
+[secrets.openclaw_webhook_secret]
+env = "OPENCLAW_WEBHOOK_SECRET"
+file_env = "OPENCLAW_WEBHOOK_SECRET_FILE"
+
+[secrets.feishu_app_secret]
+env = "FEISHU_APP_SECRET"
+file_env = "FEISHU_APP_SECRET_FILE"
+
+[secrets.telegram_bot_token]
+env = "TELEGRAM_BOT_TOKEN"
+file_env = "TELEGRAM_BOT_TOKEN_FILE"
+
+[secrets.wecom_agent_secret]
+env = "WECOM_AGENT_SECRET"
+file_env = "WECOM_AGENT_SECRET_FILE"
