@@ -30,7 +30,7 @@ describe("TicketsPage", () => {
     });
 
     render(<TicketsPage />);
-    expect(screen.getByText("Ticket list is syncing.")).toBeInTheDocument();
+    expect(screen.getByText("工单列表同步中。")).toBeInTheDocument();
   });
 
   it("renders table and filter controls", () => {
@@ -71,8 +71,8 @@ describe("TicketsPage", () => {
     });
 
     render(<TicketsPage />);
-    expect(screen.getByText("Ticket Inbox")).toBeInTheDocument();
-    expect(screen.getByText("Ticket Filters")).toBeInTheDocument();
+    expect(screen.getByText("工单收件箱")).toBeInTheDocument();
+    expect(screen.getByText("工单筛选")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Gate issue" })).toBeInTheDocument();
   });
 
@@ -97,7 +97,7 @@ describe("TicketsPage", () => {
     });
 
     render(<TicketsPage />);
-    expect(screen.getByText("Failed to load tickets.")).toBeInTheDocument();
+    expect(screen.getByText("加载工单失败。")).toBeInTheDocument();
     expect(screen.getByText("network unavailable")).toBeInTheDocument();
   });
 });

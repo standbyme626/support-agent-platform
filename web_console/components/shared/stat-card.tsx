@@ -1,3 +1,7 @@
+"use client";
+
+import { useI18n } from "@/lib/i18n";
+
 export type SlaSemanticState = "normal" | "warning" | "breached";
 
 export function StatCard({
@@ -13,6 +17,7 @@ export function StatCard({
   href?: string;
   state?: SlaSemanticState;
 }) {
+  const { t } = useI18n();
   const content = (
     <article className={`card state-${state}`}>
       <h3>{title}</h3>
@@ -25,7 +30,7 @@ export function StatCard({
     return content;
   }
   return (
-    <a href={href} aria-label={`Open ${title}`}>
+    <a href={href} aria-label={`${t("打开", "Open")} ${title}`}>
       {content}
     </a>
   );

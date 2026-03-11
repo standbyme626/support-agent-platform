@@ -21,7 +21,7 @@ describe("ChannelsPage", () => {
     });
 
     render(<ChannelsPage />);
-    expect(screen.getByText("Channels and gateway metrics are syncing.")).toBeInTheDocument();
+    expect(screen.getByText("渠道与网关指标同步中。")).toBeInTheDocument();
   });
 
   it("renders error state", () => {
@@ -36,7 +36,7 @@ describe("ChannelsPage", () => {
     });
 
     render(<ChannelsPage />);
-    expect(screen.getByText("Failed to load channels and gateway metrics.")).toBeInTheDocument();
+    expect(screen.getByText("加载渠道与网关指标失败。")).toBeInTheDocument();
     expect(screen.getByText("gateway timeout")).toBeInTheDocument();
   });
 
@@ -79,11 +79,11 @@ describe("ChannelsPage", () => {
 
     render(<ChannelsPage />);
 
-    expect(screen.getByRole("heading", { level: 2, name: "Channels / Gateway" })).toBeInTheDocument();
-    expect(screen.getByText("Gateway Status")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "渠道 / 网关" })).toBeInTheDocument();
+    expect(screen.getByText("网关状态")).toBeInTheDocument();
     expect(screen.getByText("openclaw-dev")).toBeInTheDocument();
-    expect(screen.getByText("Channel Health")).toBeInTheDocument();
-    expect(screen.getByText("Webhook Event Stream")).toBeInTheDocument();
+    expect(screen.getByText("渠道健康")).toBeInTheDocument();
+    expect(screen.getByText("Webhook 事件流")).toBeInTheDocument();
     expect(screen.getByText("ingress_normalized")).toBeInTheDocument();
     expect(screen.getByText("trace-h-001")).toBeInTheDocument();
   });

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { KbItem, KbSourceType } from "@/lib/api/kb";
 import { SourceTypeBadge } from "@/components/kb/source-type-badge";
+import { useI18n } from "@/lib/i18n";
 
 type EditorSubmitPayload = {
   doc_id?: string;
@@ -28,6 +29,7 @@ export function KbEditorDialog({
   onCancel: () => void;
   onSubmit: (payload: EditorSubmitPayload) => void;
 }) {
+  const { t } = useI18n();
   const [docId, setDocId] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -50,7 +52,7 @@ export function KbEditorDialog({
 
   return (
     <section className="card" style={{ marginTop: 12 }}>
-      <h3>{isEditMode ? "Edit KB Document" : "Create KB Document"}</h3>
+      <h3>{isEditMode ? t("编辑知识库文档", "Edit KB Document") : t("新建知识库文档", "Create KB Document")}</h3>
       <div style={{ marginTop: 8 }}>
         <SourceTypeBadge sourceType={sourceType} />
       </div>
@@ -63,7 +65,7 @@ export function KbEditorDialog({
         }}
       >
         <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ color: "var(--muted)", fontSize: 12 }}>Doc ID</span>
+          <span style={{ color: "var(--muted)", fontSize: 12 }}>{t("文档 ID", "Doc ID")}</span>
           <input
             value={docId}
             onChange={(event) => setDocId(event.target.value)}
@@ -74,7 +76,7 @@ export function KbEditorDialog({
           />
         </label>
         <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ color: "var(--muted)", fontSize: 12 }}>Title</span>
+          <span style={{ color: "var(--muted)", fontSize: 12 }}>{t("标题", "Title")}</span>
           <input
             value={title}
             onChange={(event) => setTitle(event.target.value)}
@@ -85,7 +87,7 @@ export function KbEditorDialog({
         </label>
       </div>
       <label style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 10 }}>
-        <span style={{ color: "var(--muted)", fontSize: 12 }}>Content</span>
+        <span style={{ color: "var(--muted)", fontSize: 12 }}>{t("内容", "Content")}</span>
         <textarea
           value={content}
           onChange={(event) => setContent(event.target.value)}
@@ -96,7 +98,7 @@ export function KbEditorDialog({
         />
       </label>
       <label style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 10 }}>
-        <span style={{ color: "var(--muted)", fontSize: 12 }}>Tags (comma separated)</span>
+        <span style={{ color: "var(--muted)", fontSize: 12 }}>{t("标签（逗号分隔）", "Tags (comma separated)")}</span>
         <input
           value={tagsText}
           onChange={(event) => setTagsText(event.target.value)}
@@ -127,10 +129,14 @@ export function KbEditorDialog({
           disabled={submitting}
           aria-label="kb_submit"
         >
-          {submitting ? "Submitting..." : isEditMode ? "Save Changes" : "Create Document"}
+          {submitting
+            ? t("提交中...", "Submitting...")
+            : isEditMode
+              ? t("保存修改", "Save Changes")
+              : t("创建文档", "Create Document")}
         </button>
         <button className="btn-ghost" onClick={onCancel} disabled={submitting} aria-label="kb_cancel">
-          Cancel
+          {t("取消", "Cancel")}
         </button>
       </div>
     </section>

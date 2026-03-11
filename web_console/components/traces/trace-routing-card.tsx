@@ -1,3 +1,7 @@
+"use client";
+
+import { useI18n } from "@/lib/i18n";
+
 function toText(value: unknown) {
   if (value === null || value === undefined || value === "") {
     return "-";
@@ -19,25 +23,26 @@ export function TraceRoutingCard({
   handoffReason: string | null;
   errorOnly: boolean;
 }) {
+  const { t } = useI18n();
   const rows = Object.entries(routeDecision).slice(0, 8);
   return (
     <article className="card">
-      <h3>Trace Routing</h3>
+      <h3>{t("Trace 路由", "Trace Routing")}</h3>
       <ul className="list" style={{ marginTop: 10 }}>
         <li className="list-item">
-          <strong>handoff</strong>
+          <strong>{t("接管", "Handoff")}</strong>
           <div style={{ color: "var(--muted)", fontSize: 13 }}>
-            {handoff ? "true" : "false"} · reason={handoffReason ?? "-"}
+            {handoff ? "true" : "false"} · {t("原因", "Reason")}={handoffReason ?? "-"}
           </div>
         </li>
         <li className="list-item">
-          <strong>error_only</strong>
+          <strong>{t("仅错误", "Error Only")}</strong>
           <div style={{ color: "var(--muted)", fontSize: 13 }}>{errorOnly ? "true" : "false"}</div>
         </li>
         {rows.length === 0 ? (
           <li className="list-item">
-            <strong>route_decision</strong>
-            <div style={{ color: "var(--muted)", fontSize: 13 }}>No route payload.</div>
+            <strong>{t("路由决策", "Route Decision")}</strong>
+            <div style={{ color: "var(--muted)", fontSize: 13 }}>{t("暂无路由载荷。", "No route payload.")}</div>
           </li>
         ) : (
           rows.map(([key, value]) => (

@@ -8,6 +8,7 @@ import { TraceToolCallsCard } from "@/components/traces/trace-tool-calls-card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ErrorState } from "@/components/shared/error-state";
 import { LoadingState } from "@/components/shared/loading-state";
+import { useI18n } from "@/lib/i18n";
 import { useTraceDetail } from "@/lib/hooks/useTraceDetail";
 
 function toText(value: string | null | undefined) {
@@ -15,40 +16,53 @@ function toText(value: string | null | undefined) {
 }
 
 export default function TraceDetailPage() {
+  const { t } = useI18n();
   const params = useParams<{ traceId: string }>();
   const traceId = params?.traceId;
 
   if (!traceId) {
-    return <ErrorState title="Invalid trace id." message="Cannot resolve trace from route." />;
+    return (
+      <ErrorState
+        title={t("无效 Trace ID。", "Invalid trace id.")}
+        message={t("无法从路由中解析 Trace。", "Cannot resolve trace from route.")}
+      />
+    );
   }
 
   const { loading, error, data, refetch } = useTraceDetail(traceId);
 
   if (loading) {
-    return <LoadingState title="Trace detail is syncing." />;
+    return <LoadingState title={t("Trace 详情同步中。", "Trace detail is syncing.")} />;
   }
 
   if (error) {
-    return <ErrorState title="Failed to load trace detail." message={error} onRetry={() => void refetch()} />;
+    return <ErrorState title={t("加载 Trace 详情失败。", "Failed to load trace detail.")} message={error} onRetry={() => void refetch()} />;
   }
 
   if (!data) {
-    return <EmptyState title="Trace not found." message={`No trace payload for ${traceId}.`} />;
+    return (
+      <EmptyState
+        title={t("未找到 Trace。", "Trace not found.")}
+        message={t(`未找到 ${traceId} 的 Trace 数据。`, `No trace payload for ${traceId}.`)}
+      />
+    );
   }
 
   return (
     <section>
-      <h2 className="section-title">Trace Detail</h2>
+      <h2 className="section-title">{t("Trace 详情", "Trace Detail")}</h2>
       <article className="card">
         <h3>{data.trace_id}</h3>
         <div style={{ color: "var(--muted)", marginTop: 8 }}>
-          ticket={toText(data.ticket_id)} · session={toText(data.session_id)}
+          {t("工单", "Ticket")}={toText(data.ticket_id)} · {t("会话", "Session")}={toText(data.session_id)}
         </div>
         <div style={{ color: "var(--muted)", marginTop: 4 }}>
-          workflow={toText(data.workflow)} · channel={toText(data.channel)} · provider={toText(data.provider)}
+          {t("工作流", "Workflow")}={toText(data.workflow)} · {t("渠道", "Channel")}={toText(data.channel)} ·{" "}
+          {t("模型提供方", "Provider")}={toText(data.provider)}
         </div>
         <div style={{ color: "var(--muted)", marginTop: 4 }}>
-          latency={data.latency_ms !== null ? `${data.latency_ms}ms` : "-"} · created_at={toText(data.created_at)}
+          {t("延迟", "Latency")}={data.latency_ms !== null ? `${data.latency_ms}ms` : "-"} ·{" "}
+          {t("创建时间", "Created At")}={toText(data.created_at)}
         </div>
       </article>
 

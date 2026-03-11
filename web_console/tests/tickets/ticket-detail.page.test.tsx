@@ -35,7 +35,7 @@ describe("TicketDetailPage", () => {
     });
 
     render(<TicketDetailPage />);
-    expect(screen.getByText("Ticket detail is syncing.")).toBeInTheDocument();
+    expect(screen.getByText("工单详情同步中。")).toBeInTheDocument();
   });
 
   it("renders ticket detail layout", () => {
@@ -90,12 +90,12 @@ describe("TicketDetailPage", () => {
     });
 
     render(<TicketDetailPage />);
-    expect(screen.getByText("Ticket Detail")).toBeInTheDocument();
+    expect(screen.getByText("工单详情")).toBeInTheDocument();
     expect(screen.getByText("Elevator issue")).toBeInTheDocument();
-    expect(screen.getByText("Actions Panel")).toBeInTheDocument();
-    expect(screen.getByText("Event Timeline")).toBeInTheDocument();
-    expect(screen.getByText("Recommended Actions")).toBeInTheDocument();
-    expect(screen.getByText("Similar Cases")).toBeInTheDocument();
+    expect(screen.getByText("动作面板")).toBeInTheDocument();
+    expect(screen.getByText("事件时间线")).toBeInTheDocument();
+    expect(screen.getByText("推荐动作")).toBeInTheDocument();
+    expect(screen.getByText("相似案例")).toBeInTheDocument();
   });
 
   it("renders error state", () => {
@@ -114,7 +114,7 @@ describe("TicketDetailPage", () => {
     });
 
     render(<TicketDetailPage />);
-    expect(screen.getByText("Failed to load ticket detail.")).toBeInTheDocument();
+    expect(screen.getByText("加载工单详情失败。")).toBeInTheDocument();
     expect(screen.getByText("detail api timeout")).toBeInTheDocument();
   });
 });

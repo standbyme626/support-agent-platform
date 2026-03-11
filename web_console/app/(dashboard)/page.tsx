@@ -8,6 +8,7 @@ import { LoadingState } from "@/components/shared/loading-state";
 import { StatCard, type SlaSemanticState } from "@/components/shared/stat-card";
 import { useDashboardRecentErrors } from "@/lib/hooks/useDashboardRecentErrors";
 import { useDashboardSummary } from "@/lib/hooks/useDashboardSummary";
+import { useI18n } from "@/lib/i18n";
 import { useQueueSummary } from "@/lib/hooks/useQueueSummary";
 import { buildTicketListUrl, buildTraceDetailUrl } from "@/lib/utils/routes";
 
@@ -22,18 +23,19 @@ function determineSlaState(warning: number, breached: number): SlaSemanticState 
 }
 
 export default function DashboardPage() {
+  const { t } = useI18n();
   const summary = useDashboardSummary();
   const recentErrors = useDashboardRecentErrors();
   const queueSummary = useQueueSummary();
 
   if (summary.loading || recentErrors.loading || queueSummary.loading) {
-    return <LoadingState title="Dashboard is syncing." />;
+    return <LoadingState title={t("总览数据同步中。", "Dashboard is syncing.")} />;
   }
 
   if (summary.error) {
     return (
       <ErrorState
-        title="Failed to load dashboard summary."
+        title={t("加载总览摘要失败。", "Failed to load dashboard summary.")}
         message={summary.error}
         onRetry={() => void summary.refetch()}
       />
@@ -43,7 +45,7 @@ export default function DashboardPage() {
   if (recentErrors.error) {
     return (
       <ErrorState
-        title="Failed to load recent errors."
+        title={t("加载近期错误失败。", "Failed to load recent errors.")}
         message={recentErrors.error}
         onRetry={() => void recentErrors.refetch()}
       />
@@ -53,7 +55,7 @@ export default function DashboardPage() {
   if (queueSummary.error) {
     return (
       <ErrorState
-        title="Failed to load queue summary."
+        title={t("加载队列摘要失败。", "Failed to load queue summary.")}
         message={queueSummary.error}
         onRetry={() => void queueSummary.refetch()}
       />
@@ -61,7 +63,12 @@ export default function DashboardPage() {
   }
 
   if (!summary.data) {
-    return <EmptyState title="No dashboard data." message="No summary payload received." />;
+    return (
+      <EmptyState
+        title={t("暂无总览数据。", "No dashboard data.")}
+        message={t("未收到摘要数据。", "No summary payload received.")}
+      />
+    );
   }
 
   const slaState = determineSlaState(summary.data.sla_warning_count, summary.data.sla_breached_count);
@@ -69,52 +76,52 @@ export default function DashboardPage() {
 
   return (
     <section>
-      <h2 className="section-title">Overview</h2>
+      <h2 className="section-title">{t("概览", "Overview")}</h2>
       <div className="grid stats">
         <StatCard
-          title="New Today"
+          title={t("今日新建", "New Today")}
           value={summary.data.new_tickets_today}
-          hint="Created in the last 24h"
+          hint={t("最近 24 小时创建", "Created in the last 24h")}
           href={buildTicketListUrl({ created_from: "today" })}
         />
         <StatCard
-          title="In Progress"
+          title={t("处理中", "In Progress")}
           value={summary.data.in_progress_count}
-          hint="open + pending tickets"
+          hint={t("open + pending 工单", "open + pending tickets")}
           href={buildTicketListUrl({ status: "open" })}
         />
         <StatCard
-          title="SLA Risk"
+          title={t("SLA 风险", "SLA Risk")}
           value={totalSlaRisk}
-          hint="warning + breached"
+          hint={t("预警 + 超时", "warning + breached")}
           href={buildTicketListUrl({ sla_state: slaState })}
           state={slaState}
         />
         <StatCard
-          title="Escalated"
+          title={t("已升级", "Escalated")}
           value={summary.data.escalated_count}
-          hint="tickets requiring higher priority"
+          hint={t("需要更高优先级处理", "tickets requiring higher priority")}
           href={buildTicketListUrl({ status: "escalated" })}
           state={summary.data.escalated_count > 0 ? "warning" : "normal"}
         />
         <StatCard
-          title="Handoff Pending"
+          title={t("待接管", "Handoff Pending")}
           value={summary.data.handoff_pending_count}
-          hint="requested or accepted"
+          hint={t("requested 或 accepted", "requested or accepted")}
           href={buildTicketListUrl({ handoff_state: "requested" })}
           state={summary.data.handoff_pending_count > 0 ? "warning" : "normal"}
         />
       </div>
 
       <h2 className="section-title" style={{ marginTop: 20 }}>
-        Errors, Queue, and Workload
+        {t("错误、队列与负载", "Errors, Queue, and Workload")}
       </h2>
       <div className="grid two-col">
         <article className="card">
-          <h3>Recent Trace Errors</h3>
+          <h3>{t("近期 Trace 错误", "Recent Trace Errors")}</h3>
           {recentErrors.data.length === 0 ? (
             <div className="hint" style={{ marginTop: 8 }}>
-              No recent trace errors.
+              {t("暂无近期 Trace 错误。", "No recent trace errors.")}
             </div>
           ) : (
             <ul className="list">

@@ -4,25 +4,27 @@ import { TraceTable } from "@/components/traces/trace-table";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ErrorState } from "@/components/shared/error-state";
 import { LoadingState } from "@/components/shared/loading-state";
+import { useI18n } from "@/lib/i18n";
 import { useTraceList } from "@/lib/hooks/useTraceList";
 
 export default function TracesPage() {
+  const { t } = useI18n();
   const { loading, error, items, total, page, pageSize, filters, setPage, updateFilters, clearFilters, refetch } =
     useTraceList();
 
   if (loading) {
-    return <LoadingState title="Trace list is syncing." />;
+    return <LoadingState title={t("Trace 列表同步中。", "Trace list is syncing.")} />;
   }
 
   if (error) {
-    return <ErrorState title="Failed to load traces." message={error} onRetry={() => void refetch()} />;
+    return <ErrorState title={t("加载 Trace 失败。", "Failed to load traces.")} message={error} onRetry={() => void refetch()} />;
   }
 
   return (
     <section>
-      <h2 className="section-title">Trace List</h2>
+      <h2 className="section-title">{t("Trace 列表", "Trace List")}</h2>
       <article className="card">
-        <h3>Filters</h3>
+        <h3>{t("筛选", "Filters")}</h3>
         <div
           style={{
             marginTop: 10,
@@ -32,43 +34,43 @@ export default function TracesPage() {
           }}
         >
           <input
-            aria-label="trace_id"
-            placeholder="trace_id"
+            aria-label={t("Trace ID", "Trace ID")}
+            placeholder={t("Trace ID", "Trace ID")}
             value={filters.trace_id ?? ""}
             onChange={(event) => updateFilters({ trace_id: event.target.value || undefined })}
             style={{ height: 34, borderRadius: 8, border: "1px solid var(--border)", padding: "0 10px" }}
           />
           <input
-            aria-label="ticket_id"
-            placeholder="ticket_id"
+            aria-label={t("工单 ID", "Ticket ID")}
+            placeholder={t("工单 ID", "Ticket ID")}
             value={filters.ticket_id ?? ""}
             onChange={(event) => updateFilters({ ticket_id: event.target.value || undefined })}
             style={{ height: 34, borderRadius: 8, border: "1px solid var(--border)", padding: "0 10px" }}
           />
           <input
-            aria-label="session_id"
-            placeholder="session_id"
+            aria-label={t("会话 ID", "Session ID")}
+            placeholder={t("会话 ID", "Session ID")}
             value={filters.session_id ?? ""}
             onChange={(event) => updateFilters({ session_id: event.target.value || undefined })}
             style={{ height: 34, borderRadius: 8, border: "1px solid var(--border)", padding: "0 10px" }}
           />
           <input
-            aria-label="workflow"
-            placeholder="workflow"
+            aria-label={t("工作流", "Workflow")}
+            placeholder={t("工作流", "Workflow")}
             value={filters.workflow ?? ""}
             onChange={(event) => updateFilters({ workflow: event.target.value || undefined })}
             style={{ height: 34, borderRadius: 8, border: "1px solid var(--border)", padding: "0 10px" }}
           />
           <input
-            aria-label="channel"
-            placeholder="channel"
+            aria-label={t("渠道", "Channel")}
+            placeholder={t("渠道", "Channel")}
             value={filters.channel ?? ""}
             onChange={(event) => updateFilters({ channel: event.target.value || undefined })}
             style={{ height: 34, borderRadius: 8, border: "1px solid var(--border)", padding: "0 10px" }}
           />
           <input
-            aria-label="provider"
-            placeholder="provider"
+            aria-label={t("模型提供方", "Provider")}
+            placeholder={t("模型提供方", "Provider")}
             value={filters.provider ?? ""}
             onChange={(event) => updateFilters({ provider: event.target.value || undefined })}
             style={{ height: 34, borderRadius: 8, border: "1px solid var(--border)", padding: "0 10px" }}
@@ -81,9 +83,9 @@ export default function TracesPage() {
             }
             style={{ height: 34, borderRadius: 8, border: "1px solid var(--border)", padding: "0 10px" }}
           >
-            <option value="">error_only: all</option>
-            <option value="true">error_only=true</option>
-            <option value="false">error_only=false</option>
+            <option value="">{t("仅错误：全部", "Error Only: All")}</option>
+            <option value="true">{t("仅错误=true", "Error Only = true")}</option>
+            <option value="false">{t("仅错误=false", "Error Only = false")}</option>
           </select>
           <select
             aria-label="handoff"
@@ -93,9 +95,9 @@ export default function TracesPage() {
             }
             style={{ height: 34, borderRadius: 8, border: "1px solid var(--border)", padding: "0 10px" }}
           >
-            <option value="">handoff: all</option>
-            <option value="true">handoff=true</option>
-            <option value="false">handoff=false</option>
+            <option value="">{t("接管：全部", "Handoff: All")}</option>
+            <option value="true">{t("接管=true", "Handoff = true")}</option>
+            <option value="false">{t("接管=false", "Handoff = false")}</option>
           </select>
         </div>
         <button
@@ -104,13 +106,16 @@ export default function TracesPage() {
           style={{ marginTop: 10 }}
           aria-label="clear_trace_filters"
         >
-          Clear Filters
+          {t("清空筛选", "Clear Filters")}
         </button>
       </article>
 
       <div style={{ marginTop: 12 }}>
         {items.length === 0 ? (
-          <EmptyState title="No traces matched." message="Adjust filters to find related traces." />
+          <EmptyState
+            title={t("未匹配到 Trace。", "No traces matched.")}
+            message={t("请调整筛选条件后重试。", "Adjust filters to find related traces.")}
+          />
         ) : (
           <TraceTable rows={items} page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
         )}

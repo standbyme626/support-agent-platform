@@ -19,7 +19,7 @@ describe("QueuesPage", () => {
     });
 
     render(<QueuesPage />);
-    expect(screen.getByText("Queue board is syncing.")).toBeInTheDocument();
+    expect(screen.getByText("队列看板同步中。")).toBeInTheDocument();
   });
 
   it("renders error state", () => {
@@ -32,7 +32,7 @@ describe("QueuesPage", () => {
     });
 
     render(<QueuesPage />);
-    expect(screen.getByText("Failed to load queue board.")).toBeInTheDocument();
+    expect(screen.getByText("加载队列看板失败。")).toBeInTheDocument();
     expect(screen.getByText("network timeout")).toBeInTheDocument();
   });
 
@@ -66,8 +66,8 @@ describe("QueuesPage", () => {
 
     render(<QueuesPage />);
 
-    expect(screen.getByRole("heading", { level: 2, name: "Queue Board" })).toBeInTheDocument();
-    expect(screen.getByText("Queue Details")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "队列看板" })).toBeInTheDocument();
+    expect(screen.getByText("队列明细")).toBeInTheDocument();
     const queueLinks = screen
       .getAllByRole("link")
       .map((element) => element.getAttribute("href"))

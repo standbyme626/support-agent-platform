@@ -7,29 +7,30 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { ErrorState } from "@/components/shared/error-state";
 import { LoadingState } from "@/components/shared/loading-state";
 import { useKB } from "@/lib/hooks/useKB";
+import { useI18n } from "@/lib/i18n";
 import type { KbItem, KbSourceType } from "@/lib/api/kb";
 
-const KB_NAV_ITEMS: Array<{ href: string; label: string; sourceType: KbSourceType }> = [
-  { href: "/kb/faq", label: "FAQ", sourceType: "faq" },
-  { href: "/kb/sop", label: "SOP", sourceType: "sop" },
-  { href: "/kb/cases", label: "History Cases", sourceType: "history_case" }
-];
-
-function sourceTypeTitle(sourceType: KbSourceType) {
-  if (sourceType === "faq") {
-    return "KB FAQ";
-  }
-  if (sourceType === "sop") {
-    return "KB SOP";
-  }
-  return "KB History Cases";
-}
-
 export function KbWorkspacePage({ sourceType }: { sourceType: KbSourceType }) {
+  const { t } = useI18n();
   const kb = useKB(sourceType);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<KbItem | null>(null);
   const [deleteCandidate, setDeleteCandidate] = useState<KbItem | null>(null);
+  const kbNavItems: Array<{ href: string; label: string; sourceType: KbSourceType }> = [
+    { href: "/kb/faq", label: t("知识库 FAQ", "KB FAQ"), sourceType: "faq" },
+    { href: "/kb/sop", label: t("知识库 SOP", "KB SOP"), sourceType: "sop" },
+    { href: "/kb/cases", label: t("历史案例", "History Cases"), sourceType: "history_case" }
+  ];
+
+  function sourceTypeTitle(currentSourceType: KbSourceType) {
+    if (currentSourceType === "faq") {
+      return t("知识库 FAQ", "KB FAQ");
+    }
+    if (currentSourceType === "sop") {
+      return t("知识库 SOP", "KB SOP");
+    }
+    return t("KB 历史案例", "KB History Cases");
+  }
 
   function openCreateDialog() {
     kb.clearActionState();
@@ -71,18 +72,18 @@ export function KbWorkspacePage({ sourceType }: { sourceType: KbSourceType }) {
   }
 
   if (kb.loading) {
-    return <LoadingState title="KB list is syncing." />;
+    return <LoadingState title={t("知识库列表同步中。", "KB list is syncing.")} />;
   }
 
   if (kb.error) {
-    return <ErrorState title="Failed to load KB documents." message={kb.error} onRetry={() => void kb.refetch()} />;
+    return <ErrorState title={t("加载知识库文档失败。", "Failed to load KB documents.")} message={kb.error} onRetry={() => void kb.refetch()} />;
   }
 
   return (
     <section>
       <h2 className="section-title">{sourceTypeTitle(sourceType)}</h2>
       <nav style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
-        {KB_NAV_ITEMS.map((item) => (
+        {kbNavItems.map((item) => (
           <a
             key={item.href}
             href={item.href}
@@ -95,7 +96,7 @@ export function KbWorkspacePage({ sourceType }: { sourceType: KbSourceType }) {
       </nav>
 
       <article className="card" style={{ marginTop: 12 }}>
-        <h3>Filters & Actions</h3>
+        <h3>{t("筛选与操作", "Filters & Actions")}</h3>
         <div
           style={{
             marginTop: 10,
@@ -107,15 +108,15 @@ export function KbWorkspacePage({ sourceType }: { sourceType: KbSourceType }) {
           <input
             value={kb.q}
             onChange={(event) => kb.setQuery(event.target.value)}
-            placeholder="Search in title/content"
+            placeholder={t("在标题/内容中搜索", "Search in title/content")}
             aria-label="kb_search"
             style={{ height: 34, borderRadius: 8, border: "1px solid var(--border)", padding: "0 10px" }}
           />
           <button className="btn-ghost" onClick={kb.clearQuery}>
-            Clear
+            {t("清空", "Clear")}
           </button>
           <button className="btn-primary" onClick={openCreateDialog} aria-label="kb_add_doc">
-            Add Document
+            {t("新增文档", "Add Document")}
           </button>
         </div>
       </article>
@@ -147,13 +148,13 @@ export function KbWorkspacePage({ sourceType }: { sourceType: KbSourceType }) {
 
       {deleteCandidate ? (
         <article className="card" style={{ marginTop: 12 }}>
-          <h3>Confirm Delete</h3>
+          <h3>{t("确认删除", "Confirm Delete")}</h3>
           <p style={{ marginTop: 8 }}>
-            Delete <strong>{deleteCandidate.doc_id}</strong>?
+            {t("确认删除", "Delete")} <strong>{deleteCandidate.doc_id}</strong>?
           </p>
           <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
             <button className="btn-primary" onClick={() => void confirmDelete()} disabled={kb.actionLoading}>
-              Confirm Delete
+              {t("确认删除", "Confirm Delete")}
             </button>
             <button
               className="btn-ghost"
@@ -163,7 +164,7 @@ export function KbWorkspacePage({ sourceType }: { sourceType: KbSourceType }) {
               }}
               disabled={kb.actionLoading}
             >
-              Cancel
+              {t("取消", "Cancel")}
             </button>
           </div>
         </article>
@@ -172,8 +173,8 @@ export function KbWorkspacePage({ sourceType }: { sourceType: KbSourceType }) {
       <div style={{ marginTop: 12 }}>
         {kb.items.length === 0 ? (
           <EmptyState
-            title="No KB documents matched."
-            message="Try another keyword or create a new KB document."
+            title={t("未匹配到知识库文档。", "No KB documents matched.")}
+            message={t("请尝试其他关键词或创建新文档。", "Try another keyword or create a new KB document.")}
           />
         ) : (
           <KbTable

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { TicketEventItem } from "@/lib/api/tickets";
+import { useI18n } from "@/lib/i18n";
 
 const OBSERVABILITY_EVENTS = new Set([
   "ingress_normalized",
@@ -17,7 +18,7 @@ const EVENT_SUMMARY_FIELDS: Record<string, string[]> = {
   handoff_decision: ["should_handoff", "reason", "policy_version"]
 };
 
-function formatTimestamp(value: string | null) {
+function formatTimestamp(value: string | null, locale: string) {
   if (!value) {
     return "n/a";
   }
@@ -25,7 +26,7 @@ function formatTimestamp(value: string | null) {
   if (Number.isNaN(parsed.getTime())) {
     return value;
   }
-  return parsed.toLocaleString("zh-CN", { hour12: false });
+  return parsed.toLocaleString(locale, { hour12: false });
 }
 
 function toInlineValue(value: unknown): string {
@@ -41,7 +42,7 @@ function toInlineValue(value: unknown): string {
   return JSON.stringify(value);
 }
 
-function buildEventSummary(event: TicketEventItem) {
+function buildEventSummary(event: TicketEventItem, emptyText: string) {
   const payload = event.payload ?? {};
   const preferredFields = EVENT_SUMMARY_FIELDS[event.event_type] ?? [];
   const preferredSummary = preferredFields
@@ -57,10 +58,11 @@ function buildEventSummary(event: TicketEventItem) {
   if (genericSummary.length > 0) {
     return genericSummary.join(" · ");
   }
-  return "No payload summary.";
+  return emptyText;
 }
 
 export function TicketTimeline({ events }: { events: TicketEventItem[] }) {
+  const { t, language } = useI18n();
   const normalizedEvents = useMemo(
     () =>
       events.map((event, index) => ({
@@ -72,7 +74,7 @@ export function TicketTimeline({ events }: { events: TicketEventItem[] }) {
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
 
   if (normalizedEvents.length === 0) {
-    return <p style={{ color: "var(--muted)" }}>No events yet.</p>;
+    return <p style={{ color: "var(--muted)" }}>{t("暂无事件。", "No events yet.")}</p>;
   }
 
   const activeEvent =
@@ -84,7 +86,7 @@ export function TicketTimeline({ events }: { events: TicketEventItem[] }) {
       <ul className="list" style={{ marginTop: 10 }}>
         {normalizedEvents.map((event) => {
           const isObservabilityEvent = OBSERVABILITY_EVENTS.has(event.event_type);
-          const summary = buildEventSummary(event);
+          const summary = buildEventSummary(event, t("无载荷摘要。", "No payload summary."));
           return (
             <li
               key={event.event_id}
@@ -122,12 +124,13 @@ export function TicketTimeline({ events }: { events: TicketEventItem[] }) {
                         whiteSpace: "nowrap"
                       }}
                     >
-                      observable
+                      {t("可观测", "observable")}
                     </span>
                   ) : null}
                 </div>
                 <small>
-                  actor={event.actor_id} · source={event.source ?? "ticket"} · {formatTimestamp(event.created_at)}
+                  actor={event.actor_id} · source={event.source ?? "ticket"} ·{" "}
+                  {formatTimestamp(event.created_at, language === "en" ? "en-US" : "zh-CN")}
                 </small>
               </button>
             </li>
@@ -146,9 +149,13 @@ export function TicketTimeline({ events }: { events: TicketEventItem[] }) {
           background: "rgba(31, 111, 235, 0.06)"
         }}
       >
-        <strong style={{ display: "block", fontSize: 12, color: "var(--muted)" }}>Hover Summary</strong>
+        <strong style={{ display: "block", fontSize: 12, color: "var(--muted)" }}>
+          {t("悬停摘要", "Hover Summary")}
+        </strong>
         <div style={{ marginTop: 4, fontSize: 13 }}>
-          {activeEvent ? `${activeEvent.event_type}: ${buildEventSummary(activeEvent)}` : "Hover a timeline node."}
+          {activeEvent
+            ? `${activeEvent.event_type}: ${buildEventSummary(activeEvent, t("无载荷摘要。", "No payload summary."))}`
+            : t("悬停时间线节点查看摘要。", "Hover a timeline node.")}
         </div>
       </div>
     </div>

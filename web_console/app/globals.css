@@ -54,6 +54,13 @@ a {
   flex-wrap: wrap;
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .topbar nav a {
   padding: 6px 10px;
   border: 1px solid var(--border);
@@ -64,6 +71,23 @@ a {
 .topbar nav a:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.lang-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.lang-switch select {
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  padding: 0 8px;
 }
 
 .main-content {

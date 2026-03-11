@@ -28,7 +28,7 @@ describe("TraceDetailPage", () => {
     });
 
     render(<TraceDetailPage />);
-    expect(screen.getByText("Trace detail is syncing.")).toBeInTheDocument();
+    expect(screen.getByText("Trace 详情同步中。")).toBeInTheDocument();
   });
 
   it("renders trace detail sections", () => {
@@ -66,11 +66,11 @@ describe("TraceDetailPage", () => {
     });
 
     render(<TraceDetailPage />);
-    expect(screen.getByText("Trace Detail")).toBeInTheDocument();
-    expect(screen.getByText("Trace Routing")).toBeInTheDocument();
-    expect(screen.getByText("Tool Calls")).toBeInTheDocument();
-    expect(screen.getByText("Grounding & Summary")).toBeInTheDocument();
-    expect(screen.getByText("Trace Timeline")).toBeInTheDocument();
+    expect(screen.getByText("Trace 详情")).toBeInTheDocument();
+    expect(screen.getByText("Trace 路由")).toBeInTheDocument();
+    expect(screen.getByText("工具调用")).toBeInTheDocument();
+    expect(screen.getByText("Grounding 与摘要")).toBeInTheDocument();
+    expect(screen.getByText("Trace 时间线")).toBeInTheDocument();
     expect(screen.getByText("search_kb")).toBeInTheDocument();
   });
 
@@ -83,7 +83,7 @@ describe("TraceDetailPage", () => {
     });
 
     render(<TraceDetailPage />);
-    expect(screen.getByText("Failed to load trace detail.")).toBeInTheDocument();
+    expect(screen.getByText("加载 Trace 详情失败。")).toBeInTheDocument();
     expect(screen.getByText("trace detail timeout")).toBeInTheDocument();
   });
 });

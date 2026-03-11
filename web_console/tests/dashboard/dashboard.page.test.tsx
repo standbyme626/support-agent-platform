@@ -42,7 +42,7 @@ describe("DashboardPage", () => {
     });
 
     render(<DashboardPage />);
-    expect(screen.getByText("Dashboard is syncing.")).toBeInTheDocument();
+    expect(screen.getByText("总览数据同步中。")).toBeInTheDocument();
   });
 
   it("renders summary cards with SLA semantic state", () => {
@@ -90,10 +90,10 @@ describe("DashboardPage", () => {
 
     render(<DashboardPage />);
 
-    expect(screen.getByText("New Today")).toBeInTheDocument();
-    expect(screen.getByText("SLA Risk")).toBeInTheDocument();
-    expect(screen.getByText("Recent Trace Errors")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Open SLA Risk" })).toHaveAttribute(
+    expect(screen.getByText("今日新建")).toBeInTheDocument();
+    expect(screen.getByText("SLA 风险")).toBeInTheDocument();
+    expect(screen.getByText("近期 Trace 错误")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "打开 SLA 风险" })).toHaveAttribute(
       "href",
       "/tickets?sla_state=breached"
     );
@@ -120,7 +120,7 @@ describe("DashboardPage", () => {
     });
 
     render(<DashboardPage />);
-    expect(screen.getByText("Failed to load dashboard summary.")).toBeInTheDocument();
+    expect(screen.getByText("加载总览摘要失败。")).toBeInTheDocument();
     expect(screen.getByText("network timeout")).toBeInTheDocument();
   });
 });

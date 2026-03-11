@@ -23,7 +23,7 @@ function buildEvent(
 describe("TicketTimeline", () => {
   it("renders empty state", () => {
     render(<TicketTimeline events={[]} />);
-    expect(screen.getByText("No events yet.")).toBeInTheDocument();
+    expect(screen.getByText("暂无事件。")).toBeInTheDocument();
   });
 
   it("renders key observability events", () => {
@@ -54,7 +54,7 @@ describe("TicketTimeline", () => {
     expect(screen.getByText("route_decision")).toBeInTheDocument();
     expect(screen.getByText("sla_evaluated")).toBeInTheDocument();
     expect(screen.getByText("handoff_decision")).toBeInTheDocument();
-    expect(screen.getAllByText("observable")).toHaveLength(4);
+    expect(screen.getAllByText("可观测")).toHaveLength(4);
   });
 
   it("shows hover summary for selected node", () => {

@@ -1,3 +1,6 @@
+"use client";
+
+import { useI18n } from "@/lib/i18n";
 import type { TicketAssistResponse, TicketItem } from "@/lib/api/tickets";
 
 function renderMetadata(ticket: TicketItem) {
@@ -32,18 +35,19 @@ export function TicketSummaryCard({
   ticket: TicketItem;
   assist: TicketAssistResponse | null;
 }) {
+  const { t } = useI18n();
   const metadataRows = renderMetadata(ticket);
   return (
     <article className="card">
-      <h3>AI Summary</h3>
+      <h3>{t("AI 摘要", "AI Summary")}</h3>
       <p style={{ marginTop: 10, marginBottom: 0 }}>
-        {assist?.summary || "No summary available yet."}
+        {assist?.summary || t("暂无摘要。", "No summary available yet.")}
       </p>
       <div style={{ marginTop: 12, color: "var(--muted)", fontSize: 13 }}>
-        Latest message: {ticket.latest_message}
+        {t("最新消息", "Latest message")}: {ticket.latest_message}
       </div>
       <div style={{ marginTop: 10 }}>
-        <strong>Risk flags:</strong> {assist?.risk_flags?.join(", ") || "-"}
+        <strong>{t("风险标签", "Risk flags")}:</strong> {assist?.risk_flags?.join(", ") || "-"}
       </div>
       {metadataRows.length > 0 ? (
         <ul style={{ marginTop: 10, marginBottom: 0, paddingLeft: 18 }}>{metadataRows}</ul>

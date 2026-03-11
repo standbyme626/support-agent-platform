@@ -1,4 +1,7 @@
+"use client";
+
 import type { QueueSummaryItem } from "@/lib/api/queues";
+import { useI18n } from "@/lib/i18n";
 
 function computeTotals(rows: QueueSummaryItem[]) {
   return rows.reduce(
@@ -13,15 +16,16 @@ function computeTotals(rows: QueueSummaryItem[]) {
 }
 
 export function AssigneeWorkloadCard({ rows }: { rows: QueueSummaryItem[] }) {
+  const { t } = useI18n();
   const totals = computeTotals(rows);
   const perAssignee =
     totals.assigneeCount === 0 ? 0 : Math.round((totals.inProgress / totals.assigneeCount) * 10) / 10;
   return (
     <article className="card">
-      <h3>Assignee Workload</h3>
+      <h3>{t("处理人负载", "Assignee Workload")}</h3>
       <div className="value">{perAssignee}</div>
       <div className="hint">
-        avg in-progress per assignee · escalated {totals.escalated}
+        {t("每位处理人平均处理中", "avg in-progress per assignee")} · {t("已升级", "escalated")} {totals.escalated}
       </div>
     </article>
   );

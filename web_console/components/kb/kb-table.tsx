@@ -1,5 +1,8 @@
+"use client";
+
 import type { KbItem } from "@/lib/api/kb";
 import { SourceTypeBadge } from "@/components/kb/source-type-badge";
+import { useI18n } from "@/lib/i18n";
 
 function toDateTimeText(value: string | null) {
   if (!value) {
@@ -31,22 +34,23 @@ export function KbTable({
   onEdit: (item: KbItem) => void;
   onDelete: (item: KbItem) => void;
 }) {
+  const { t } = useI18n();
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <section className="card">
-      <h3>KB Documents</h3>
+      <h3>{t("知识库文档", "KB Documents")}</h3>
       <div style={{ overflowX: "auto", marginTop: 10 }}>
         <table className="table">
           <thead>
-            <tr>
-              <th>Doc ID</th>
-              <th>Type</th>
-              <th>Title</th>
-              <th>Tags</th>
-              <th>Updated</th>
-              <th>Actions</th>
-            </tr>
+              <tr>
+                <th>{t("文档 ID", "Doc ID")}</th>
+                <th>{t("类型", "Type")}</th>
+                <th>{t("标题", "Title")}</th>
+                <th>{t("标签", "Tags")}</th>
+                <th>{t("更新时间", "Updated")}</th>
+                <th>{t("操作", "Actions")}</th>
+              </tr>
           </thead>
           <tbody>
             {rows.map((item) => (
@@ -69,7 +73,7 @@ export function KbTable({
                       aria-label={`edit_${item.doc_id}`}
                       disabled={actionLoading}
                     >
-                      Edit
+                      {t("编辑", "Edit")}
                     </button>
                     <button
                       className="btn-ghost"
@@ -77,7 +81,7 @@ export function KbTable({
                       aria-label={`delete_${item.doc_id}`}
                       disabled={actionLoading}
                     >
-                      Delete
+                      {t("删除", "Delete")}
                     </button>
                   </div>
                 </td>
@@ -95,7 +99,7 @@ export function KbTable({
         }}
       >
         <small>
-          page {page}/{pageCount} · total {total}
+          {t("页", "page")} {page}/{pageCount} · {t("总计", "total")} {total}
         </small>
         <div style={{ display: "flex", gap: 8 }}>
           <button
@@ -103,14 +107,14 @@ export function KbTable({
             onClick={() => onPageChange(Math.max(1, page - 1))}
             disabled={page <= 1}
           >
-            Prev
+            {t("上一页", "Prev")}
           </button>
           <button
             className="btn-ghost"
             onClick={() => onPageChange(Math.min(pageCount, page + 1))}
             disabled={page >= pageCount}
           >
-            Next
+            {t("下一页", "Next")}
           </button>
         </div>
       </div>

@@ -48,15 +48,15 @@ describe("KbFaqPage", () => {
     });
 
     render(<KbFaqPage />);
-    expect(screen.getByText("KB list is syncing.")).toBeInTheDocument();
+    expect(screen.getByText("知识库列表同步中。")).toBeInTheDocument();
   });
 
   it("renders KB table and source tabs", () => {
     mockUseKB.mockReturnValue(baseHookState());
 
     render(<KbFaqPage />);
-    expect(screen.getByText("KB FAQ")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "SOP" })).toHaveAttribute("href", "/kb/sop");
+    expect(screen.getByRole("heading", { name: "知识库 FAQ", level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "知识库 SOP" })).toHaveAttribute("href", "/kb/sop");
     expect(screen.getByRole("button", { name: /edit_doc_faq_001/i })).toBeInTheDocument();
   });
 
@@ -95,7 +95,7 @@ describe("KbFaqPage", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "delete_doc_faq_001" }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirm Delete" }));
+    fireEvent.click(screen.getByRole("button", { name: "确认删除" }));
 
     await waitFor(() => expect(state.deleteDoc).toHaveBeenCalledWith("doc_faq_001"));
   });

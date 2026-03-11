@@ -1,12 +1,16 @@
+"use client";
+
+import { useI18n } from "@/lib/i18n";
 import type { KbSourceType } from "@/lib/api/kb";
 
-const LABELS: Record<KbSourceType, string> = {
-  faq: "FAQ",
-  sop: "SOP",
-  history_case: "History Case"
-};
-
 export function SourceTypeBadge({ sourceType }: { sourceType: KbSourceType }) {
+  const { t } = useI18n();
+  const labels: Record<KbSourceType, string> = {
+    faq: "FAQ",
+    sop: "SOP",
+    history_case: t("历史案例", "History Case")
+  };
+
   return (
     <span
       style={{
@@ -21,7 +25,7 @@ export function SourceTypeBadge({ sourceType }: { sourceType: KbSourceType }) {
         fontWeight: 600
       }}
     >
-      {LABELS[sourceType]}
+      {labels[sourceType]}
     </span>
   );
 }

@@ -1,3 +1,6 @@
+"use client";
+
+import { useI18n } from "@/lib/i18n";
 import type { TicketItem } from "@/lib/api/tickets";
 
 function SortButton({
@@ -50,19 +53,20 @@ export function TicketTable({
   onSort: (sortBy: string, sortOrder: "asc" | "desc") => void;
   onPageChange: (nextPage: number) => void;
 }) {
+  const { t } = useI18n();
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <section className="card">
-      <h3>Tickets</h3>
+      <h3>{t("工单列表", "Tickets")}</h3>
       <div style={{ overflowX: "auto", marginTop: 10 }}>
         <table className="table">
           <thead>
             <tr>
-              <th>Ticket</th>
+              <th>{t("工单", "Ticket")}</th>
               <th>
                 <SortButton
-                  label="Priority"
+                  label={t("优先级", "Priority")}
                   sortBy="priority"
                   activeSortBy={sortBy}
                   activeSortOrder={sortOrder}
@@ -71,19 +75,19 @@ export function TicketTable({
               </th>
               <th>
                 <SortButton
-                  label="Status"
+                  label={t("状态", "Status")}
                   sortBy="status"
                   activeSortBy={sortBy}
                   activeSortOrder={sortOrder}
                   onSort={onSort}
                 />
               </th>
-              <th>Queue</th>
-              <th>Assignee</th>
-              <th>Channel</th>
+              <th>{t("队列", "Queue")}</th>
+              <th>{t("处理人", "Assignee")}</th>
+              <th>{t("渠道", "Channel")}</th>
               <th>
                 <SortButton
-                  label="Created"
+                  label={t("创建时间", "Created")}
                   sortBy="created_at"
                   activeSortBy={sortBy}
                   activeSortOrder={sortOrder}
@@ -121,7 +125,7 @@ export function TicketTable({
         }}
       >
         <small>
-          page {page}/{pageCount} · total {total}
+          {t("页", "page")} {page}/{pageCount} · {t("总计", "total")} {total}
         </small>
         <div style={{ display: "flex", gap: 8 }}>
           <button
@@ -129,14 +133,14 @@ export function TicketTable({
             disabled={page <= 1}
             className="btn-ghost"
           >
-            Prev
+            {t("上一页", "Prev")}
           </button>
           <button
             onClick={() => onPageChange(Math.min(pageCount, page + 1))}
             disabled={page >= pageCount}
             className="btn-ghost"
           >
-            Next
+            {t("下一页", "Next")}
           </button>
         </div>
       </div>

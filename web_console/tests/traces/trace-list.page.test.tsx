@@ -25,7 +25,7 @@ describe("TracesPage", () => {
     });
 
     render(<TracesPage />);
-    expect(screen.getByText("Trace list is syncing.")).toBeInTheDocument();
+    expect(screen.getByText("Trace 列表同步中。")).toBeInTheDocument();
   });
 
   it("renders trace table", () => {
@@ -59,7 +59,7 @@ describe("TracesPage", () => {
     });
 
     render(<TracesPage />);
-    expect(screen.getByText("Trace List")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Trace 列表", level: 2 })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "trace-001" })).toHaveAttribute("href", "/traces/trace-001");
     expect(screen.getByText("support-intake")).toBeInTheDocument();
   });
@@ -80,7 +80,7 @@ describe("TracesPage", () => {
     });
 
     render(<TracesPage />);
-    expect(screen.getByText("Failed to load traces.")).toBeInTheDocument();
+    expect(screen.getByText("加载 Trace 失败。")).toBeInTheDocument();
     expect(screen.getByText("traces api timeout")).toBeInTheDocument();
   });
 });
