@@ -59,7 +59,7 @@ class WeComAdapter(BaseChannelAdapter):
         msg_id = payload.get("MsgId")
         if msg_id:
             return f"{self.channel}:{msg_id}"
-        session_id = payload.get("FromUserName") or payload.get("session_id")
+        session_id = payload.get("session_id") or payload.get("FromUserName")
         create_time = payload.get("CreateTime")
         if session_id and create_time:
             return f"{self.channel}:{session_id}:{create_time}"
@@ -67,7 +67,7 @@ class WeComAdapter(BaseChannelAdapter):
 
     def build_inbound(self, payload: dict[str, Any]) -> InboundEnvelope:
         msg_id = payload.get("MsgId")
-        session_id = str(payload.get("FromUserName") or payload.get("session_id") or "")
+        session_id = str(payload.get("session_id") or payload.get("FromUserName") or "")
         message_text = str(payload.get("Content") or payload.get("text") or "")
         if not session_id:
             raise ChannelAdapterError(

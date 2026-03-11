@@ -10,7 +10,10 @@ from storage.ticket_repository import TicketRepository
 
 
 class TicketAPI:
-    """Ticket-centric domain API used by tools and workflows."""
+    """Ticket-centric domain API used by tools and workflows.
+
+    Lifecycle transitions and guardrails are owned here instead of OpenClaw adapters.
+    """
 
     _ALLOWED_STATUS_TRANSITIONS: ClassVar[dict[TicketStatus, set[TicketStatus]]] = {
         "open": {"pending", "escalated", "handoff", "resolved", "closed"},

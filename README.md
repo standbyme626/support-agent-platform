@@ -27,6 +27,11 @@
    - `cp .env.example .env`
    - `export SUPPORT_AGENT_ENV=dev`
    - 可选：`export SUPPORT_AGENT_SQLITE_PATH=/absolute/path/tickets.db`
+   - LLM（业务层）使用 OpenAI 兼容接口，可通过 `.env` 直接切换：
+     - `OPENAI_BASE_URL=http://100.90.236.32:11434/v1`
+     - `OPENAI_MODEL=qwen3.5:9b`
+     - `OPENAI_API_KEY=ollama-local`
+   - 设计边界不变：OpenClaw 只负责 ingress/session/routing，LLM 推理在项目后端执行。
 4. 执行质量闸门
    - `make check`
    - `make ci`
@@ -40,6 +45,10 @@
    - `python -m scripts.rollback_release --env dev`
    - `python -m scripts.run_acceptance --env dev`
    - `python -m scripts.trace_kpi --env dev --output storage/acceptance/trace_kpi_from_log.json`
+   - 企业微信桥接服务（让 OpenClaw 仅做 ingress/routing）：
+     - `python -m scripts.wecom_bridge_server --env dev --host 127.0.0.1 --port 18081`
+     - `openclaw --profile support-agent-wecom config set channels.wecom.bridgeUrl "http://127.0.0.1:18081/wecom/process"`
+     - 重启 OpenClaw profile 后生效
 
 ## 目录结构
 
@@ -105,11 +114,24 @@
 
 - 这是设计约束。OpenClaw 仅做接入与路由，业务决策在 `core/` 与 `workflows/`。
 
-### 4) 为什么没有前端后台
+### 4) 如何切换 LLM 节点或模型
+
+- 只改 `.env`（或系统环境变量）即可，无需修改 workflow 代码：
+  - `OPENAI_BASE_URL`：模型网关地址（支持本地 Ollama 与云端 OpenAI-compatible）。
+  - `OPENAI_MODEL`：模型名（例如 `qwen3.5:9b`）。
+  - `LLM_STREAM`：是否启用流式（当前默认 `false`）。
+
+### 5) 企业微信为什么不再走 OpenClaw 内置 Agent
+
+- 当 `channels.wecom.bridgeUrl` 被配置后，企业微信插件会把消息转发到本项目 bridge。
+- bridge 在本仓库内执行 `SupportIntakeWorkflow`（含 LLM/RAG/工单规则）。
+- OpenClaw 仍只承担渠道接入、session、routing。
+
+### 6) 为什么没有前端后台
 
 - MVP 阶段仅交付后端流程与验证能力，前端不在当前范围内。
 
-### 5) 为什么 `make lint` 会扫到 `refs/` 报错
+### 7) 为什么 `make lint` 会扫到 `refs/` 报错
 
 - `refs/` 是第三方参考代码，不受本仓编码规范约束。
 - 提交前请使用路径限定 lint，仅检查本仓业务代码目录。

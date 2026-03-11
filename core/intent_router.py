@@ -16,6 +16,7 @@ class IntentRouter:
     """Rule-based intent router with threshold and low-confidence fallback."""
 
     _intent_keywords: ClassVar[dict[str, set[str]]] = {
+        "greeting": {"你好", "您好", "hello", "hey", "在吗"},
         "faq": {"怎么", "如何", "查询", "帮助", "help", "faq"},
         "repair": {"报修", "故障", "坏了", "维修", "中断"},
         "complaint": {"投诉", "差评", "生气", "不满意", "赔偿"},

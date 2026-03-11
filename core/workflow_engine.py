@@ -67,7 +67,7 @@ class WorkflowEngine:
             session_id=envelope.session_id,
             ticket_id=existing_ticket_id,
         )
-        kb_source = "faq" if intent.intent == "faq" else "grounded"
+        kb_source = "faq" if intent.intent in {"faq", "greeting"} else "grounded"
         docs_result = self._tool_router.execute(
             "search_kb",
             {
@@ -81,7 +81,19 @@ class WorkflowEngine:
         retrieved_docs = self._normalize_docs(docs_result.output)
 
         if existing_ticket_id is None:
-            if intent.intent == "faq" and not intent.is_low_confidence and retrieved_docs:
+            if intent.intent == "greeting":
+                ticket = self._ticket_api.create_ticket(
+                    channel=envelope.channel,
+                    session_id=envelope.session_id,
+                    thread_id=str(envelope.metadata.get("thread_id") or envelope.session_id),
+                    title="问候咨询",
+                    latest_message=envelope.message_text,
+                    intent=intent.intent,
+                    priority="P4",
+                    queue="faq",
+                    metadata={**envelope.metadata, "trace_id": trace_id},
+                )
+            elif intent.intent == "faq" and not intent.is_low_confidence and retrieved_docs:
                 ticket = self._ticket_api.create_ticket(
                     channel=envelope.channel,
                     session_id=envelope.session_id,
@@ -236,6 +248,9 @@ class WorkflowEngine:
     ) -> str:
         if handoff.should_handoff:
             return "已为你转接人工客服，请稍候。"
+
+        if intent.intent == "greeting":
+            return "你好，我是智慧工单助手。请描述你的问题（如报修、账单、投诉），我来帮你处理。"
 
         if intent.intent == "faq" and retrieved_docs:
             doc = retrieved_docs[0]

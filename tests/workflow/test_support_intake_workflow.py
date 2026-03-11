@@ -67,6 +67,24 @@ def test_support_intake_faq_reply_and_no_collab_push(tmp_path: Path) -> None:
     assert "direct_reply" in result.trace_events
 
 
+def test_support_intake_greeting_no_handoff_and_no_collab_push(tmp_path: Path) -> None:
+    workflow, _ = _build_intake_workflow(tmp_path)
+    result = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-greeting",
+            message_text="你好",
+            metadata={"thread_id": "thread-greeting"},
+        )
+    )
+
+    assert result.handoff_required is False
+    assert result.collab_push is None
+    assert result.ticket_action == "greeting_reply"
+    assert "你好" in result.reply_text
+    assert "direct_reply" in result.trace_events
+
+
 def test_support_intake_repair_creates_ticket_and_pushes_collab(tmp_path: Path) -> None:
     workflow, ticket_api = _build_intake_workflow(tmp_path)
     result = workflow.run(

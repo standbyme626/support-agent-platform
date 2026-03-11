@@ -13,6 +13,7 @@
 - `scripts/deploy_release.py`
 - `scripts/verify_release.py`
 - `scripts/rollback_release.py`
+- `scripts/wecom_bridge_server.py`
 
 ## 2. 运行前检查
 
@@ -21,6 +22,11 @@
 3. 配置环境：
    - `export SUPPORT_AGENT_ENV=dev`
    - 可选：`export SUPPORT_AGENT_SQLITE_PATH=/absolute/path/tickets.db`
+   - 可选：配置业务层 LLM（OpenAI-compatible）
+     - `export OPENAI_BASE_URL=http://100.90.236.32:11434/v1`
+     - `export OPENAI_MODEL=qwen3.5:9b`
+     - `export OPENAI_API_KEY=ollama-local`
+     - `export LLM_ENABLED=true`
 4. 若使用容器 smoke：
    - 安装 Docker 与 Docker Compose
    - 执行 `docker compose build`
@@ -194,6 +200,25 @@ make release-cycle ENV=dev
 
 该命令可复现完整发布链路，适合作为 staging/dev 演练入口。
 
+### 3.13 企业微信 bridge（OpenClaw 仅 ingress/session/routing）
+
+1. 启动 bridge 服务：
+
+```bash
+python -m scripts.wecom_bridge_server --env dev --host 127.0.0.1 --port 18081
+```
+
+2. 配置 OpenClaw 企业微信插件转发到 bridge：
+
+```bash
+openclaw --profile support-agent-wecom config set channels.wecom.bridgeUrl "http://127.0.0.1:18081/wecom/process"
+```
+
+3. 重启 OpenClaw profile 对应 gateway 进程。
+4. 健康检查：
+   - `curl http://127.0.0.1:18081/healthz`
+   - 企业微信发消息后，bridge 返回 `handled=true`，业务回复来自本仓库 workflow。
+
 ## 4. 故障排查步骤
 
 ### 4.1 healthcheck 返回 `error` 或 `degraded`
@@ -241,6 +266,13 @@ make release-cycle ENV=dev
 2. 使用 `diagnostics.missing_snapshots` 定位缺失快照。
 3. 执行 `commands.redeploy` 重新发布，随后 `commands.verify` 复核。
 
+### 4.8 企业微信仍走 OpenClaw 内置 Agent
+
+1. 检查 OpenClaw 配置是否存在 `channels.wecom.bridgeUrl`。
+2. 确认 bridge 服务存活：`curl http://127.0.0.1:18081/healthz`。
+3. 重启 OpenClaw profile 网关进程，避免旧配置残留。
+4. 若 bridge 不可达，插件会返回兜底错误文案，不应再触发内置 Agent 推理。
+
 ## 5. 标准恢复流程
 
 1. 运行 `healthcheck` 确认配置和存储。
@@ -248,3 +280,8 @@ make release-cycle ENV=dev
 3. 运行 `gateway_status` 检查会话绑定和 recent events。
 4. 运行 `trace_debug` 对齐 trace 链路。
 5. 必要时执行 `make check`，确认代码与测试基线未破坏。
+
+## 6. 架构边界提醒
+
+- OpenClaw 仅做接入/会话/路由（ingress/session/routing）。
+- 工单业务与 LLM 推理在 `core/`、`workflows/`、`llm/` 内完成，不放入 OpenClaw。

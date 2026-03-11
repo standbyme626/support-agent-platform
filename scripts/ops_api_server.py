@@ -1,0 +1,1147 @@
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import uuid
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime, timedelta
+from http import HTTPStatus
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from typing import Any
+from urllib.parse import parse_qs, urlparse
+
+from config import AppConfig, load_app_config
+from core.intent_router import IntentDecision
+from core.recommended_actions_engine import RecommendedActionsEngine
+from core.retriever import Retriever
+from core.summary_engine import SummaryEngine
+from core.ticket_api import TicketAPI
+from core.trace_logger import JsonTraceLogger
+from llm import build_summary_model_adapter
+from openclaw_adapter.bindings import build_default_bindings
+from openclaw_adapter.gateway import OpenClawGateway
+from scripts.gateway_status import collect_status
+from storage.models import KBDocument, Ticket
+from storage.ticket_repository import TicketRepository
+
+DEFAULT_HOST = os.getenv("OPS_API_HOST", "127.0.0.1")
+DEFAULT_PORT = int(os.getenv("OPS_API_PORT", "18082"))
+DEFAULT_ERROR_MESSAGE = "请求处理失败，请稍后重试。"
+
+TICKET_DETAIL_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)$")
+TICKET_EVENTS_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/events$")
+TICKET_ASSIST_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/assist$")
+TICKET_SIMILAR_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/similar-cases$")
+TICKET_ACTION_RE = re.compile(
+    r"^/api/tickets/(?P<ticket_id>[^/]+)/(claim|reassign|escalate|resolve|close)$"
+)
+TRACE_DETAIL_RE = re.compile(r"^/api/traces/(?P<trace_id>[^/]+)$")
+KB_DOC_RE = re.compile(r"^/api/kb/(?P<doc_id>[^/]+)$")
+
+
+@dataclass(frozen=True)
+class OpsApiRuntime:
+    app_config: AppConfig
+    gateway: OpenClawGateway
+    ticket_api: TicketAPI
+    repository: TicketRepository
+    trace_logger: JsonTraceLogger
+    retriever: Retriever
+    summary_engine: SummaryEngine
+    recommendation_engine: RecommendedActionsEngine
+    kb_store_path: Path
+
+
+@dataclass(frozen=True)
+class ApiResponse:
+    status: HTTPStatus
+    payload: dict[str, Any]
+
+
+def _seed_root() -> Path:
+    return Path(__file__).resolve().parents[1] / "seed_data"
+
+
+def _default_kb_store_path(app_config: AppConfig) -> Path:
+    return Path(app_config.storage.sqlite_path).with_name("ops_api_kb.json")
+
+
+def build_runtime(environment: str | None) -> OpsApiRuntime:
+    app_config = load_app_config(environment)
+    bindings = build_default_bindings(app_config)
+    gateway = OpenClawGateway(bindings)
+
+    sqlite_path = Path(app_config.storage.sqlite_path)
+    repository = TicketRepository(sqlite_path)
+    repository.apply_migrations()
+
+    ticket_api = TicketAPI(repository, session_mapper=bindings.session_mapper)
+    retriever = Retriever(_seed_root())
+    summary_engine = SummaryEngine(model_adapter=build_summary_model_adapter(app_config.llm))
+    recommendation_engine = RecommendedActionsEngine()
+
+    kb_store_path = _default_kb_store_path(app_config)
+    if not kb_store_path.exists():
+        _write_kb_docs(kb_store_path, _seed_kb_docs())
+
+    return OpsApiRuntime(
+        app_config=app_config,
+        gateway=gateway,
+        ticket_api=ticket_api,
+        repository=repository,
+        trace_logger=bindings.trace_logger,
+        retriever=retriever,
+        summary_engine=summary_engine,
+        recommendation_engine=recommendation_engine,
+        kb_store_path=kb_store_path,
+    )
+
+
+def _seed_kb_docs() -> list[dict[str, Any]]:
+    docs = Retriever(_seed_root()).search_grounded("工单", top_k=200)
+    return [_kb_doc_to_json(item) for item in docs]
+
+
+def _kb_doc_to_json(doc: KBDocument) -> dict[str, Any]:
+    return {
+        "doc_id": doc.doc_id,
+        "source_type": doc.source_type,
+        "title": doc.title,
+        "content": doc.content,
+        "tags": list(doc.tags),
+        "updated_at": datetime.now(UTC).isoformat(),
+    }
+
+
+def _load_kb_docs(path: Path) -> list[dict[str, Any]]:
+    if not path.exists():
+        return []
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, list):
+        return []
+    docs: list[dict[str, Any]] = []
+    for item in payload:
+        if isinstance(item, dict):
+            docs.append(dict(item))
+    return docs
+
+
+def _write_kb_docs(path: Path, docs: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(docs, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _request_id(request_id: str | None) -> str:
+    if request_id and request_id.strip():
+        return request_id.strip()
+    return f"req_{uuid.uuid4().hex[:12]}"
+
+
+def _error(
+    request_id: str,
+    *,
+    code: str,
+    message: str,
+    status: HTTPStatus = HTTPStatus.BAD_REQUEST,
+    details: dict[str, Any] | None = None,
+) -> ApiResponse:
+    payload: dict[str, Any] = {"code": code, "message": message, "request_id": request_id}
+    if details:
+        payload["details"] = details
+    return ApiResponse(status=status, payload=payload)
+
+
+def _json_response(
+    request_id: str, data: dict[str, Any], *, status: HTTPStatus = HTTPStatus.OK
+) -> ApiResponse:
+    return ApiResponse(status=status, payload={"request_id": request_id, **data})
+
+
+def _parse_int(value: str | None, *, default: int, minimum: int = 1, maximum: int = 1000) -> int:
+    if value is None:
+        return default
+    try:
+        parsed = int(value)
+    except ValueError:
+        return default
+    return max(minimum, min(parsed, maximum))
+
+
+def _parse_iso_datetime(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            return parsed.replace(tzinfo=UTC)
+        return parsed
+    except ValueError:
+        return None
+
+
+def _sla_state(ticket: Ticket) -> str:
+    if ticket.resolution_due_at is None:
+        return "normal"
+    now = datetime.now(UTC)
+    due_at = ticket.resolution_due_at
+    if due_at.tzinfo is None:
+        due_at = due_at.replace(tzinfo=UTC)
+    if now >= due_at:
+        return "breached"
+    if due_at - now <= timedelta(hours=2):
+        return "warning"
+    return "normal"
+
+
+def _ticket_to_dict(ticket: Ticket) -> dict[str, Any]:
+    data = asdict(ticket)
+    for key in (
+        "created_at",
+        "updated_at",
+        "first_response_due_at",
+        "resolution_due_at",
+        "escalated_at",
+        "resolved_at",
+        "closed_at",
+    ):
+        value = data.get(key)
+        data[key] = value.isoformat() if isinstance(value, datetime) else value
+    data["sla_state"] = _sla_state(ticket)
+    return data
+
+
+def _event_to_dict(event: Any) -> dict[str, Any]:
+    data = asdict(event)
+    if isinstance(data.get("created_at"), datetime):
+        data["created_at"] = data["created_at"].isoformat()
+    data.setdefault("source", "ticket")
+    data.setdefault("trace_id", None)
+    return data
+
+
+def _trace_event_to_dict(event: dict[str, Any], *, ticket_id: str, index: int) -> dict[str, Any]:
+    payload_raw = event.get("payload")
+    payload = dict(payload_raw) if isinstance(payload_raw, dict) else {}
+    trace_id = event.get("trace_id")
+    trace_id_text = str(trace_id) if trace_id else None
+    session_id = event.get("session_id")
+    session_id_text = str(session_id) if session_id else None
+
+    if trace_id_text and "trace_id" not in payload:
+        payload["trace_id"] = trace_id_text
+    if session_id_text and "session_id" not in payload:
+        payload["session_id"] = session_id_text
+
+    event_type = str(event.get("event_type") or "trace_event")
+    event_id = f"trace_evt_{trace_id_text or ticket_id}_{index}"
+    created_at_raw = event.get("timestamp")
+    created_at = str(created_at_raw) if created_at_raw else None
+
+    return {
+        "event_id": event_id,
+        "ticket_id": str(event.get("ticket_id") or ticket_id),
+        "event_type": event_type,
+        "actor_type": "trace",
+        "actor_id": session_id_text or trace_id_text or "trace-logger",
+        "payload": payload,
+        "created_at": created_at,
+        "source": "trace",
+        "trace_id": trace_id_text,
+    }
+
+
+def _event_sort_key(item: dict[str, Any]) -> tuple[datetime, str]:
+    created_at = item.get("created_at")
+    parsed = _parse_iso_datetime(str(created_at)) if created_at else None
+    if parsed is None:
+        parsed = datetime.min.replace(tzinfo=UTC)
+    return (parsed, str(item.get("event_id", "")))
+
+
+def _ticket_timeline_events(runtime: OpsApiRuntime, ticket_id: str) -> list[dict[str, Any]]:
+    timeline = [_event_to_dict(item) for item in runtime.ticket_api.list_events(ticket_id)]
+    trace_events = runtime.trace_logger.query_by_ticket(ticket_id, limit=500)
+    for index, item in enumerate(trace_events):
+        if not isinstance(item, dict):
+            continue
+        timeline.append(_trace_event_to_dict(item, ticket_id=ticket_id, index=index))
+    timeline.sort(key=_event_sort_key)
+    return timeline
+
+
+def _filter_tickets(runtime: OpsApiRuntime, query: dict[str, str]) -> list[Ticket]:
+    page_size = _parse_int(query.get("page_size"), default=20, minimum=1, maximum=200)
+    scan_limit = max(500, page_size * 50)
+    tickets = runtime.repository.list_tickets(limit=scan_limit, offset=0)
+    custom_field_aliases: dict[str, tuple[str, ...]] = {
+        "service_type": ("service_type",),
+        "community": ("community_name", "community"),
+        "community_name": ("community_name", "community"),
+        "building": ("building",),
+        "unit": ("unit",),
+        "parking": ("parking_lot", "parking_space_id", "parking"),
+        "parking_lot": ("parking_lot",),
+        "parking_space_id": ("parking_space_id",),
+        "rent_contract_id": ("rent_contract_id",),
+        "complaint_category": ("complaint_category",),
+        "visit_required": ("visit_required",),
+        "follow_up_required": ("follow_up_required",),
+        "approval": ("approval_required", "approval"),
+        "approval_required": ("approval_required", "approval"),
+    }
+
+    def match(ticket: Ticket) -> bool:
+        q = (query.get("q") or "").strip().lower()
+        if q and q not in f"{ticket.title} {ticket.latest_message}".lower():
+            return False
+        if query.get("status") and ticket.status != query["status"]:
+            return False
+        if query.get("queue") and ticket.queue != query["queue"]:
+            return False
+        if query.get("assignee") and (ticket.assignee or "") != query["assignee"]:
+            return False
+        if query.get("priority") and ticket.priority != query["priority"]:
+            return False
+        if query.get("channel") and ticket.channel != query["channel"]:
+            return False
+        if query.get("handoff_state") and ticket.handoff_state != query["handoff_state"]:
+            return False
+        if query.get("risk_level") and ticket.risk_level != query["risk_level"]:
+            return False
+        for query_key, metadata_keys in custom_field_aliases.items():
+            expected = query.get(query_key)
+            if not expected:
+                continue
+            if not any(str(ticket.metadata.get(item, "")) == expected for item in metadata_keys):
+                return False
+        if query.get("sla_state") and _sla_state(ticket) != query["sla_state"]:
+            return False
+
+        created_from = _parse_iso_datetime(query.get("created_from"))
+        created_to = _parse_iso_datetime(query.get("created_to"))
+        if created_from and ticket.created_at and ticket.created_at < created_from:
+            return False
+        if created_to and ticket.created_at and ticket.created_at > created_to:
+            return False
+        return True
+
+    filtered = [item for item in tickets if match(item)]
+
+    priority_order = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
+    sort_by = (query.get("sort_by") or "created_at").strip()
+    sort_order = (query.get("sort_order") or "desc").strip().lower()
+    reverse = sort_order != "asc"
+
+    def sort_key(ticket: Ticket) -> Any:
+        if sort_by == "priority":
+            return priority_order.get(str(ticket.priority), 99)
+        if sort_by == "status":
+            return str(ticket.status)
+        if sort_by == "updated_at":
+            value = ticket.updated_at
+            return value or datetime.min.replace(tzinfo=UTC)
+        if sort_by == "risk_level":
+            risk_order = {"low": 0, "medium": 1, "high": 2, "critical": 3}
+            return risk_order.get(str(ticket.risk_level), 1)
+        value = ticket.created_at
+        return value or datetime.min.replace(tzinfo=UTC)
+
+    filtered.sort(key=sort_key, reverse=reverse)
+    return filtered
+
+
+def _dashboard_summary(runtime: OpsApiRuntime) -> dict[str, Any]:
+    tickets = runtime.repository.list_tickets(limit=2000, offset=0)
+    today = datetime.now(UTC).date()
+
+    new_tickets_today = 0
+    in_progress_count = 0
+    handoff_pending_count = 0
+    escalated_count = 0
+    sla_warning_count = 0
+    sla_breached_count = 0
+
+    for ticket in tickets:
+        if ticket.created_at and ticket.created_at.date() == today:
+            new_tickets_today += 1
+        if ticket.status in {"open", "pending"}:
+            in_progress_count += 1
+        if ticket.handoff_state in {"requested", "accepted"}:
+            handoff_pending_count += 1
+        if ticket.status == "escalated":
+            escalated_count += 1
+        state = _sla_state(ticket)
+        if state == "warning":
+            sla_warning_count += 1
+        elif state == "breached":
+            sla_breached_count += 1
+
+    return {
+        "new_tickets_today": new_tickets_today,
+        "in_progress_count": in_progress_count,
+        "handoff_pending_count": handoff_pending_count,
+        "escalated_count": escalated_count,
+        "sla_warning_count": sla_warning_count,
+        "sla_breached_count": sla_breached_count,
+    }
+
+
+def _dashboard_recent_errors(runtime: OpsApiRuntime) -> list[dict[str, Any]]:
+    events = runtime.trace_logger.read_recent(limit=300)
+    failures: list[dict[str, Any]] = []
+    for event in events:
+        event_type = str(event.get("event_type", ""))
+        payload = event.get("payload")
+        payload_dict = payload if isinstance(payload, dict) else {}
+        if event_type.endswith("failed") or "error" in payload_dict:
+            failures.append(
+                {
+                    "timestamp": event.get("timestamp"),
+                    "trace_id": event.get("trace_id"),
+                    "ticket_id": event.get("ticket_id"),
+                    "event_type": event_type,
+                    "error": payload_dict.get("error"),
+                }
+            )
+    return failures[-50:]
+
+
+def _trace_groups(runtime: OpsApiRuntime) -> dict[str, list[dict[str, Any]]]:
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for event in runtime.trace_logger.read_recent(limit=5000):
+        trace_id = str(event.get("trace_id") or "")
+        if not trace_id:
+            continue
+        groups.setdefault(trace_id, []).append(event)
+    return groups
+
+
+def _trace_summary(
+    runtime: OpsApiRuntime, trace_id: str, events: list[dict[str, Any]]
+) -> dict[str, Any]:
+    first = events[0]
+    last = events[-1]
+    first_ts = _parse_iso_datetime(str(first.get("timestamp", "")))
+    last_ts = _parse_iso_datetime(str(last.get("timestamp", "")))
+    latency_ms: int | None = None
+    if first_ts and last_ts:
+        latency_ms = int((last_ts - first_ts).total_seconds() * 1000)
+
+    route_decision = {}
+    handoff_reason = None
+    channel = None
+    provider = runtime.app_config.llm.provider
+    workflow = "support-intake"
+    error_only = False
+    handoff = False
+    ticket_id = None
+    session_id = None
+
+    for item in events:
+        payload = item.get("payload")
+        payload_dict = payload if isinstance(payload, dict) else {}
+        event_type = str(item.get("event_type", ""))
+        if ticket_id is None and item.get("ticket_id"):
+            ticket_id = item.get("ticket_id")
+        if session_id is None and item.get("session_id"):
+            session_id = item.get("session_id")
+        if event_type == "route_decision":
+            route_decision = payload_dict
+        if event_type == "handoff_decision" and payload_dict.get("should_handoff"):
+            handoff = True
+            handoff_reason = str(payload_dict.get("reason", ""))
+        if "channel" in payload_dict and channel is None:
+            channel = str(payload_dict["channel"])
+        if "provider" in payload_dict:
+            provider = str(payload_dict["provider"])
+        if "workflow" in payload_dict:
+            workflow = str(payload_dict["workflow"])
+        if event_type.endswith("failed") or "error" in payload_dict:
+            error_only = True
+
+    return {
+        "trace_id": trace_id,
+        "ticket_id": ticket_id,
+        "session_id": session_id,
+        "workflow": workflow,
+        "channel": channel,
+        "provider": provider,
+        "route_decision": route_decision,
+        "handoff": handoff,
+        "handoff_reason": handoff_reason,
+        "error_only": error_only,
+        "latency_ms": latency_ms,
+        "created_at": first.get("timestamp"),
+    }
+
+
+def _trace_detail_event_to_dict(event: dict[str, Any], *, index: int) -> dict[str, Any]:
+    payload_raw = event.get("payload")
+    payload = payload_raw if isinstance(payload_raw, dict) else {}
+    trace_id = event.get("trace_id")
+    trace_id_text = str(trace_id) if trace_id else ""
+    return {
+        "event_id": f"trace_evt_{trace_id_text}_{index}",
+        "event_type": str(event.get("event_type") or "trace_event"),
+        "timestamp": event.get("timestamp"),
+        "ticket_id": event.get("ticket_id"),
+        "session_id": event.get("session_id"),
+        "payload": payload,
+    }
+
+
+def _queue_summary(runtime: OpsApiRuntime) -> list[dict[str, Any]]:
+    tickets = runtime.repository.list_tickets(limit=3000, offset=0)
+    summary: dict[str, dict[str, Any]] = {}
+    for ticket in tickets:
+        bucket = summary.setdefault(
+            ticket.queue,
+            {
+                "queue_name": ticket.queue,
+                "open_count": 0,
+                "in_progress_count": 0,
+                "warning_count": 0,
+                "breached_count": 0,
+                "escalated_count": 0,
+                "assignees": set(),
+            },
+        )
+        if ticket.status == "open":
+            bucket["open_count"] += 1
+        if ticket.status in {"pending", "escalated"}:
+            bucket["in_progress_count"] += 1
+        if ticket.status == "escalated":
+            bucket["escalated_count"] += 1
+        state = _sla_state(ticket)
+        if state == "warning":
+            bucket["warning_count"] += 1
+        elif state == "breached":
+            bucket["breached_count"] += 1
+        if ticket.assignee:
+            bucket["assignees"].add(ticket.assignee)
+
+    rows: list[dict[str, Any]] = []
+    for queue_name, bucket in summary.items():
+        rows.append(
+            {
+                "queue_name": queue_name,
+                "open_count": bucket["open_count"],
+                "in_progress_count": bucket["in_progress_count"],
+                "warning_count": bucket["warning_count"],
+                "breached_count": bucket["breached_count"],
+                "escalated_count": bucket["escalated_count"],
+                "assignee_count": len(bucket["assignees"]),
+            }
+        )
+    rows.sort(key=lambda item: str(item["queue_name"]))
+    return rows
+
+
+def _extract_similar_cases(ticket: Ticket, retriever: Retriever) -> list[dict[str, Any]]:
+    metadata_cases = ticket.metadata.get("similar_cases")
+    if isinstance(metadata_cases, list):
+        cases: list[dict[str, Any]] = []
+        for item in metadata_cases:
+            if isinstance(item, dict):
+                cases.append(dict(item))
+        if cases:
+            return cases[:10]
+
+    docs = retriever.search_history(ticket.latest_message, top_k=5)
+    return [
+        {
+            "doc_id": doc.doc_id,
+            "source_type": doc.source_type,
+            "title": doc.title,
+            "score": doc.score,
+        }
+        for doc in docs
+    ]
+
+
+def _resolve_action(
+    runtime: OpsApiRuntime, *, ticket_id: str, action: str, body: dict[str, Any]
+) -> dict[str, Any]:
+    actor_id = str(body.get("actor_id") or "").strip()
+    if not actor_id:
+        raise ValueError("actor_id is required")
+
+    if action == "claim":
+        ticket = runtime.ticket_api.assign_ticket(ticket_id, assignee=actor_id, actor_id=actor_id)
+    elif action == "reassign":
+        target_queue = str(body.get("target_queue") or "").strip()
+        target_assignee = str(body.get("target_assignee") or "").strip()
+        updates: dict[str, Any] = {}
+        if target_queue:
+            updates["queue"] = target_queue
+        if updates:
+            runtime.ticket_api.update_ticket(ticket_id, updates, actor_id=actor_id)
+        ticket = (
+            runtime.ticket_api.assign_ticket(ticket_id, assignee=target_assignee, actor_id=actor_id)
+            if target_assignee
+            else runtime.ticket_api.require_ticket(ticket_id)
+        )
+        runtime.ticket_api.add_event(
+            ticket_id,
+            event_type="ticket_reassign_requested",
+            actor_type="agent",
+            actor_id=actor_id,
+            payload={"target_queue": target_queue, "target_assignee": target_assignee},
+        )
+    elif action == "escalate":
+        note = str(body.get("note") or "升级处理")
+        ticket = runtime.ticket_api.escalate_ticket(ticket_id, actor_id=actor_id, reason=note)
+    elif action == "resolve":
+        resolution_note = str(body.get("resolution_note") or "已处理")
+        resolution_code = str(body.get("resolution_code") or "") or None
+        ticket = runtime.ticket_api.resolve_ticket(
+            ticket_id,
+            actor_id=actor_id,
+            resolution_note=resolution_note,
+            resolution_code=resolution_code,
+        )
+    elif action == "close":
+        resolution_note = str(body.get("resolution_note") or body.get("close_reason") or "已关闭")
+        ticket = runtime.ticket_api.close_ticket(
+            ticket_id,
+            actor_id=actor_id,
+            resolution_note=resolution_note,
+            close_reason=str(body.get("close_reason") or "agent_close"),
+            resolution_code=(
+                str(body.get("resolution_code")) if body.get("resolution_code") else None
+            ),
+        )
+    else:
+        raise ValueError(f"unsupported action: {action}")
+
+    return _ticket_to_dict(ticket)
+
+
+def handle_api_request(
+    runtime: OpsApiRuntime,
+    *,
+    method: str,
+    path: str,
+    query: dict[str, str],
+    body: dict[str, Any] | None,
+    request_id: str | None = None,
+) -> ApiResponse:
+    req_id = _request_id(request_id)
+    payload = body or {}
+
+    try:
+        if method == "GET" and path == "/healthz":
+            return _json_response(req_id, {"status": "ok"})
+
+        if method == "GET" and path == "/api/dashboard/summary":
+            return _json_response(req_id, {"data": _dashboard_summary(runtime)})
+        if method == "GET" and path == "/api/dashboard/recent-errors":
+            return _json_response(req_id, {"data": _dashboard_recent_errors(runtime)})
+
+        if method == "GET" and path == "/api/tickets":
+            page = _parse_int(query.get("page"), default=1, minimum=1, maximum=100000)
+            page_size = _parse_int(query.get("page_size"), default=20, minimum=1, maximum=200)
+            filtered_tickets = _filter_tickets(runtime, query)
+            total = len(filtered_tickets)
+            start = (page - 1) * page_size
+            end = start + page_size
+            return _json_response(
+                req_id,
+                {
+                    "items": [_ticket_to_dict(item) for item in filtered_tickets[start:end]],
+                    "page": page,
+                    "page_size": page_size,
+                    "total": total,
+                },
+            )
+
+        if method == "GET" and (match := TICKET_DETAIL_RE.match(path)):
+            ticket_id = match.group("ticket_id")
+            ticket = runtime.ticket_api.get_ticket(ticket_id)
+            if ticket is None:
+                return _error(
+                    req_id,
+                    code="ticket_not_found",
+                    message=f"ticket {ticket_id} not found",
+                    status=HTTPStatus.NOT_FOUND,
+                )
+            return _json_response(req_id, {"data": _ticket_to_dict(ticket)})
+
+        if method == "GET" and (match := TICKET_EVENTS_RE.match(path)):
+            ticket_id = match.group("ticket_id")
+            return _json_response(req_id, {"items": _ticket_timeline_events(runtime, ticket_id)})
+
+        if method == "GET" and (match := TICKET_ASSIST_RE.match(path)):
+            ticket_id = match.group("ticket_id")
+            ticket = runtime.ticket_api.require_ticket(ticket_id)
+            events = runtime.ticket_api.list_events(ticket_id)
+            summary = runtime.summary_engine.case_summary(ticket, events)
+            metadata_cards = ticket.metadata.get("recommended_action_cards")
+            recommendations: list[dict[str, Any]]
+            if isinstance(metadata_cards, list):
+                recommendations = [dict(item) for item in metadata_cards if isinstance(item, dict)]
+            else:
+                retrieved_docs = runtime.retriever.search_grounded(ticket.latest_message, top_k=3)
+                intent = IntentDecision(
+                    intent=ticket.intent,
+                    confidence=0.7,
+                    is_low_confidence=False,
+                    reason="ticket-intent",
+                )
+                recommendations = [
+                    item.as_dict()
+                    for item in runtime.recommendation_engine.recommend(
+                        ticket=ticket,
+                        intent=intent,
+                        retrieved_docs=retrieved_docs,
+                        sla_breaches=[],
+                    )
+                ]
+            risk_flags = sorted(
+                {
+                    str(item.get("risk", ""))
+                    for item in recommendations
+                    if isinstance(item, dict) and item.get("risk")
+                }
+            )
+            return _json_response(
+                req_id,
+                {
+                    "summary": summary,
+                    "recommended_actions": recommendations,
+                    "risk_flags": risk_flags,
+                    "latest_messages": [ticket.latest_message],
+                    "provider": runtime.app_config.llm.provider,
+                    "prompt_version": "workflow_engine_v1",
+                },
+            )
+
+        if method == "GET" and (match := TICKET_SIMILAR_RE.match(path)):
+            ticket_id = match.group("ticket_id")
+            ticket = runtime.ticket_api.require_ticket(ticket_id)
+            return _json_response(
+                req_id, {"items": _extract_similar_cases(ticket, runtime.retriever)}
+            )
+
+        if method == "POST" and (match := TICKET_ACTION_RE.match(path)):
+            ticket_id = match.group("ticket_id")
+            action = path.rsplit("/", 1)[-1]
+            updated = _resolve_action(runtime, ticket_id=ticket_id, action=action, body=payload)
+            return _json_response(req_id, {"data": updated})
+
+        if method == "GET" and path == "/api/queues":
+            return _json_response(req_id, {"items": _queue_summary(runtime)})
+        if method == "GET" and path == "/api/queues/summary":
+            return _json_response(req_id, {"items": _queue_summary(runtime)})
+
+        if method == "GET" and path == "/api/traces":
+            page = _parse_int(query.get("page"), default=1, minimum=1, maximum=100000)
+            page_size = _parse_int(query.get("page_size"), default=20, minimum=1, maximum=200)
+            summaries = [
+                _trace_summary(runtime, trace_id, trace_events)
+                for trace_id, trace_events in sorted(_trace_groups(runtime).items(), reverse=True)
+                if trace_events
+            ]
+            filtered_traces: list[dict[str, Any]] = []
+            for item in summaries:
+                if query.get("trace_id") and item.get("trace_id") != query["trace_id"]:
+                    continue
+                if query.get("ticket_id") and (
+                    str(item.get("ticket_id") or "") != query["ticket_id"]
+                ):
+                    continue
+                if query.get("session_id") and (
+                    str(item.get("session_id") or "") != query["session_id"]
+                ):
+                    continue
+                if query.get("workflow") and item.get("workflow") != query["workflow"]:
+                    continue
+                if query.get("channel") and item.get("channel") != query["channel"]:
+                    continue
+                if query.get("provider") and item.get("provider") != query["provider"]:
+                    continue
+                if (
+                    query.get("error_only")
+                    and str(item.get("error_only")).lower() != str(query["error_only"]).lower()
+                ):
+                    continue
+                if (
+                    query.get("handoff")
+                    and str(item.get("handoff")).lower() != str(query["handoff"]).lower()
+                ):
+                    continue
+                filtered_traces.append(item)
+            total = len(filtered_traces)
+            start = (page - 1) * page_size
+            end = start + page_size
+            return _json_response(
+                req_id,
+                {
+                    "items": filtered_traces[start:end],
+                    "page": page,
+                    "page_size": page_size,
+                    "total": total,
+                },
+            )
+
+        if method == "GET" and (match := TRACE_DETAIL_RE.match(path)):
+            trace_id = match.group("trace_id")
+            trace_events = runtime.trace_logger.query_by_trace(trace_id, limit=2000)
+            if not trace_events:
+                return _error(
+                    req_id,
+                    code="trace_not_found",
+                    message=f"trace {trace_id} not found",
+                    status=HTTPStatus.NOT_FOUND,
+                )
+            trace_summary = _trace_summary(runtime, trace_id, trace_events)
+            retrieved_doc_ids: list[str] = []
+            tool_calls: list[str] = []
+            summary_text = ""
+            for event in trace_events:
+                event_type = str(event.get("event_type", ""))
+                payload_dict = event.get("payload")
+                payload = payload_dict if isinstance(payload_dict, dict) else {}
+                if event_type == "ticket_context_retrieved":
+                    retrieved_doc_ids = [
+                        str(item) for item in payload.get("doc_ids", []) if isinstance(item, str)
+                    ]
+                if event_type in {"tool_call_end", "tool_call"} and payload.get("tool"):
+                    tool_calls.append(str(payload["tool"]))
+                if event_type == "recommended_actions":
+                    summary_text = json.dumps(payload.get("actions", []), ensure_ascii=False)
+            return _json_response(
+                req_id,
+                {
+                    "trace_id": trace_id,
+                    "ticket_id": trace_summary.get("ticket_id"),
+                    "session_id": trace_summary.get("session_id"),
+                    "workflow": trace_summary.get("workflow"),
+                    "channel": trace_summary.get("channel"),
+                    "provider": trace_summary.get("provider"),
+                    "route_decision": trace_summary.get("route_decision"),
+                    "retrieved_docs": retrieved_doc_ids,
+                    "tool_calls": tool_calls,
+                    "summary": summary_text,
+                    "handoff": trace_summary.get("handoff"),
+                    "handoff_reason": trace_summary.get("handoff_reason"),
+                    "error_only": trace_summary.get("error_only"),
+                    "latency_ms": trace_summary.get("latency_ms"),
+                    "created_at": trace_summary.get("created_at"),
+                    "events": [
+                        _trace_detail_event_to_dict(event, index=index)
+                        for index, event in enumerate(trace_events)
+                    ],
+                },
+            )
+
+        if method == "GET" and path == "/api/kb":
+            kb_docs = _load_kb_docs(runtime.kb_store_path)
+            source_type = (query.get("source_type") or "").strip()
+            q = (query.get("q") or "").strip().lower()
+            page = _parse_int(query.get("page"), default=1, minimum=1, maximum=100000)
+            page_size = _parse_int(query.get("page_size"), default=20, minimum=1, maximum=200)
+            filtered_kb_docs: list[dict[str, Any]] = []
+            for item in kb_docs:
+                if source_type and str(item.get("source_type", "")) != source_type:
+                    continue
+                haystack = f"{item.get('title', '')} {item.get('content', '')}".lower()
+                if q and q not in haystack:
+                    continue
+                filtered_kb_docs.append(item)
+            total = len(filtered_kb_docs)
+            start = (page - 1) * page_size
+            end = start + page_size
+            return _json_response(
+                req_id,
+                {
+                    "items": filtered_kb_docs[start:end],
+                    "page": page,
+                    "page_size": page_size,
+                    "total": total,
+                },
+            )
+
+        if method == "POST" and path == "/api/kb":
+            doc_id = str(payload.get("doc_id") or f"doc_{uuid.uuid4().hex[:8]}")
+            source_type = str(payload.get("source_type") or "").strip()
+            title = str(payload.get("title") or "").strip()
+            content = str(payload.get("content") or "").strip()
+            tags = payload.get("tags") or []
+            if source_type not in {"faq", "sop", "history_case"}:
+                return _error(
+                    req_id,
+                    code="invalid_source_type",
+                    message="source_type must be faq/sop/history_case",
+                )
+            if not title or not content:
+                return _error(
+                    req_id, code="invalid_payload", message="title and content are required"
+                )
+
+            kb_docs = _load_kb_docs(runtime.kb_store_path)
+            if any(str(item.get("doc_id")) == doc_id for item in kb_docs):
+                return _error(req_id, code="doc_exists", message=f"doc {doc_id} already exists")
+            record = {
+                "doc_id": doc_id,
+                "source_type": source_type,
+                "title": title,
+                "content": content,
+                "tags": [str(item) for item in tags if str(item).strip()],
+                "updated_at": datetime.now(UTC).isoformat(),
+            }
+            kb_docs.append(record)
+            _write_kb_docs(runtime.kb_store_path, kb_docs)
+            return _json_response(req_id, {"data": record}, status=HTTPStatus.CREATED)
+
+        if method == "PATCH" and (match := KB_DOC_RE.match(path)):
+            doc_id = match.group("doc_id")
+            kb_docs = _load_kb_docs(runtime.kb_store_path)
+            updated_doc: dict[str, Any] | None = None
+            for item in kb_docs:
+                if str(item.get("doc_id")) != doc_id:
+                    continue
+                for key in ("title", "content", "source_type", "tags"):
+                    if key in payload:
+                        item[key] = payload[key]
+                item["updated_at"] = datetime.now(UTC).isoformat()
+                updated_doc = item
+                break
+            if updated_doc is None:
+                return _error(
+                    req_id,
+                    code="doc_not_found",
+                    message=f"doc {doc_id} not found",
+                    status=HTTPStatus.NOT_FOUND,
+                )
+            _write_kb_docs(runtime.kb_store_path, kb_docs)
+            return _json_response(req_id, {"data": updated_doc})
+
+        if method == "DELETE" and (match := KB_DOC_RE.match(path)):
+            doc_id = match.group("doc_id")
+            kb_docs = _load_kb_docs(runtime.kb_store_path)
+            remaining = [item for item in kb_docs if str(item.get("doc_id")) != doc_id]
+            if len(remaining) == len(kb_docs):
+                return _error(
+                    req_id,
+                    code="doc_not_found",
+                    message=f"doc {doc_id} not found",
+                    status=HTTPStatus.NOT_FOUND,
+                )
+            _write_kb_docs(runtime.kb_store_path, remaining)
+            return _json_response(req_id, {"deleted": True, "doc_id": doc_id})
+
+        if method == "GET" and path == "/api/channels/health":
+            recent = runtime.trace_logger.read_recent(limit=200)
+            channels = runtime.gateway.bindings.channel_router.supported_channels
+            rows = []
+            for channel in channels:
+                channel_events = [
+                    event
+                    for event in recent
+                    if isinstance(event.get("payload"), dict)
+                    and str((event["payload"]).get("channel", "")) == channel
+                ]
+                last_event = channel_events[-1] if channel_events else None
+                last_error = None
+                retry_state = "idle"
+                if last_event and isinstance(last_event.get("payload"), dict):
+                    payload_dict = last_event["payload"]
+                    if "error" in payload_dict:
+                        last_error = payload_dict.get("error")
+                        retry_state = "retry_pending"
+                rows.append(
+                    {
+                        "channel": channel,
+                        "connected": True,
+                        "last_event_at": (last_event or {}).get("timestamp"),
+                        "last_error": last_error,
+                        "retry_state": retry_state,
+                    }
+                )
+            return _json_response(req_id, {"items": rows})
+
+        if method == "GET" and path == "/api/channels/events":
+            recent_events = runtime.trace_logger.read_recent(limit=100)
+            rows = []
+            for event in recent_events:
+                payload_dict = event.get("payload")
+                payload = payload_dict if isinstance(payload_dict, dict) else {}
+                channel_name = payload.get("channel")
+                if not channel_name:
+                    continue
+                rows.append(
+                    {
+                        "timestamp": event.get("timestamp"),
+                        "trace_id": event.get("trace_id"),
+                        "channel": channel_name,
+                        "event_type": event.get("event_type"),
+                        "payload": payload,
+                    }
+                )
+            return _json_response(req_id, {"items": rows[-50:]})
+
+        if method == "GET" and path == "/api/openclaw/status":
+            return _json_response(req_id, {"data": collect_status(runtime.app_config.environment)})
+
+        if method == "GET" and path == "/api/openclaw/routes":
+            channels = runtime.gateway.bindings.channel_router.supported_channels
+            return _json_response(
+                req_id,
+                {
+                    "gateway": runtime.app_config.gateway.name,
+                    "routes": [
+                        {"channel": channel, "mode": "ingress/session/routing"}
+                        for channel in channels
+                    ],
+                },
+            )
+
+        if method == "GET" and path == "/api/agents/assignees":
+            tickets = runtime.repository.list_tickets(limit=3000, offset=0)
+            assignees = sorted({ticket.assignee for ticket in tickets if ticket.assignee})
+            if not assignees:
+                assignees = ["u_ops_01", "u_ops_02", "u_supervisor_01"]
+            return _json_response(req_id, {"items": assignees})
+
+        return _error(
+            req_id,
+            code="not_found",
+            message=f"route not found: {method} {path}",
+            status=HTTPStatus.NOT_FOUND,
+        )
+    except KeyError as exc:
+        return _error(req_id, code="not_found", message=str(exc), status=HTTPStatus.NOT_FOUND)
+    except ValueError as exc:
+        return _error(
+            req_id, code="invalid_payload", message=str(exc), status=HTTPStatus.BAD_REQUEST
+        )
+    except Exception as exc:
+        return _error(
+            req_id,
+            code="internal_error",
+            message=DEFAULT_ERROR_MESSAGE,
+            status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            details={"error": str(exc)},
+        )
+
+
+def _build_handler(runtime: OpsApiRuntime) -> type[BaseHTTPRequestHandler]:
+    class OpsApiHandler(BaseHTTPRequestHandler):
+        server_version = "SupportAgentOpsAPI/1.0"
+
+        def do_GET(self) -> None:
+            self._dispatch("GET")
+
+        def do_POST(self) -> None:
+            self._dispatch("POST")
+
+        def do_PATCH(self) -> None:
+            self._dispatch("PATCH")
+
+        def do_DELETE(self) -> None:
+            self._dispatch("DELETE")
+
+        def _dispatch(self, method: str) -> None:
+            parsed = urlparse(self.path)
+            query = {
+                key: values[-1]
+                for key, values in parse_qs(parsed.query, keep_blank_values=True).items()
+                if values
+            }
+            request_id = self.headers.get("X-Request-Id")
+            body: dict[str, Any] | None = None
+            if method in {"POST", "PATCH"}:
+                body = self._read_json_body()
+                if body is None:
+                    response = _error(
+                        _request_id(request_id),
+                        code="invalid_json",
+                        message="request body must be a JSON object",
+                    )
+                    self._write_json(response.status, response.payload)
+                    return
+
+            response = handle_api_request(
+                runtime,
+                method=method,
+                path=parsed.path,
+                query=query,
+                body=body,
+                request_id=request_id,
+            )
+            self._write_json(response.status, response.payload)
+
+        def _read_json_body(self) -> dict[str, Any] | None:
+            raw_length = self.headers.get("Content-Length")
+            if raw_length is None:
+                return {}
+            try:
+                length = int(raw_length)
+            except ValueError:
+                return None
+            if length <= 0:
+                return {}
+            body = self.rfile.read(length)
+            try:
+                payload = json.loads(body.decode("utf-8"))
+            except json.JSONDecodeError:
+                return None
+            if not isinstance(payload, dict):
+                return None
+            return payload
+
+        def _write_json(self, status: HTTPStatus, payload: dict[str, Any]) -> None:
+            encoded = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+            self.send_response(status.value)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(encoded)))
+            self.end_headers()
+            self.wfile.write(encoded)
+
+        def log_message(self, format: str, *args: object) -> None:
+            return
+
+    return OpsApiHandler
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run support-agent Ops API server")
+    parser.add_argument("--env", default=None, help="Environment name (dev/prod)")
+    parser.add_argument("--host", default=DEFAULT_HOST, help="HTTP bind host")
+    parser.add_argument("--port", type=int, default=DEFAULT_PORT, help="HTTP bind port")
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    runtime = build_runtime(args.env)
+    handler = _build_handler(runtime)
+    server = ThreadingHTTPServer((args.host, args.port), handler)
+    print(
+        json.dumps(
+            {
+                "status": "starting",
+                "host": args.host,
+                "port": args.port,
+                "healthz": "/healthz",
+                "api_base": "/api/*",
+                "contract": "api-contract-v1",
+            },
+            ensure_ascii=False,
+        )
+    )
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        return 0
+    finally:
+        server.server_close()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

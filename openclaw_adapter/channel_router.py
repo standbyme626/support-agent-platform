@@ -6,7 +6,10 @@ from channel_adapters.base import BaseChannelAdapter
 
 
 class ChannelRouter:
-    """Resolve a channel name to its adapter implementation."""
+    """Resolve a channel name to its adapter implementation.
+
+    This adapter registry intentionally avoids business decisions.
+    """
 
     def __init__(self, adapters: Mapping[str, BaseChannelAdapter]) -> None:
         self._adapters = {channel.lower(): adapter for channel, adapter in adapters.items()}

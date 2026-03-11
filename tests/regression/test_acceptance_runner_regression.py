@@ -13,6 +13,7 @@ def test_acceptance_runner_outputs_summary_and_trace_kpi(
     monkeypatch: MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("SUPPORT_AGENT_ENV", "dev")
+    monkeypatch.setenv("LLM_ENABLED", "false")
     monkeypatch.setenv("SUPPORT_AGENT_SQLITE_PATH", str(tmp_path / "acceptance.db"))
 
     sample_path = (

@@ -1,0 +1,89 @@
+import { render, screen } from "@testing-library/react";
+import { useParams } from "next/navigation";
+import TraceDetailPage from "@/app/(dashboard)/traces/[traceId]/page";
+import { useTraceDetail } from "@/lib/hooks/useTraceDetail";
+
+vi.mock("next/navigation", () => ({
+  useParams: vi.fn()
+}));
+
+vi.mock("@/lib/hooks/useTraceDetail", () => ({
+  useTraceDetail: vi.fn()
+}));
+
+const mockUseParams = vi.mocked(useParams);
+const mockUseTraceDetail = vi.mocked(useTraceDetail);
+
+describe("TraceDetailPage", () => {
+  beforeEach(() => {
+    mockUseParams.mockReturnValue({ traceId: "trace-001" });
+  });
+
+  it("renders loading state", () => {
+    mockUseTraceDetail.mockReturnValue({
+      loading: true,
+      error: null,
+      data: null,
+      refetch: vi.fn()
+    });
+
+    render(<TraceDetailPage />);
+    expect(screen.getByText("Trace detail is syncing.")).toBeInTheDocument();
+  });
+
+  it("renders trace detail sections", () => {
+    mockUseTraceDetail.mockReturnValue({
+      loading: false,
+      error: null,
+      data: {
+        trace_id: "trace-001",
+        ticket_id: "TCK-001",
+        session_id: "sess-001",
+        workflow: "support-intake",
+        channel: "wecom",
+        provider: "openai-compatible",
+        route_decision: { intent: "repair", confidence: 0.93 },
+        retrieved_docs: ["doc-001"],
+        tool_calls: ["search_kb"],
+        summary: "action recommendations generated",
+        handoff: false,
+        handoff_reason: null,
+        error_only: false,
+        latency_ms: 250,
+        created_at: "2026-03-11T00:00:00+00:00",
+        events: [
+          {
+            event_id: "trace_evt_1",
+            event_type: "route_decision",
+            timestamp: "2026-03-11T00:00:01+00:00",
+            ticket_id: "TCK-001",
+            session_id: "sess-001",
+            payload: { intent: "repair" }
+          }
+        ]
+      },
+      refetch: vi.fn()
+    });
+
+    render(<TraceDetailPage />);
+    expect(screen.getByText("Trace Detail")).toBeInTheDocument();
+    expect(screen.getByText("Trace Routing")).toBeInTheDocument();
+    expect(screen.getByText("Tool Calls")).toBeInTheDocument();
+    expect(screen.getByText("Grounding & Summary")).toBeInTheDocument();
+    expect(screen.getByText("Trace Timeline")).toBeInTheDocument();
+    expect(screen.getByText("search_kb")).toBeInTheDocument();
+  });
+
+  it("renders error state", () => {
+    mockUseTraceDetail.mockReturnValue({
+      loading: false,
+      error: "trace detail timeout",
+      data: null,
+      refetch: vi.fn()
+    });
+
+    render(<TraceDetailPage />);
+    expect(screen.getByText("Failed to load trace detail.")).toBeInTheDocument();
+    expect(screen.getByText("trace detail timeout")).toBeInTheDocument();
+  });
+});

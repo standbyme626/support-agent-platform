@@ -5,6 +5,16 @@ log_path = "storage/gateway-prod.log"
 [storage]
 sqlite_path = "storage/tickets.db"
 
+[llm]
+enabled = true
+provider = "openai_compatible"
+base_url = "http://127.0.0.1:11434/v1"
+api_key = "ollama-local"
+model = "qwen3.5:9b"
+timeout_seconds = 45
+temperature = 0.2
+stream = false
+
 [secrets.openclaw_webhook_secret]
 env = "OPENCLAW_WEBHOOK_SECRET"
 file_env = "OPENCLAW_WEBHOOK_SECRET_FILE"

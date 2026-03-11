@@ -25,6 +25,16 @@ def run_healthcheck(environment: str | None = None) -> dict[str, object]:
         }
 
     sqlite_path = Path(app_config.storage.sqlite_path)
+    llm_config = app_config.llm
+    checks["llm"] = {
+        "ok": (not llm_config.enabled)
+        or bool(llm_config.base_url.strip() and llm_config.model.strip()),
+        "enabled": llm_config.enabled,
+        "provider": llm_config.provider,
+        "base_url": llm_config.base_url,
+        "model": llm_config.model,
+        "stream": llm_config.stream,
+    }
 
     try:
         repo = TicketRepository(sqlite_path)

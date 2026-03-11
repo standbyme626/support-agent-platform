@@ -1,0 +1,103 @@
+import { render, screen } from "@testing-library/react";
+import TicketsPage from "@/app/(dashboard)/tickets/page";
+import { useTickets } from "@/lib/hooks/useTickets";
+
+vi.mock("@/lib/hooks/useTickets", () => ({
+  useTickets: vi.fn()
+}));
+
+const mockUseTickets = vi.mocked(useTickets);
+
+describe("TicketsPage", () => {
+  it("renders loading state", () => {
+    mockUseTickets.mockReturnValue({
+      loading: true,
+      error: null,
+      items: [],
+      total: 0,
+      assignees: [],
+      page: 1,
+      pageSize: 20,
+      sortBy: "created_at",
+      sortOrder: "desc",
+      filters: {},
+      setPage: vi.fn(),
+      setPageSize: vi.fn(),
+      setSort: vi.fn(),
+      updateFilters: vi.fn(),
+      clearFilters: vi.fn(),
+      refetch: vi.fn()
+    });
+
+    render(<TicketsPage />);
+    expect(screen.getByText("Ticket list is syncing.")).toBeInTheDocument();
+  });
+
+  it("renders table and filter controls", () => {
+    mockUseTickets.mockReturnValue({
+      loading: false,
+      error: null,
+      items: [
+        {
+          ticket_id: "t-1",
+          title: "Gate issue",
+          latest_message: "cannot open",
+          status: "open",
+          priority: "P1",
+          queue: "support",
+          assignee: "u_ops_01",
+          channel: "wecom",
+          handoff_state: "none",
+          risk_level: "medium",
+          metadata: {},
+          created_at: "2026-03-11T00:00:00+00:00",
+          updated_at: "2026-03-11T00:00:00+00:00",
+          sla_state: "warning"
+        }
+      ],
+      total: 1,
+      assignees: ["u_ops_01"],
+      page: 1,
+      pageSize: 20,
+      sortBy: "created_at",
+      sortOrder: "desc",
+      filters: {},
+      setPage: vi.fn(),
+      setPageSize: vi.fn(),
+      setSort: vi.fn(),
+      updateFilters: vi.fn(),
+      clearFilters: vi.fn(),
+      refetch: vi.fn()
+    });
+
+    render(<TicketsPage />);
+    expect(screen.getByText("Ticket Inbox")).toBeInTheDocument();
+    expect(screen.getByText("Ticket Filters")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Gate issue" })).toBeInTheDocument();
+  });
+
+  it("renders error state", () => {
+    mockUseTickets.mockReturnValue({
+      loading: false,
+      error: "network unavailable",
+      items: [],
+      total: 0,
+      assignees: [],
+      page: 1,
+      pageSize: 20,
+      sortBy: "created_at",
+      sortOrder: "desc",
+      filters: {},
+      setPage: vi.fn(),
+      setPageSize: vi.fn(),
+      setSort: vi.fn(),
+      updateFilters: vi.fn(),
+      clearFilters: vi.fn(),
+      refetch: vi.fn()
+    });
+
+    render(<TicketsPage />);
+    expect(screen.getByText("Failed to load tickets.")).toBeInTheDocument();
+    expect(screen.getByText("network unavailable")).toBeInTheDocument();
+  });
+});

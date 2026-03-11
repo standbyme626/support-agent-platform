@@ -26,7 +26,11 @@ class SupportIntakeResult:
 
 
 class SupportIntakeWorkflow:
-    """Workflow A: intake entry -> FAQ reply -> auto-ticket -> handoff."""
+    """Workflow A: intake entry -> FAQ reply -> auto-ticket -> handoff.
+
+    Business routing/transition rules are enforced here (workflow/core),
+    not inside the OpenClaw ingress/session/routing adapter layer.
+    """
 
     def __init__(
         self,
@@ -205,6 +209,10 @@ class SupportIntakeWorkflow:
         ):
             trace_events.extend(["low_confidence", "conservative_ticket"])
             return "conservative_ticket", trace_events
+
+        if outcome.intent.intent == "greeting":
+            trace_events.extend(["greeting", "direct_reply"])
+            return "greeting_reply", trace_events
 
         if outcome.intent.intent == "faq":
             top_score = outcome.retrieved_docs[0].score if outcome.retrieved_docs else 0.0

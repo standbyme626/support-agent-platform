@@ -12,7 +12,11 @@ from .outbound_sender import OutboundSender
 
 
 class OpenClawGateway:
-    """Minimal OpenClaw integration: ingress/session/routing only."""
+    """Minimal OpenClaw integration: ingress/session/routing only.
+
+    Ticket lifecycle/state policies must remain in core/workflows.
+    This gateway only normalizes inbound payloads, maps sessions, and routes egress.
+    """
 
     def __init__(self, bindings: GatewayBindings | None = None) -> None:
         self._bindings = bindings or build_default_bindings()

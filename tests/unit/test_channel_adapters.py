@@ -59,6 +59,30 @@ def test_wecom_adapter_builds_inbound() -> None:
     assert inbound.metadata["contract_version"] == "wecom.v2"
 
 
+def test_wecom_adapter_prefers_explicit_session_id() -> None:
+    adapter = WeComAdapter()
+    inbound = adapter.build_inbound(
+        {
+            "session_id": "group:g-1:user:user_a",
+            "FromUserName": "user_a",
+            "Content": "群内报修",
+            "CreateTime": "1710000001",
+        }
+    )
+
+    assert inbound.session_id == "group:g-1:user:user_a"
+    assert (
+        adapter.idempotency_key(
+            {
+                "session_id": "group:g-1:user:user_a",
+                "FromUserName": "user_a",
+                "CreateTime": "1710000001",
+            }
+        )
+        == "wecom:group:g-1:user:user_a:1710000001"
+    )
+
+
 def test_feishu_signature_verification() -> None:
     adapter = FeishuAdapter()
     secret = "feishu-secret"

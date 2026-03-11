@@ -18,6 +18,7 @@ from core.ticket_api import TicketAPI
 from core.tool_router import ToolRouter
 from core.trace_logger import JsonTraceLogger
 from core.workflow_engine import WorkflowEngine
+from llm import build_summary_model_adapter
 from openclaw_adapter.bindings import build_default_bindings
 from openclaw_adapter.gateway import OpenClawGateway
 from scripts.trace_kpi import DEFAULT_REQUIRED_EVENTS, generate_trace_kpi
@@ -67,7 +68,7 @@ def build_runtime(environment: str | None) -> AcceptanceRuntime:
         ticket_api=ticket_api,
         intent_router=IntentRouter(),
         tool_router=tool_router,
-        summary_engine=SummaryEngine(),
+        summary_engine=SummaryEngine(model_adapter=build_summary_model_adapter(app_config.llm)),
         handoff_manager=HandoffManager.from_file(policy_path),
         sla_engine=SlaEngine.from_file(policy_path),
         recommendation_engine=RecommendedActionsEngine(),
