@@ -1,17 +1,21 @@
-# API Client Scaffold
+# API Client Overview
 
-Implemented in A group:
+`web_console/lib/api` 已覆盖升级2页面所需接口模块。
 
-- `client.ts`: shared JSON fetch and normalized API error.
-- `dashboard.ts`: summary and recent-errors APIs.
-- `queues.ts`: queue summary API for dashboard cards.
+## Core
 
-Implemented in B group:
+- `client.ts`：统一 JSON 请求与错误归一化（`code/message/request_id`）。
 
-- `tickets.ts`: ticket list and assignee APIs with pagination/filter/sort query.
+## Domain Modules
 
-Implemented in C group:
+- `dashboard.ts`：`/api/dashboard/summary`、`/api/dashboard/recent-errors`
+- `tickets.ts`：Ticket list/detail/events/assist/similar-cases/actions + assignees
+- `traces.ts`：Trace list/detail
+- `queues.ts`：Queues + queue summary
+- `kb.ts`：KB list/create/update/delete
+- `channels.ts`：channels health/events + openclaw status/routes
 
-- `tickets.ts` extended with detail/events/assist/similar-cases/action APIs.
+## Notes
 
-Other groups (D-H) will continue adding API modules.
+- 列表接口统一支持分页参数和总数回传（`page/page_size/total`）。
+- 过滤参数与 URL 查询参数在 hooks 层串联（如 `useTickets`、`useTraceList`）。

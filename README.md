@@ -1,18 +1,28 @@
 # support-agent-platform
 
-`support-agent-platform` 是一个以工单为核心的 `workflow-first, agent-assisted` 客服协同后端骨架：
+`support-agent-platform` 是一个以工单为核心的 `workflow-first, agent-assisted` 客服协同平台：
 
 - `workflow-first`：建单、分派、升级、关闭、SLA、handoff 由确定性流程控制。
 - `agent-assisted`：意图分类、检索、摘要、推荐动作由 Agent/LLM 增强。
 - OpenClaw 只负责 `ingress/session/routing`，不承载业务规则。
-- 当前阶段不包含前端后台，聚焦消息入口、工单生命周期与可观测性。
+- 升级2已交付 `web_console/` Ops Console，形成页面 + API 联调闭环。
 
-## 升级1现状
+## 升级现状
 
 - 已完成 ticket 生命周期增强：`inbox`、`lifecycle_stage`、SLA 截止时间、`resolved/closed/escalated` 时间戳与 `resolution_note`。
 - 已完成协同命令增强：`/claim /reassign /escalate /resolve /close`。
 - OpenClaw 仍只做接入与路由，不承载业务规则。
 - 参考仓统一放在 `refs/`，仅用于对照阅读，不参与运行与提交流程。
+
+### 升级2（A1~H4）状态
+
+- 已完成 8 个目标页面：Dashboard、Tickets、Ticket Detail、Timeline、Traces、Queues、KB、Channels/Gateway。
+- 已完成升级2页面对应 `/api/*` 联调与错误语义统一（`code/message/request_id`）。
+- 已完成前后端测试补齐与验收文档回填，升级2任务清单为全量闭环状态。
+- 实施与验收详见：
+  - [`升级2.md`](./升级2.md)
+  - [`升级2-实施要求与验收测试规范.md`](./升级2-实施要求与验收测试规范.md)
+  - [`升级2-任务分解与执行清单-A1-H4.md`](./升级2-任务分解与执行清单-A1-H4.md)
 
 ## 快速启动
 
@@ -61,6 +71,7 @@
 - `scripts/`：运维与调试脚本（health/status/replay/trace）。
 - `tests/`：`unit/integration/workflow/regression` 四层测试。
 - `seed_data/`：KB 文档与 SLA 规则样本。
+- `web_console/`：升级2前端 Ops Console（页面、组件、API 客户端、前端测试）。
 - `refs/`：外部参考仓（只读对照，不纳入提交）。
 
 ## 运行命令
@@ -97,6 +108,9 @@
 - [ACCEPTANCE_CHECKLIST.md](./ACCEPTANCE_CHECKLIST.md)：MVP 验收清单（Z1）。
 - [DEMO_SCRIPT.md](./DEMO_SCRIPT.md)：可复现演示脚本（Z2）。
 - [ROADMAP.md](./ROADMAP.md)：后续迭代路线图（Z3）。
+- [升级2.md](./升级2.md)：升级2页面与API蓝图。
+- [升级2-实施要求与验收测试规范.md](./升级2-实施要求与验收测试规范.md)：升级2执行约束、验收与测试标准。
+- [升级2-任务分解与执行清单-A1-H4.md](./升级2-任务分解与执行清单-A1-H4.md)：升级2文件级任务分解与完成记录。
 
 ## 常见问题
 
@@ -129,7 +143,7 @@
 
 ### 6) 为什么没有前端后台
 
-- MVP 阶段仅交付后端流程与验证能力，前端不在当前范围内。
+- 升级1阶段以前端不在范围内；升级2已新增 `web_console/` 作为 Ops Console 前端。
 
 ### 7) 为什么 `make lint` 会扫到 `refs/` 报错
 
