@@ -73,6 +73,8 @@ describe("TicketsPage", () => {
     render(<TicketsPage />);
     expect(screen.getByText("工单收件箱")).toBeInTheDocument();
     expect(screen.getByText("工单筛选")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "refresh_tickets" })).toBeInTheDocument();
+    expect(screen.getByLabelText("小区")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Gate issue" })).toBeInTheDocument();
   });
 

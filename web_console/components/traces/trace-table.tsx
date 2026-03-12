@@ -37,9 +37,12 @@ export function TraceTable({
 
   return (
     <section className="card">
-      <h3>{t("Trace 列表", "Traces")}</h3>
+      <div className="ops-card-title-row">
+        <h3>{t("Trace 列表", "Traces")}</h3>
+        <span className="ops-chip strong">{t("总计", "total")} {total}</span>
+      </div>
       <div style={{ overflowX: "auto", marginTop: 10 }}>
-        <table className="table">
+        <table className="table ops-table-tight">
           <thead>
             <tr>
               <th>{t("Trace", "Trace")}</th>
@@ -50,6 +53,7 @@ export function TraceTable({
               <th>{t("模型提供方", "Provider")}</th>
               <th>{t("路由", "Route")}</th>
               <th>{t("接管", "Handoff")}</th>
+              <th>{t("错误", "Error")}</th>
               <th>{t("延迟", "Latency")}</th>
               <th>{t("创建时间", "Created")}</th>
             </tr>
@@ -66,7 +70,16 @@ export function TraceTable({
                 <td>{toText(row.channel)}</td>
                 <td>{toText(row.provider)}</td>
                 <td>{toText(typeof row.route_decision.intent === "string" ? row.route_decision.intent : null)}</td>
-                <td>{row.handoff ? t("是", "yes") : t("否", "no")}</td>
+                <td>
+                  <span className={`pill ${row.handoff ? "pill-warning" : "pill-normal"}`}>
+                    {row.handoff ? t("是", "yes") : t("否", "no")}
+                  </span>
+                </td>
+                <td>
+                  <span className={`pill ${row.error_only ? "pill-breached" : "pill-normal"}`}>
+                    {row.error_only ? "error" : "normal"}
+                  </span>
+                </td>
                 <td>{row.latency_ms !== null ? `${row.latency_ms}ms` : "-"}</td>
                 <td>{toDateTimeText(row.created_at, language === "en" ? "en-US" : "zh-CN")}</td>
               </tr>

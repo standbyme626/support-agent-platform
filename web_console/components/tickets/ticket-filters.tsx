@@ -12,6 +12,10 @@ export type TicketFiltersValue = {
   channel?: string;
   handoff_state?: string;
   service_type?: string;
+  community_name?: string;
+  building?: string;
+  parking_lot?: string;
+  approval_required?: string;
   risk_level?: string;
   created_from?: string;
   created_to?: string;
@@ -32,18 +36,12 @@ function SelectField({
   onChange: (value: string) => void;
 }) {
   return (
-    <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <span style={{ color: "var(--muted)", fontSize: 12 }}>{label}</span>
+    <label className="ops-label">
+      <span>{label}</span>
       <select
+        className="ops-select"
         value={value ?? ""}
         onChange={(event) => onChange(event.target.value)}
-        style={{
-          height: 36,
-          borderRadius: 8,
-          border: "1px solid var(--border)",
-          background: "#fff",
-          padding: "0 10px"
-        }}
       >
         <option value="">{allLabel ?? "All"}</option>
         {options.map((option) => (
@@ -70,8 +68,14 @@ export function TicketFilters({
   const { t } = useI18n();
 
   return (
-    <section className="card">
+    <section className="card ops-filter-compact">
       <h3>{t("工单筛选", "Ticket Filters")}</h3>
+      <p className="hint" style={{ marginTop: 8 }}>
+        {t(
+          "核心字段：service_type / community_name / building / parking_lot / approval_required",
+          "Core fields: service_type / community_name / building / parking_lot / approval_required"
+        )}
+      </p>
       <div style={{ marginTop: 10 }}>
         <SearchInput
           value={value.q ?? ""}
@@ -79,14 +83,90 @@ export function TicketFilters({
           onChange={(q) => onChange({ q })}
         />
       </div>
-      <div
-        style={{
-          marginTop: 10,
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))",
-          gap: 10
-        }}
-      >
+      <div className="ops-filter-grid">
+        <SelectField
+          label={t("服务类型", "Service Type")}
+          allLabel={t("全部", "All")}
+          value={value.service_type}
+          onChange={(service_type) => onChange({ service_type })}
+          options={[
+            { label: t("报修", "repair"), value: "repair" },
+            { label: t("停车", "parking"), value: "parking" },
+            { label: t("投诉", "complaint"), value: "complaint" },
+            { label: t("账单", "billing"), value: "billing" }
+          ]}
+        />
+        <SelectField
+          label={t("风险", "Risk")}
+          allLabel={t("全部", "All")}
+          value={value.risk_level}
+          onChange={(risk_level) => onChange({ risk_level })}
+          options={[
+            { label: t("低", "low"), value: "low" },
+            { label: t("中", "medium"), value: "medium" },
+            { label: t("高", "high"), value: "high" },
+            { label: t("紧急", "critical"), value: "critical" }
+          ]}
+        />
+        <label className="ops-label">
+          <span>{t("小区", "Community Name")}</span>
+          <input
+            className="ops-input"
+            value={value.community_name ?? ""}
+            onChange={(event) => onChange({ community_name: event.target.value })}
+            placeholder={t("例如：A区", "e.g. Community-A")}
+          />
+        </label>
+        <label className="ops-label">
+          <span>{t("楼栋", "Building")}</span>
+          <input
+            className="ops-input"
+            value={value.building ?? ""}
+            onChange={(event) => onChange({ building: event.target.value })}
+            placeholder={t("例如：1号楼", "e.g. Building-1")}
+          />
+        </label>
+        <label className="ops-label">
+          <span>{t("停车位", "Parking Lot")}</span>
+          <input
+            className="ops-input"
+            value={value.parking_lot ?? ""}
+            onChange={(event) => onChange({ parking_lot: event.target.value })}
+            placeholder={t("例如：B2-018", "e.g. B2-018")}
+          />
+        </label>
+        <SelectField
+          label={t("审批要求", "Approval Required")}
+          allLabel={t("全部", "All")}
+          value={value.approval_required}
+          onChange={(approval_required) => onChange({ approval_required })}
+          options={[
+            { label: t("需要审批", "true"), value: "true" },
+            { label: t("无需审批", "false"), value: "false" }
+          ]}
+        />
+        <SelectField
+          label={t("接管", "Handoff")}
+          allLabel={t("全部", "All")}
+          value={value.handoff_state}
+          onChange={(handoff_state) => onChange({ handoff_state })}
+          options={[
+            { label: t("无", "none"), value: "none" },
+            { label: t("已请求", "requested"), value: "requested" },
+            { label: t("已接受", "accepted"), value: "accepted" }
+          ]}
+        />
+        <SelectField
+          label="SLA"
+          allLabel={t("全部", "All")}
+          value={value.sla_state}
+          onChange={(sla_state) => onChange({ sla_state })}
+          options={[
+            { label: t("正常", "normal"), value: "normal" },
+            { label: t("预警", "warning"), value: "warning" },
+            { label: t("超时", "breached"), value: "breached" }
+          ]}
+        />
         <SelectField
           label={t("状态", "Status")}
           allLabel={t("全部", "All")}
@@ -141,83 +221,27 @@ export function TicketFilters({
             { label: "feishu", value: "feishu" }
           ]}
         />
-        <SelectField
-          label={t("接管", "Handoff")}
-          allLabel={t("全部", "All")}
-          value={value.handoff_state}
-          onChange={(handoff_state) => onChange({ handoff_state })}
-          options={[
-            { label: t("无", "none"), value: "none" },
-            { label: t("已请求", "requested"), value: "requested" },
-            { label: t("已接受", "accepted"), value: "accepted" }
-          ]}
-        />
-        <SelectField
-          label={t("服务类型", "Service Type")}
-          allLabel={t("全部", "All")}
-          value={value.service_type}
-          onChange={(service_type) => onChange({ service_type })}
-          options={[
-            { label: t("报修", "repair"), value: "repair" },
-            { label: t("停车", "parking"), value: "parking" },
-            { label: t("投诉", "complaint"), value: "complaint" },
-            { label: t("账单", "billing"), value: "billing" }
-          ]}
-        />
-        <SelectField
-          label={t("风险", "Risk")}
-          allLabel={t("全部", "All")}
-          value={value.risk_level}
-          onChange={(risk_level) => onChange({ risk_level })}
-          options={[
-            { label: t("低", "low"), value: "low" },
-            { label: t("中", "medium"), value: "medium" },
-            { label: t("高", "high"), value: "high" },
-            { label: t("紧急", "critical"), value: "critical" }
-          ]}
-        />
-        <SelectField
-          label="SLA"
-          allLabel={t("全部", "All")}
-          value={value.sla_state}
-          onChange={(sla_state) => onChange({ sla_state })}
-          options={[
-            { label: t("正常", "normal"), value: "normal" },
-            { label: t("预警", "warning"), value: "warning" },
-            { label: t("超时", "breached"), value: "breached" }
-          ]}
-        />
-        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ color: "var(--muted)", fontSize: 12 }}>{t("创建起始", "Created From")}</span>
+        <label className="ops-label">
+          <span>{t("创建起始", "Created From")}</span>
           <input
+            className="ops-input"
             type="date"
             value={value.created_from ?? ""}
             onChange={(event) => onChange({ created_from: event.target.value })}
-            style={{ height: 36, borderRadius: 8, border: "1px solid var(--border)", padding: "0 10px" }}
           />
         </label>
-        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ color: "var(--muted)", fontSize: 12 }}>{t("创建截止", "Created To")}</span>
+        <label className="ops-label">
+          <span>{t("创建截止", "Created To")}</span>
           <input
+            className="ops-input"
             type="date"
             value={value.created_to ?? ""}
             onChange={(event) => onChange({ created_to: event.target.value })}
-            style={{ height: 36, borderRadius: 8, border: "1px solid var(--border)", padding: "0 10px" }}
           />
         </label>
       </div>
       <div style={{ marginTop: 10 }}>
-        <button
-          onClick={onClear}
-          style={{
-            height: 34,
-            borderRadius: 8,
-            border: "1px solid var(--border)",
-            background: "#fff",
-            padding: "0 12px",
-            cursor: "pointer"
-          }}
-        >
+        <button onClick={onClear} className="btn-ghost">
           {t("清空筛选", "Clear Filters")}
         </button>
       </div>

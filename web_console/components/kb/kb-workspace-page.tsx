@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { KbEditorDialog } from "@/components/kb/kb-editor-dialog";
 import { KbTable } from "@/components/kb/kb-table";
+import { ActionFeedback } from "@/components/shared/action-feedback";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ErrorState } from "@/components/shared/error-state";
 import { LoadingState } from "@/components/shared/loading-state";
@@ -80,9 +81,15 @@ export function KbWorkspacePage({ sourceType }: { sourceType: KbSourceType }) {
   }
 
   return (
-    <section>
+    <section className="ops-page-stack">
       <h2 className="section-title">{sourceTypeTitle(sourceType)}</h2>
-      <nav style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
+      <p className="ops-kicker">
+        {t(
+          "Admin 模板：FAQ / SOP / History Cases 分层管理，面向 workflow-first 检索场景。",
+          "Admin template for FAQ / SOP / History Cases under workflow-first retrieval."
+        )}
+      </p>
+      <nav className="ops-kb-nav">
         {kbNavItems.map((item) => (
           <a
             key={item.href}
@@ -97,20 +104,13 @@ export function KbWorkspacePage({ sourceType }: { sourceType: KbSourceType }) {
 
       <article className="card" style={{ marginTop: 12 }}>
         <h3>{t("筛选与操作", "Filters & Actions")}</h3>
-        <div
-          style={{
-            marginTop: 10,
-            display: "grid",
-            gap: 8,
-            gridTemplateColumns: "minmax(220px, 2fr) auto auto"
-          }}
-        >
+        <div className="ops-kb-search-row">
           <input
+            className="ops-input"
             value={kb.q}
             onChange={(event) => kb.setQuery(event.target.value)}
             placeholder={t("在标题/内容中搜索", "Search in title/content")}
             aria-label="kb_search"
-            style={{ height: 34, borderRadius: 8, border: "1px solid var(--border)", padding: "0 10px" }}
           />
           <button className="btn-ghost" onClick={kb.clearQuery}>
             {t("清空", "Clear")}
@@ -121,16 +121,14 @@ export function KbWorkspacePage({ sourceType }: { sourceType: KbSourceType }) {
         </div>
       </article>
 
-      {kb.actionSuccess ? (
-        <section className="state-banner" role="status" style={{ marginTop: 12 }}>
-          <p>{kb.actionSuccess}</p>
-        </section>
-      ) : null}
-      {kb.actionError && !editorOpen ? (
-        <section className="state-banner" role="alert" style={{ marginTop: 12 }}>
-          <p>{kb.actionError}</p>
-        </section>
-      ) : null}
+      <ActionFeedback
+        variant="success"
+        message={kb.actionSuccess ? `${t("操作成功：", "Operation succeeded: ")}${kb.actionSuccess}` : null}
+      />
+      <ActionFeedback
+        variant="error"
+        message={kb.actionError && !editorOpen ? `${t("操作失败：", "Operation failed: ")}${kb.actionError}` : null}
+      />
 
       <KbEditorDialog
         open={editorOpen}

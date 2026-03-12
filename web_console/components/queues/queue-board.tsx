@@ -29,20 +29,43 @@ export function QueueBoard({ rows }: { rows: QueueSummaryItem[] }) {
   return (
     <article className="card">
       <h3>{t("队列看板", "Queue Board")}</h3>
-      <ul className="list">
-        {rows.map((row) => (
-          <li className="list-item" key={row.queue_name}>
-            <div>
-              <a href={buildTicketListUrl({ queue: row.queue_name })}>{row.queue_name}</a>
-            </div>
-            <small>
-              {t("待处理", "open")} {row.open_count} · {t("处理中", "in progress")} {row.in_progress_count} ·{" "}
-              {t("预警", "warning")} {row.warning_count} · {t("超时", "breached")} {row.breached_count} ·{" "}
-              {t("升级", "escalated")} {row.escalated_count} · {t("状态", "state")} {queueState(row)}
-            </small>
-          </li>
-        ))}
-      </ul>
+      <div style={{ overflowX: "auto", marginTop: 10 }}>
+        <table className="table ops-table-tight">
+          <thead>
+            <tr>
+              <th>{t("队列", "Queue")}</th>
+              <th>{t("Open", "Open")}</th>
+              <th>{t("In Progress", "In Progress")}</th>
+              <th>{t("Warning", "Warning")}</th>
+              <th>{t("Breached", "Breached")}</th>
+              <th>{t("Escalated", "Escalated")}</th>
+              <th>{t("Assignees", "Assignees")}</th>
+              <th>{t("状态", "State")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => {
+              const state = queueState(row);
+              return (
+                <tr key={row.queue_name}>
+                  <td>
+                    <a href={buildTicketListUrl({ queue: row.queue_name })}>{row.queue_name}</a>
+                  </td>
+                  <td>{row.open_count}</td>
+                  <td>{row.in_progress_count}</td>
+                  <td>{row.warning_count}</td>
+                  <td>{row.breached_count}</td>
+                  <td>{row.escalated_count}</td>
+                  <td>{row.assignee_count}</td>
+                  <td>
+                    <span className={`pill pill-${state}`}>{state}</span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </article>
   );
 }

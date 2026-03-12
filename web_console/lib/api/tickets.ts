@@ -38,6 +38,10 @@ export type TicketQuery = {
   channel?: string;
   handoff_state?: string;
   service_type?: string;
+  community_name?: string;
+  building?: string;
+  parking_lot?: string;
+  approval_required?: string;
   risk_level?: string;
   created_from?: string;
   created_to?: string;

@@ -9,7 +9,10 @@ export function QueueSummaryCard({ rows }: { rows: QueueSummaryItem[] }) {
 
   return (
     <article className="card">
-      <h3>{t("队列负载排行", "Queue Load Ranking")}</h3>
+      <div className="ops-card-title-row">
+        <h3>{t("队列负载排行", "Queue Load Ranking")}</h3>
+        <span className="ops-chip strong">{t("Top 5", "Top 5")}</span>
+      </div>
       <ul className="list">
         {rows.slice(0, 5).map((row) => (
           <li className="list-item" key={row.queue_name}>

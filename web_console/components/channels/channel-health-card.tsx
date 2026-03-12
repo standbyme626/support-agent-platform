@@ -58,7 +58,11 @@ export function ChannelHealthCard({ rows }: { rows: ChannelHealthItem[] }) {
               {rows.map((row) => (
                 <tr key={row.channel}>
                   <td>{row.channel}</td>
-                  <td>{row.connected ? t("是", "Yes") : t("否", "No")}</td>
+                  <td>
+                    <span className={`pill ${row.connected ? "pill-normal" : "pill-breached"}`}>
+                      {row.connected ? t("是", "Yes") : t("否", "No")}
+                    </span>
+                  </td>
                   <td>{toDateTimeText(row.last_event_at)}</td>
                   <td>{row.retry_state}</td>
                   <td>{toErrorText(row.last_error)}</td>

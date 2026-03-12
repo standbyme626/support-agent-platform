@@ -60,6 +60,7 @@ describe("TracesPage", () => {
 
     render(<TracesPage />);
     expect(screen.getByRole("heading", { name: "Trace 列表", level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "refresh_traces" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "trace-001" })).toHaveAttribute("href", "/traces/trace-001");
     expect(screen.getByText("support-intake")).toBeInTheDocument();
   });

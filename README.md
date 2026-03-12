@@ -18,7 +18,11 @@
 
 - 已完成 8 个目标页面：Dashboard、Tickets、Ticket Detail、Timeline、Traces、Queues、KB、Channels/Gateway。
 - 已完成升级2页面对应 `/api/*` 联调与错误语义统一（`code/message/request_id`）。
-- 已完成前后端测试补齐与验收文档回填，升级2任务清单为全量闭环状态。
+- 已完成升级2收口项（P0/P1/P2）：
+  - P0：修复 Ticket 动作反馈准确性（失败不再显示成功）并补充对应测试；补齐前端最小 e2e 场景（Ticket 动作链、Trace drill-down、KB CRUD、Channels 观测）。
+  - P1：补齐 Ticket List/Detail 的定制字段可见性与可筛选性；为 Ticket List、Trace、Queue、Channels 增加显式刷新入口。
+  - P2：新增统一反馈组件 `ActionFeedback`，统一成功/失败提示样式与语义（已在 Ticket / KB 场景接入）。
+- 前端质量闸门（`web_console`）：`lint`、`typecheck`、`vitest` 均通过；当前测试为 `33/33` 通过（含 `tests/e2e/upgrade2-minimal-flow.test.tsx`）。
 - 实施与验收详见：
   - [`升级2.md`](./升级2.md)
   - [`升级2-实施要求与验收测试规范.md`](./升级2-实施要求与验收测试规范.md)

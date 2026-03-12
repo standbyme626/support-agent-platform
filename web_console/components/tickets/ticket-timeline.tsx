@@ -83,15 +83,14 @@ export function TicketTimeline({ events }: { events: TicketEventItem[] }) {
 
   return (
     <div>
-      <ul className="list" style={{ marginTop: 10 }}>
+      <ul className="ops-timeline" style={{ marginTop: 10 }}>
         {normalizedEvents.map((event) => {
           const isObservabilityEvent = OBSERVABILITY_EVENTS.has(event.event_type);
           const summary = buildEventSummary(event, t("无载荷摘要。", "No payload summary."));
           return (
             <li
               key={event.event_id}
-              className="list-item"
-              style={{ borderLeft: `3px solid ${isObservabilityEvent ? "var(--accent)" : "var(--border)"}` }}
+              className={`ops-timeline-item ${isObservabilityEvent ? "is-observable" : ""}`}
             >
               <button
                 type="button"
@@ -114,16 +113,7 @@ export function TicketTimeline({ events }: { events: TicketEventItem[] }) {
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
                   <strong>{event.event_type}</strong>
                   {isObservabilityEvent ? (
-                    <span
-                      style={{
-                        border: "1px solid var(--accent)",
-                        color: "var(--accent)",
-                        borderRadius: 999,
-                        padding: "1px 8px",
-                        fontSize: 11,
-                        whiteSpace: "nowrap"
-                      }}
-                    >
+                    <span className="ops-chip strong">
                       {t("可观测", "observable")}
                     </span>
                   ) : null}
@@ -146,7 +136,7 @@ export function TicketTimeline({ events }: { events: TicketEventItem[] }) {
           border: "1px solid var(--border)",
           borderRadius: 10,
           padding: "8px 10px",
-          background: "rgba(31, 111, 235, 0.06)"
+          background: "rgba(15, 111, 133, 0.06)"
         }}
       >
         <strong style={{ display: "block", fontSize: 12, color: "var(--muted)" }}>

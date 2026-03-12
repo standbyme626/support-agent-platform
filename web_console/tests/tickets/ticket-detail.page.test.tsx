@@ -56,7 +56,9 @@ describe("TicketDetailPage", () => {
         metadata: {
           service_type: "repair",
           community_name: "A区",
-          building: "1号楼"
+          building: "1号楼",
+          parking_lot: "B2-018",
+          approval_required: "true"
         },
         created_at: "2026-03-11T00:00:00+00:00",
         updated_at: "2026-03-11T00:00:00+00:00",
@@ -96,6 +98,7 @@ describe("TicketDetailPage", () => {
     expect(screen.getByText("事件时间线")).toBeInTheDocument();
     expect(screen.getByText("推荐动作")).toBeInTheDocument();
     expect(screen.getByText("相似案例")).toBeInTheDocument();
+    expect(screen.getByText("定制字段")).toBeInTheDocument();
   });
 
   it("renders error state", () => {

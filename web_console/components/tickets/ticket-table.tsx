@@ -58,9 +58,14 @@ export function TicketTable({
 
   return (
     <section className="card">
-      <h3>{t("工单列表", "Tickets")}</h3>
+      <div className="ops-card-title-row">
+        <h3>{t("工单列表", "Tickets")}</h3>
+        <span className="ops-chip strong">
+          {t("总计", "total")} {total}
+        </span>
+      </div>
       <div style={{ overflowX: "auto", marginTop: 10 }}>
-        <table className="table">
+        <table className="table ops-table-tight">
           <thead>
             <tr>
               <th>{t("工单", "Ticket")}</th>
@@ -85,6 +90,13 @@ export function TicketTable({
               <th>{t("队列", "Queue")}</th>
               <th>{t("处理人", "Assignee")}</th>
               <th>{t("渠道", "Channel")}</th>
+              <th>{t("服务类型", "Service Type")}</th>
+              <th>{t("小区", "Community")}</th>
+              <th>{t("楼栋", "Building")}</th>
+              <th>{t("停车位", "Parking Lot")}</th>
+              <th>{t("审批", "Approval")}</th>
+              <th>{t("接管", "Handoff")}</th>
+              <th>{t("风险", "Risk")}</th>
               <th>
                 <SortButton
                   label={t("创建时间", "Created")}
@@ -100,16 +112,27 @@ export function TicketTable({
             {items.map((ticket) => (
               <tr key={ticket.ticket_id}>
                 <td>
-                  <a href={`/tickets/${ticket.ticket_id}`}>{ticket.title}</a>
-                  <div style={{ color: "var(--muted)", fontSize: 12 }}>{ticket.latest_message}</div>
+                  <div className="ops-ticket-row-title">
+                    <a href={`/tickets/${ticket.ticket_id}`}>{ticket.title}</a>
+                    <span className="ops-chip">{ticket.ticket_id}</span>
+                  </div>
+                  <div className="ops-ticket-row-meta">{ticket.latest_message}</div>
                 </td>
                 <td>{ticket.priority}</td>
                 <td>
-                  <span className={`pill pill-${ticket.sla_state}`}>{ticket.status}</span>
+                  <span className={`pill pill-${ticket.sla_state}`}>{ticket.status}</span>{" "}
+                  <span className={`pill pill-${ticket.sla_state}`}>SLA:{ticket.sla_state}</span>
                 </td>
                 <td>{ticket.queue}</td>
                 <td>{ticket.assignee ?? "-"}</td>
                 <td>{ticket.channel}</td>
+                <td>{String(ticket.metadata?.service_type ?? "-")}</td>
+                <td>{String(ticket.metadata?.community_name ?? "-")}</td>
+                <td>{String(ticket.metadata?.building ?? "-")}</td>
+                <td>{String(ticket.metadata?.parking_lot ?? "-")}</td>
+                <td>{String(ticket.metadata?.approval_required ?? "-")}</td>
+                <td>{ticket.handoff_state}</td>
+                <td>{ticket.risk_level}</td>
                 <td>{ticket.created_at ? new Date(ticket.created_at).toLocaleString() : "-"}</td>
               </tr>
             ))}

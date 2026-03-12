@@ -39,7 +39,10 @@ export function TicketSummaryCard({
   const metadataRows = renderMetadata(ticket);
   return (
     <article className="card">
-      <h3>{t("AI 摘要", "AI Summary")}</h3>
+      <div className="ops-card-title-row">
+        <h3>{t("AI 摘要", "AI Summary")}</h3>
+        <span className="ops-chip strong">{assist?.provider ?? "agent"}</span>
+      </div>
       <p style={{ marginTop: 10, marginBottom: 0 }}>
         {assist?.summary || t("暂无摘要。", "No summary available yet.")}
       </p>
@@ -49,8 +52,11 @@ export function TicketSummaryCard({
       <div style={{ marginTop: 10 }}>
         <strong>{t("风险标签", "Risk flags")}:</strong> {assist?.risk_flags?.join(", ") || "-"}
       </div>
+      <div style={{ marginTop: 6, color: "var(--muted)", fontSize: 12 }}>
+        {t("提示词版本", "Prompt version")}: {assist?.prompt_version ?? "-"}
+      </div>
       {metadataRows.length > 0 ? (
-        <ul style={{ marginTop: 10, marginBottom: 0, paddingLeft: 18 }}>{metadataRows}</ul>
+        <ul className="ops-inline-list" style={{ marginTop: 10, marginBottom: 0 }}>{metadataRows}</ul>
       ) : null}
     </article>
   );

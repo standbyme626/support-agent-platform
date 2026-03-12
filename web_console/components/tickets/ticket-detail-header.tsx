@@ -8,9 +8,12 @@ export function TicketDetailHeader({ ticket }: { ticket: TicketItem }) {
 
   return (
     <header className="card">
-      <h3 style={{ fontSize: 18, margin: 0 }}>{ticket.title}</h3>
+      <div className="ops-card-title-row">
+        <h3 style={{ fontSize: 18, margin: 0, color: "var(--text)" }}>{ticket.title}</h3>
+        <span className="ops-chip">{ticket.ticket_id}</span>
+      </div>
       <div style={{ marginTop: 8, color: "var(--muted)" }}>
-        {ticket.ticket_id} · {ticket.channel} · {t("队列", "queue")} {ticket.queue}
+        {ticket.channel} · {t("队列", "queue")} {ticket.queue}
       </div>
       <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
         <span className={`pill pill-${ticket.sla_state}`}>{t("状态", "status")} {ticket.status}</span>

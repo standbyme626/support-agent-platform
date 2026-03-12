@@ -67,6 +67,7 @@ describe("QueuesPage", () => {
     render(<QueuesPage />);
 
     expect(screen.getByRole("heading", { level: 2, name: "队列看板" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "refresh_queues" })).toBeInTheDocument();
     expect(screen.getByText("队列明细")).toBeInTheDocument();
     const queueLinks = screen
       .getAllByRole("link")

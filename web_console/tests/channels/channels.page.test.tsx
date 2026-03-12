@@ -80,6 +80,7 @@ describe("ChannelsPage", () => {
     render(<ChannelsPage />);
 
     expect(screen.getByRole("heading", { level: 2, name: "渠道 / 网关" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "refresh_channels" })).toBeInTheDocument();
     expect(screen.getByText("网关状态")).toBeInTheDocument();
     expect(screen.getByText("openclaw-dev")).toBeInTheDocument();
     expect(screen.getByText("渠道健康")).toBeInTheDocument();

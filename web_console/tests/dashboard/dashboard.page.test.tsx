@@ -3,6 +3,7 @@ import DashboardPage from "@/app/(dashboard)/page";
 import { useDashboardSummary } from "@/lib/hooks/useDashboardSummary";
 import { useDashboardRecentErrors } from "@/lib/hooks/useDashboardRecentErrors";
 import { useQueueSummary } from "@/lib/hooks/useQueueSummary";
+import { useGatewayHealth } from "@/lib/hooks/useGatewayHealth";
 
 vi.mock("@/lib/hooks/useDashboardSummary", () => ({
   useDashboardSummary: vi.fn()
@@ -16,9 +17,14 @@ vi.mock("@/lib/hooks/useQueueSummary", () => ({
   useQueueSummary: vi.fn()
 }));
 
+vi.mock("@/lib/hooks/useGatewayHealth", () => ({
+  useGatewayHealth: vi.fn()
+}));
+
 const mockUseDashboardSummary = vi.mocked(useDashboardSummary);
 const mockUseDashboardRecentErrors = vi.mocked(useDashboardRecentErrors);
 const mockUseQueueSummary = vi.mocked(useQueueSummary);
+const mockUseGatewayHealth = vi.mocked(useGatewayHealth);
 
 describe("DashboardPage", () => {
   it("renders loading state", () => {
@@ -38,6 +44,15 @@ describe("DashboardPage", () => {
       loading: false,
       error: null,
       data: [],
+      refetch: vi.fn()
+    });
+    mockUseGatewayHealth.mockReturnValue({
+      loading: false,
+      error: null,
+      status: null,
+      routes: [],
+      channelHealth: [],
+      events: [],
       refetch: vi.fn()
     });
 
@@ -87,6 +102,30 @@ describe("DashboardPage", () => {
       ],
       refetch: vi.fn()
     });
+    mockUseGatewayHealth.mockReturnValue({
+      loading: false,
+      error: null,
+      status: {
+        environment: "dev",
+        gateway: "openclaw-dev",
+        sqlite_path: "/tmp/demo.db",
+        session_bindings: 2,
+        log_path: "/tmp/gateway.log",
+        recent_events: []
+      },
+      routes: [{ channel: "wecom", mode: "ingress/session/routing" }],
+      channelHealth: [
+        {
+          channel: "wecom",
+          connected: true,
+          last_event_at: "2026-03-11T00:00:00+00:00",
+          last_error: null,
+          retry_state: "idle"
+        }
+      ],
+      events: [],
+      refetch: vi.fn()
+    });
 
     render(<DashboardPage />);
 
@@ -116,6 +155,15 @@ describe("DashboardPage", () => {
       loading: false,
       error: null,
       data: [],
+      refetch: vi.fn()
+    });
+    mockUseGatewayHealth.mockReturnValue({
+      loading: false,
+      error: null,
+      status: null,
+      routes: [],
+      channelHealth: [],
+      events: [],
       refetch: vi.fn()
     });
 

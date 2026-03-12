@@ -19,6 +19,21 @@ function toText(value: unknown) {
   return String(value);
 }
 
+function toBriefJson(value: unknown) {
+  if (value === null || value === undefined) {
+    return "-";
+  }
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  try {
+    const serialized = JSON.stringify(value);
+    return serialized.length > 140 ? `${serialized.slice(0, 137)}...` : serialized;
+  } catch {
+    return String(value);
+  }
+}
+
 export default function TicketDetailPage() {
   const { t } = useI18n();
   const params = useParams<{ ticketId: string }>();
@@ -54,68 +69,51 @@ export default function TicketDetailPage() {
     );
   }
 
+  const lastHandoffEvent = [...events].reverse().find((item) => item.event_type.includes("handoff"));
+  const metadataEntries = Object.entries(ticket.metadata ?? {})
+    .filter(([, value]) => value !== null && value !== undefined && value !== "")
+    .sort(([left], [right]) => left.localeCompare(right));
+
   return (
-    <section>
+    <section className="ops-page-stack">
       <h2 className="section-title">{t("工单详情", "Ticket Detail")}</h2>
+      <p className="ops-kicker">
+        {t(
+          "三栏工作台：左栏 summary/grounding/cases，中栏活动流，右栏 handoff 与动作。",
+          "Three-pane workspace: summary/grounding/cases, activity stream, and handoff/actions."
+        )}
+      </p>
       <TicketDetailHeader ticket={ticket} />
       <div className="detail-grid" style={{ marginTop: 12 }}>
         <div className="detail-col">
           <TicketSummaryCard ticket={ticket} assist={assist} />
           <article className="card" style={{ marginTop: 12 }}>
-            <h3>{t("核心字段", "Core Fields")}</h3>
-            <ul style={{ marginTop: 10, marginBottom: 0, paddingLeft: 18 }}>
-              <li>{t("队列", "Queue")}: {ticket.queue}</li>
-              <li>{t("处理人", "Assignee")}: {ticket.assignee ?? "-"}</li>
-              <li>{t("渠道", "Channel")}: {ticket.channel}</li>
-              <li>{t("接管状态", "Handoff State")}: {ticket.handoff_state}</li>
+            <h3>{t("Grounding", "Grounding")}</h3>
+            <ul className="ops-inline-list" style={{ marginTop: 10 }}>
               <li>{t("服务类型", "Service Type")}: {toText(ticket.metadata?.service_type)}</li>
               <li>{t("小区", "Community Name")}: {toText(ticket.metadata?.community_name)}</li>
               <li>{t("楼栋", "Building")}: {toText(ticket.metadata?.building)}</li>
               <li>{t("停车位", "Parking Lot")}: {toText(ticket.metadata?.parking_lot)}</li>
-              <li>{t("是否需审批", "Approval Required")}: {toText(ticket.metadata?.approval_required)}</li>
-              <li>{t("风险等级", "Risk Level")}: {ticket.risk_level}</li>
+              <li>{t("审批要求", "Approval Required")}: {toText(ticket.metadata?.approval_required)}</li>
+              <li>{t("最近消息", "Latest Message")}: {ticket.latest_message || "-"}</li>
             </ul>
-          </article>
-        </div>
-
-        <div className="detail-col">
-          <TicketActionsPanel
-            ticket={ticket}
-            assignees={assignees}
-            loadingAction={actionLoading}
-            actionError={actionError}
-            onAction={(action: TicketActionType, payload: TicketActionPayload) =>
-              runAction(action, payload)
-            }
-          />
-          <article className="card" style={{ marginTop: 12 }}>
-            <h3>{t("事件时间线", "Event Timeline")}</h3>
-            <TicketTimeline events={events} />
-          </article>
-        </div>
-
-        <div className="detail-col">
-          <article className="card">
-            <h3>{t("推荐动作", "Recommended Actions")}</h3>
-            {assist?.recommended_actions?.length ? (
-              <ul className="list">
-                {assist.recommended_actions.map((action, index) => (
-                  <li className="list-item" key={`action-${index}`}>
-                    <strong>{toText(action.title ?? action.action)}</strong>
-                    <div style={{ color: "var(--muted)", fontSize: 13 }}>
-                      {toText(action.description ?? action.reason)}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p style={{ color: "var(--muted)" }}>{t("暂无推荐动作。", "No recommended actions available.")}</p>
-            )}
+            {assist?.latest_messages?.length ? (
+              <>
+                <h4 style={{ marginTop: 12, marginBottom: 6, fontSize: 13 }}>{t("关联上下文", "Context Messages")}</h4>
+                <ul className="list">
+                  {assist.latest_messages.slice(0, 3).map((line, index) => (
+                    <li className="list-item" key={`ctx-${index}`}>
+                      <small>{line}</small>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
           </article>
           <article className="card" style={{ marginTop: 12 }}>
             <h3>{t("相似案例", "Similar Cases")}</h3>
             {similarCases.length ? (
-              <ul className="list">
+              <ul className="list" style={{ marginTop: 10 }}>
                 {similarCases.map((item, index) => (
                   <li className="list-item" key={`${item.doc_id ?? "doc"}-${index}`}>
                     <strong>{item.title ?? t("未命名案例", "Untitled case")}</strong>
@@ -130,6 +128,82 @@ export default function TicketDetailPage() {
               <p style={{ color: "var(--muted)" }}>{t("暂无相似案例。", "No similar cases.")}</p>
             )}
           </article>
+        </div>
+
+        <div className="detail-col">
+          <article className="card">
+            <h3>{t("事件时间线", "Event Timeline")}</h3>
+            <TicketTimeline events={events} />
+          </article>
+          <article className="card" style={{ marginTop: 12 }}>
+            <h3>{t("核心字段", "Core Fields")}</h3>
+            <ul className="ops-inline-list" style={{ marginTop: 10 }}>
+              <li>{t("队列", "Queue")}: {ticket.queue}</li>
+              <li>{t("处理人", "Assignee")}: {ticket.assignee ?? "-"}</li>
+              <li>{t("渠道", "Channel")}: {ticket.channel}</li>
+              <li>{t("接管状态", "Handoff State")}: {ticket.handoff_state}</li>
+              <li>{t("风险等级", "Risk Level")}: {ticket.risk_level}</li>
+              <li>{t("优先级", "Priority")}: {ticket.priority}</li>
+              <li>{t("状态", "Status")}: {ticket.status}</li>
+            </ul>
+          </article>
+          <article className="card" style={{ marginTop: 12 }}>
+            <h3>{t("定制字段", "Custom Fields")}</h3>
+            {metadataEntries.length > 0 ? (
+              <ul className="ops-inline-list" style={{ marginTop: 10 }}>
+                {metadataEntries.map(([key, value]) => (
+                  <li key={key}>
+                    <strong>{key}</strong>: {toText(value)}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p style={{ color: "var(--muted)" }}>{t("暂无定制字段。", "No custom fields.")}</p>
+            )}
+          </article>
+        </div>
+
+        <div className="detail-col">
+          <article className="card">
+            <h3>{t("Handoff Decision", "Handoff Decision")}</h3>
+            <ul className="ops-inline-list" style={{ marginTop: 10 }}>
+              <li>{t("接管状态", "Handoff State")}: {ticket.handoff_state}</li>
+              <li>{t("风险等级", "Risk Level")}: {ticket.risk_level}</li>
+              <li>
+                {t("最新接管事件", "Latest handoff event")}:{" "}
+                {lastHandoffEvent ? `${lastHandoffEvent.event_type} · ${toText(lastHandoffEvent.created_at)}` : t("无", "none")}
+              </li>
+              <li>{t("接管载荷", "Handoff payload")}: {lastHandoffEvent ? toBriefJson(lastHandoffEvent.payload) : "-"}</li>
+            </ul>
+          </article>
+          <article className="card" style={{ marginTop: 12 }}>
+            <h3>{t("推荐动作", "Recommended Actions")}</h3>
+            {assist?.recommended_actions?.length ? (
+              <ul className="list" style={{ marginTop: 10 }}>
+                {assist.recommended_actions.map((action, index) => (
+                  <li className="list-item" key={`action-${index}`}>
+                    <strong>{toText(action.title ?? action.action)}</strong>
+                    <div style={{ color: "var(--muted)", fontSize: 13 }}>
+                      {toText(action.description ?? action.reason)}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p style={{ color: "var(--muted)" }}>{t("暂无推荐动作。", "No recommended actions available.")}</p>
+            )}
+          </article>
+          <div style={{ marginTop: 12 }}>
+            <TicketActionsPanel
+              ticket={ticket}
+              assignees={assignees}
+              loadingAction={actionLoading}
+              actionError={actionError}
+              onAction={(action: TicketActionType, payload: TicketActionPayload) =>
+                runAction(action, payload)
+              }
+            />
+          </div>
         </div>
       </div>
     </section>

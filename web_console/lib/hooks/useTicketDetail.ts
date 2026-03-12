@@ -77,10 +77,12 @@ export function useTicketDetail(ticketId: string) {
       await runTicketAction(ticketId, action, payload);
       await load();
     } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to execute action";
       setState((previous) => ({
         ...previous,
-        actionError: error instanceof Error ? error.message : "Failed to execute action"
+        actionError: message
       }));
+      throw error instanceof Error ? error : new Error(message);
     } finally {
       setState((previous) => ({ ...previous, actionLoading: null }));
     }

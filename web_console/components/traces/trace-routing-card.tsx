@@ -32,12 +32,15 @@ export function TraceRoutingCard({
         <li className="list-item">
           <strong>{t("接管", "Handoff")}</strong>
           <div style={{ color: "var(--muted)", fontSize: 13 }}>
-            {handoff ? "true" : "false"} · {t("原因", "Reason")}={handoffReason ?? "-"}
+            <span className={`pill ${handoff ? "pill-warning" : "pill-normal"}`}>{handoff ? "true" : "false"}</span> ·{" "}
+            {t("原因", "Reason")}={handoffReason ?? "-"}
           </div>
         </li>
         <li className="list-item">
           <strong>{t("仅错误", "Error Only")}</strong>
-          <div style={{ color: "var(--muted)", fontSize: 13 }}>{errorOnly ? "true" : "false"}</div>
+          <div style={{ color: "var(--muted)", fontSize: 13 }}>
+            <span className={`pill ${errorOnly ? "pill-breached" : "pill-normal"}`}>{errorOnly ? "true" : "false"}</span>
+          </div>
         </li>
         {rows.length === 0 ? (
           <li className="list-item">

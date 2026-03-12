@@ -1,7 +1,8 @@
-const DEFAULT_BASE_URL = "http://127.0.0.1:18082";
+const DEFAULT_BASE_URL = "";
 
 function opsApiBaseUrl() {
-  return process.env.NEXT_PUBLIC_OPS_API_BASE_URL ?? DEFAULT_BASE_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_OPS_API_BASE_URL ?? DEFAULT_BASE_URL;
+  return baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
 }
 
 export class ApiError extends Error {

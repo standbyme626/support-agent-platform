@@ -48,8 +48,19 @@ export default function QueuesPage() {
   );
 
   return (
-    <section>
-      <h2 className="section-title">{t("队列看板", "Queue Board")}</h2>
+    <section className="ops-page-stack">
+      <div className="ops-card-title-row">
+        <h2 className="section-title">{t("队列看板", "Queue Board")}</h2>
+        <button className="btn-ghost" onClick={() => void queues.refetch()} aria-label="refresh_queues">
+          {t("刷新", "Refresh")}
+        </button>
+      </div>
+      <p className="ops-kicker">
+        {t(
+          "按 queue/workload 组织处置能力，聚合队列压力、处理人负载并支持一跳进入工单列表。",
+          "Queue/workload-first operations: pressure, assignee load, and one-click ticket drill-down."
+        )}
+      </p>
       <div className="grid stats">
         <StatCard title={t("待处理", "Open")} value={totals.open} hint={t("待分派", "pending assignment")} href={buildTicketListUrl({ status: "open" })} />
         <StatCard

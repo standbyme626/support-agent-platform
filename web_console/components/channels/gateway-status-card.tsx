@@ -26,6 +26,9 @@ export function GatewayStatusCard({
   return (
     <article className="card">
       <h3>{t("网关状态", "Gateway Status")}</h3>
+      <p className="hint" style={{ marginTop: 8 }}>
+        {t("职责：ingress / session / routing", "Scope: ingress / session / routing")}
+      </p>
       <ul className="list" style={{ marginTop: 10 }}>
         <li className="list-item">
           <div>
@@ -52,6 +55,26 @@ export function GatewayStatusCard({
           <small>{status.log_path}</small>
         </li>
       </ul>
+      {routes.length > 0 ? (
+        <div style={{ marginTop: 10, overflowX: "auto" }}>
+          <table className="table ops-table-tight">
+            <thead>
+              <tr>
+                <th>{t("Channel", "Channel")}</th>
+                <th>{t("Mode", "Mode")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {routes.map((route) => (
+                <tr key={`${route.channel}-${route.mode}`}>
+                  <td>{route.channel}</td>
+                  <td>{route.mode}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
     </article>
   );
 }

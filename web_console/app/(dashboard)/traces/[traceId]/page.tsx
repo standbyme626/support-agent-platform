@@ -49,8 +49,14 @@ export default function TraceDetailPage() {
   }
 
   return (
-    <section>
+    <section className="ops-page-stack">
       <h2 className="section-title">{t("Trace 详情", "Trace Detail")}</h2>
+      <p className="ops-kicker">
+        {t(
+          "自实现 Trace 工作台：route decision / retrieved docs / tool calls / summary / handoff reason。",
+          "Custom trace workspace: route decision / retrieved docs / tool calls / summary / handoff reason."
+        )}
+      </p>
       <article className="card">
         <h3>{data.trace_id}</h3>
         <div style={{ color: "var(--muted)", marginTop: 8 }}>
@@ -82,6 +88,20 @@ export default function TraceDetailPage() {
         />
         <TraceToolCallsCard toolCalls={data.tool_calls} />
         <TraceGroundingCard retrievedDocs={data.retrieved_docs} summary={data.summary} />
+        <article className="card">
+          <h3>{t("Handoff Reason", "Handoff Reason")}</h3>
+          <div style={{ marginTop: 10, color: "var(--muted)", fontSize: 13 }}>
+            {data.handoff ? t("已触发接管。", "Handoff was triggered.") : t("未触发接管。", "No handoff triggered.")}
+          </div>
+          <div style={{ marginTop: 6 }}>
+            <strong>{toText(data.handoff_reason)}</strong>
+          </div>
+          <div style={{ marginTop: 10 }}>
+            <span className={`pill ${data.error_only ? "pill-breached" : "pill-normal"}`}>
+              error_only={data.error_only ? "true" : "false"}
+            </span>
+          </div>
+        </article>
       </div>
 
       <div style={{ marginTop: 12 }}>

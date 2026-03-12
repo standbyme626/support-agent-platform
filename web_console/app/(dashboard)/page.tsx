@@ -1,5 +1,6 @@
 "use client";
 
+import { useGatewayHealth } from "@/lib/hooks/useGatewayHealth";
 import { AssigneeWorkloadCard } from "@/components/queues/assignee-workload-card";
 import { QueueSummaryCard } from "@/components/queues/queue-summary-card";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -27,6 +28,7 @@ export default function DashboardPage() {
   const summary = useDashboardSummary();
   const recentErrors = useDashboardRecentErrors();
   const queueSummary = useQueueSummary();
+  const gateway = useGatewayHealth();
 
   if (summary.loading || recentErrors.loading || queueSummary.loading) {
     return <LoadingState title={t("总览数据同步中。", "Dashboard is syncing.")} />;
@@ -73,10 +75,21 @@ export default function DashboardPage() {
 
   const slaState = determineSlaState(summary.data.sla_warning_count, summary.data.sla_breached_count);
   const totalSlaRisk = summary.data.sla_warning_count + summary.data.sla_breached_count;
+  const traceErrorCount = recentErrors.data.length;
+  const channelConnected = gateway.channelHealth.filter((row) => row.connected).length;
+  const channelTotal = gateway.channelHealth.length;
+  const gatewayStateLabel = gateway.status ? gateway.status.gateway : t("未连接", "disconnected");
+  const gatewayRouteCount = gateway.routes.length;
 
   return (
-    <section>
+    <section className="ops-page-stack">
       <h2 className="section-title">{t("概览", "Overview")}</h2>
+      <p className="ops-kicker">
+        {t(
+          "workflow-first，agent-assisted 运营工作台。聚合 SLA / Trace / Channel 风险并直达处理页面。",
+          "Workflow-first, agent-assisted operations console with SLA / Trace / Channel risk pivots."
+        )}
+      </p>
       <div className="grid stats">
         <StatCard
           title={t("今日新建", "New Today")}
@@ -111,15 +124,48 @@ export default function DashboardPage() {
           href={buildTicketListUrl({ handoff_state: "requested" })}
           state={summary.data.handoff_pending_count > 0 ? "warning" : "normal"}
         />
+        <StatCard
+          title={t("Trace 错误", "Trace Errors")}
+          value={traceErrorCount}
+          hint={t("最近错误事件", "Recent error events")}
+          href="/traces?error_only=true"
+          state={traceErrorCount > 0 ? "warning" : "normal"}
+        />
       </div>
 
       <h2 className="section-title" style={{ marginTop: 20 }}>
-        {t("错误、队列与负载", "Errors, Queue, and Workload")}
+        {t("SLA / Trace / Channel 状态块", "SLA / Trace / Channel Blocks")}
       </h2>
       <div className="grid two-col">
         <article className="card">
+          <h3>{t("SLA 状态块", "SLA Status Block")}</h3>
+          <ul className="list" style={{ marginTop: 10 }}>
+            <li className="list-item">
+              <div className="ops-card-title-row">
+                <strong>{t("预警中", "Warning")}</strong>
+                <span className={`pill ${summary.data.sla_warning_count > 0 ? "pill-warning" : "pill-normal"}`}>
+                  {summary.data.sla_warning_count}
+                </span>
+              </div>
+            </li>
+            <li className="list-item">
+              <div className="ops-card-title-row">
+                <strong>{t("已超时", "Breached")}</strong>
+                <span className={`pill ${summary.data.sla_breached_count > 0 ? "pill-breached" : "pill-normal"}`}>
+                  {summary.data.sla_breached_count}
+                </span>
+              </div>
+            </li>
+            <li className="list-item">
+              <a href={buildTicketListUrl({ sla_state: slaState })} className="ops-muted">
+                {t("打开 SLA 风险列表", "Open SLA risk list")}
+              </a>
+            </li>
+          </ul>
+        </article>
+        <article className="card">
           <h3>{t("近期 Trace 错误", "Recent Trace Errors")}</h3>
-          {recentErrors.data.length === 0 ? (
+          {traceErrorCount === 0 ? (
             <div className="hint" style={{ marginTop: 8 }}>
               {t("暂无近期 Trace 错误。", "No recent trace errors.")}
             </div>
@@ -137,6 +183,43 @@ export default function DashboardPage() {
                   </small>
                 </li>
               ))}
+            </ul>
+          )}
+        </article>
+        <article className="card">
+          <h3>{t("Channel / Gateway 状态块", "Channel / Gateway Block")}</h3>
+          {gateway.loading ? (
+            <p className="hint" style={{ marginTop: 10 }}>
+              {t("渠道指标同步中...", "Syncing channel metrics...")}
+            </p>
+          ) : gateway.error ? (
+            <div className="hint" style={{ marginTop: 10 }}>
+              {gateway.error}
+              <div style={{ marginTop: 8 }}>
+                <button className="btn-ghost" onClick={() => void gateway.refetch()}>
+                  {t("重试", "Retry")}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <ul className="list" style={{ marginTop: 10 }}>
+              <li className="list-item">
+                <strong>{t("Gateway", "Gateway")}</strong>
+                <div className="ops-muted" style={{ fontSize: 13 }}>
+                  {gatewayStateLabel} · {t("路由", "routes")}={gatewayRouteCount}
+                </div>
+              </li>
+              <li className="list-item">
+                <strong>{t("Channel Health", "Channel Health")}</strong>
+                <div className="ops-muted" style={{ fontSize: 13 }}>
+                  {t("已连接", "connected")}={channelConnected}/{channelTotal}
+                </div>
+              </li>
+              <li className="list-item">
+                <a href="/channels" className="ops-muted">
+                  {t("打开 Channels / Gateway 页面", "Open Channels / Gateway page")}
+                </a>
+              </li>
             </ul>
           )}
         </article>

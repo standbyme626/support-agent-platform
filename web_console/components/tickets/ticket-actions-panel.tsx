@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { TicketActionPayload, TicketActionType, TicketItem } from "@/lib/api/tickets";
 import { useI18n } from "@/lib/i18n";
+import { ActionFeedback } from "@/components/shared/action-feedback";
 
 export function TicketActionsPanel({
   ticket,
@@ -37,20 +38,25 @@ export function TicketActionsPanel({
     if (!confirmed) {
       return;
     }
-    await onAction(action, payload);
-    setFeedback(t(`动作 ${action} 已执行。`, `Action ${action} executed.`));
+    setFeedback(null);
+    try {
+      await onAction(action, payload);
+      setFeedback(t(`动作 ${action} 已执行。`, `Action ${action} executed.`));
+    } catch {
+      // Errors are surfaced by actionError from useTicketDetail.
+    }
   }
 
   return (
     <section className="card">
       <h3>{t("动作面板", "Actions Panel")}</h3>
       <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
-        <label style={{ display: "grid", gap: 4 }}>
-          <span style={{ color: "var(--muted)", fontSize: 12 }}>{t("执行人", "Actor")}</span>
+        <label className="ops-label">
+          <span>{t("执行人", "Actor")}</span>
           <select
+            className="ops-select"
             value={actorId}
             onChange={(event) => setActorId(event.target.value)}
-            style={{ height: 36, borderRadius: 8, border: "1px solid var(--border)", padding: "0 10px" }}
           >
             {[...new Set([actorId, ...assignees])].map((assignee) => (
               <option key={assignee} value={assignee}>
@@ -60,55 +66,55 @@ export function TicketActionsPanel({
           </select>
         </label>
 
-        <label style={{ display: "grid", gap: 4 }}>
-          <span style={{ color: "var(--muted)", fontSize: 12 }}>{t("目标队列（改派）", "Target Queue (reassign)")}</span>
+        <label className="ops-label">
+          <span>{t("目标队列（改派）", "Target Queue (reassign)")}</span>
           <input
+            className="ops-input"
             value={targetQueue}
             onChange={(event) => setTargetQueue(event.target.value)}
-            style={{ height: 36, borderRadius: 8, border: "1px solid var(--border)", padding: "0 10px" }}
           />
         </label>
 
-        <label style={{ display: "grid", gap: 4 }}>
-          <span style={{ color: "var(--muted)", fontSize: 12 }}>{t("目标处理人（改派）", "Target Assignee (reassign)")}</span>
+        <label className="ops-label">
+          <span>{t("目标处理人（改派）", "Target Assignee (reassign)")}</span>
           <input
+            className="ops-input"
             value={targetAssignee}
             onChange={(event) => setTargetAssignee(event.target.value)}
-            style={{ height: 36, borderRadius: 8, border: "1px solid var(--border)", padding: "0 10px" }}
           />
         </label>
 
-        <label style={{ display: "grid", gap: 4 }}>
-          <span style={{ color: "var(--muted)", fontSize: 12 }}>{t("备注 / 处理说明", "Note / Resolution")}</span>
+        <label className="ops-label">
+          <span>{t("备注 / 处理说明", "Note / Resolution")}</span>
           <textarea
+            className="ops-textarea"
             value={note}
             onChange={(event) => setNote(event.target.value)}
             rows={3}
-            style={{ borderRadius: 8, border: "1px solid var(--border)", padding: "8px 10px", resize: "vertical" }}
           />
         </label>
 
-        <div style={{ display: "grid", gap: 8, gridTemplateColumns: "1fr 1fr" }}>
-          <label style={{ display: "grid", gap: 4 }}>
-            <span style={{ color: "var(--muted)", fontSize: 12 }}>{t("处理结果代码", "Resolution Code")}</span>
+        <div className="ops-split">
+          <label className="ops-label">
+            <span>{t("处理结果代码", "Resolution Code")}</span>
             <input
+              className="ops-input"
               value={resolutionCode}
               onChange={(event) => setResolutionCode(event.target.value)}
-              style={{ height: 34, borderRadius: 8, border: "1px solid var(--border)", padding: "0 10px" }}
             />
           </label>
-          <label style={{ display: "grid", gap: 4 }}>
-            <span style={{ color: "var(--muted)", fontSize: 12 }}>{t("关闭原因", "Close Reason")}</span>
+          <label className="ops-label">
+            <span>{t("关闭原因", "Close Reason")}</span>
             <input
+              className="ops-input"
               value={closeReason}
               onChange={(event) => setCloseReason(event.target.value)}
-              style={{ height: 34, borderRadius: 8, border: "1px solid var(--border)", padding: "0 10px" }}
             />
           </label>
         </div>
       </div>
 
-      <div style={{ marginTop: 12, display: "grid", gap: 8, gridTemplateColumns: "1fr 1fr" }}>
+      <div className="ops-action-grid">
         <button className="btn-primary" disabled={loadingAction !== null} onClick={() => submit("claim", { actor_id: actorId })}>
           {t("认领", "Claim")}
         </button>
@@ -167,8 +173,11 @@ export function TicketActionsPanel({
           {t(`正在执行 ${loadingAction}...`, `Executing ${loadingAction}...`)}
         </p>
       ) : null}
-      {feedback ? <p style={{ marginTop: 10, color: "var(--ok)" }}>{feedback}</p> : null}
-      {actionError ? <p style={{ marginTop: 10, color: "var(--bad)" }}>{actionError}</p> : null}
+      <ActionFeedback variant="success" message={feedback} />
+      <ActionFeedback
+        variant="error"
+        message={actionError ? t("动作执行失败：", "Action failed: ") + actionError : null}
+      />
     </section>
   );
 }

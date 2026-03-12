@@ -43,8 +43,19 @@ export default function ChannelsPage() {
   }
 
   return (
-    <section>
-      <h2 className="section-title">{t("渠道 / 网关", "Channels / Gateway")}</h2>
+    <section className="ops-page-stack">
+      <div className="ops-card-title-row">
+        <h2 className="section-title">{t("渠道 / 网关", "Channels / Gateway")}</h2>
+        <button className="btn-ghost" onClick={() => void gateway.refetch()} aria-label="refresh_channels">
+          {t("刷新", "Refresh")}
+        </button>
+      </div>
+      <p className="ops-kicker">
+        {t(
+          "仅展示 OpenClaw ingress/session/routing 与 channel health，不承载 CRM/工单业务流程。",
+          "OpenClaw boundary only: ingress/session/routing/channel health, not business CRM workflows."
+        )}
+      </p>
       <div className="grid two-col">
         <GatewayStatusCard status={gateway.status} routes={gateway.routes} />
         <ChannelHealthCard rows={gateway.channelHealth} />

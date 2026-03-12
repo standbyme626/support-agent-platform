@@ -20,12 +20,18 @@ export function AssigneeWorkloadCard({ rows }: { rows: QueueSummaryItem[] }) {
   const totals = computeTotals(rows);
   const perAssignee =
     totals.assigneeCount === 0 ? 0 : Math.round((totals.inProgress / totals.assigneeCount) * 10) / 10;
+  const stateClass = totals.escalated > 0 ? "pill-warning" : "pill-normal";
   return (
     <article className="card">
       <h3>{t("处理人负载", "Assignee Workload")}</h3>
       <div className="value">{perAssignee}</div>
       <div className="hint">
         {t("每位处理人平均处理中", "avg in-progress per assignee")} · {t("已升级", "escalated")} {totals.escalated}
+      </div>
+      <div style={{ marginTop: 10 }}>
+        <span className={`pill ${stateClass}`}>
+          {totals.escalated > 0 ? t("需要人工关注", "needs human attention") : t("负载可控", "workload stable")}
+        </span>
       </div>
     </article>
   );

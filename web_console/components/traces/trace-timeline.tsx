@@ -31,9 +31,9 @@ export function TraceTimeline({ events }: { events: TraceDetailEvent[] }) {
       {events.length === 0 ? (
         <p style={{ color: "var(--muted)", marginTop: 10 }}>{t("暂无 Trace 事件。", "No trace events recorded.")}</p>
       ) : (
-        <ul className="list" style={{ marginTop: 10 }}>
+        <ul className="ops-timeline" style={{ marginTop: 10 }}>
           {events.map((event) => (
-            <li className="list-item" key={event.event_id}>
+            <li className={`ops-timeline-item ${event.event_type.includes("route") ? "is-observable" : ""}`} key={event.event_id}>
               <strong>{event.event_type}</strong>
               <div style={{ color: "var(--muted)", fontSize: 13 }}>
                 {toDateTimeText(event.timestamp, language === "en" ? "en-US" : "zh-CN")} · ticket={event.ticket_id ?? "-"} ·{" "}

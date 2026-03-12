@@ -49,8 +49,12 @@ export function WebhookLogTable({ rows }: { rows: ChannelEventItem[] }) {
                 <tr key={`${row.timestamp ?? "ts"}-${row.trace_id ?? "trace"}-${row.event_type}`}>
                   <td>{toDateTimeText(row.timestamp)}</td>
                   <td>{row.channel}</td>
-                  <td>{row.event_type}</td>
-                  <td>{row.trace_id ?? "-"}</td>
+                  <td>
+                    <span className={`pill ${row.event_type.includes("error") ? "pill-breached" : "pill-normal"}`}>
+                      {row.event_type}
+                    </span>
+                  </td>
+                  <td>{row.trace_id ? <a href={`/traces/${encodeURIComponent(row.trace_id)}`}>{row.trace_id}</a> : "-"}</td>
                   <td>{payloadSummary(row.payload)}</td>
                 </tr>
               ))}
