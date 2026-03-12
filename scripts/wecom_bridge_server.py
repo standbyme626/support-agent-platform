@@ -52,12 +52,12 @@ class _RuntimeLike(Protocol):
 
 
 def process_wecom_message(runtime: _RuntimeLike, payload: dict[str, Any]) -> BridgeResult:
-    text = str(payload.get("text") or "").strip()
-    sender_id = str(payload.get("sender_id") or "").strip()
-    chat_id = str(payload.get("chatid") or sender_id).strip()
-    chat_type = str(payload.get("chattype") or "single").strip().lower()
-    msg_id = str(payload.get("msgid") or "").strip()
-    req_id = str(payload.get("req_id") or msg_id or f"trace-{int(time.time())}").strip()
+    text = _pick_text(payload)
+    sender_id = _pick_string(payload, "sender_id", "FromUserName")
+    chat_id = _pick_string(payload, "chatid", "ChatId") or sender_id
+    chat_type = (_pick_string(payload, "chattype", "ChatType") or "single").lower()
+    msg_id = _pick_string(payload, "msgid", "MsgId")
+    req_id = _pick_string(payload, "req_id", "ReqId", "trace_id") or msg_id or f"trace-{int(time.time())}"
 
     if not text:
         return BridgeResult(handled=True, reply_text="", status="ignored_empty")
@@ -114,6 +114,33 @@ def _compose_session_id(*, sender_id: str, chat_id: str, chat_type: str) -> str:
     if chat_type == "group":
         return f"group:{chat_id}:user:{sender_id}"
     return f"dm:{sender_id}"
+
+
+def _pick_string(payload: dict[str, Any], *keys: str) -> str:
+    for key in keys:
+        value = payload.get(key)
+        if value is None:
+            continue
+        text = str(value).strip()
+        if text:
+            return text
+    return ""
+
+
+def _pick_text(payload: dict[str, Any]) -> str:
+    for key in ("text", "Content"):
+        value = payload.get(key)
+        if isinstance(value, str):
+            text = value.strip()
+            if text:
+                return text
+        if isinstance(value, dict):
+            nested = value.get("content")
+            if nested is not None:
+                text = str(nested).strip()
+                if text:
+                    return text
+    return ""
 
 
 def _build_handler(*, runtime: _RuntimeLike, path: str) -> type[BaseHTTPRequestHandler]:

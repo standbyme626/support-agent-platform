@@ -131,3 +131,44 @@ def test_process_wecom_message_gateway_error_returns_fallback_reply() -> None:
     assert result.status == "error"
     assert result.reply_text == DEFAULT_REPLY_ON_ERROR
     assert runtime.intake_workflow.calls == 0
+
+
+def test_process_wecom_message_accepts_wecom_native_fields() -> None:
+    runtime = _DummyRuntime(
+        gateway=_DummyGateway(
+            {
+                "status": "ok",
+                "inbound": {
+                    "channel": "wecom",
+                    "session_id": "dm:user_native",
+                    "message_text": "原生字段消息",
+                    "metadata": {"inbox": "wecom.default"},
+                },
+            }
+        ),
+        intake_workflow=_DummyIntakeWorkflow(
+            _DummyIntakeResult(
+                reply_text="已处理企业微信原生字段",
+                ticket_id="TICKET-202",
+                ticket_action="faq_reply",
+            )
+        ),
+    )
+
+    result = process_wecom_message(
+        runtime,
+        {
+            "MsgId": "mid-native-1",
+            "FromUserName": "user_native",
+            "Content": "原生字段消息",
+            "ReqId": "req-native-1",
+        },
+    )
+
+    assert result.handled is True
+    assert result.status == "ok"
+    assert result.reply_text == "已处理企业微信原生字段"
+    assert runtime.intake_workflow.calls == 1
+    assert runtime.gateway.calls[0][1]["FromUserName"] == "user_native"
+    assert runtime.gateway.calls[0][1]["Content"] == "原生字段消息"
+    assert runtime.gateway.calls[0][1]["MsgId"] == "mid-native-1"
