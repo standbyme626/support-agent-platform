@@ -1,36 +1,37 @@
-# web_console (升级2 Ops Console)
+# web_console
 
-本目录是升级2 Ops Console 的前端工程。
+**版本：v0.3.0（2026-03-12）**
 
-当前状态：
+`web_console` 是 `support-agent-platform` 的前端工作台（Workflow 3）。
 
-- A~H 全组已完成：Dashboard、Tickets、Ticket Detail、Timeline、Traces、Queues、KB、Channels/Gateway。
-- 页面三态统一：Loading / Empty / Error。
-- Ticket 动作链已闭环：`claim -> reassign/escalate -> resolve -> close`，并修复动作失败场景的反馈准确性。
-- Ticket List/Detail 已补齐升级2要求的核心定制字段可见性与可筛选性（`service_type/community_name/building/parking_lot/approval_required`）。
-- Trace 详情已覆盖：route decision、tool calls、grounding docs、summary、handoff、latency。
-- Queue 支持按队列跳转 Ticket List 过滤视图。
-- KB 支持 `faq/sop/history_case` 的 CRUD。
-- Channels 页面支持 gateway status、channel health、webhook events 展示。
-- Ticket List / Traces / Queues / Channels 均已提供显式刷新按钮。
-- 已新增统一反馈组件 `components/shared/action-feedback.tsx`，用于成功/失败提示样式收敛。
-- 已补前端最小 e2e 流程用例：`tests/e2e/upgrade2-minimal-flow.test.tsx`（Ticket 动作链、Trace drill-down、KB CRUD、Channels 观测）。
+## 作用
 
-## 目录入口
+1. 展示 Dashboard、Tickets、Traces、Queues、KB、Channels。
+2. 通过 `/api/*` 与后端联调，执行 claim/reassign/escalate/resolve/close。
+3. 展示 trace、grounding、审批待办等运营与协同信息。
 
-- 路由层：`app/(dashboard)/**`
-- 组件层：`components/{tickets,traces,queues,channels,kb,shared}`
-- API 客户端：`lib/api/**`
-- 页面/组件测试：`tests/**`
+## 技术栈
+
+- Next.js 15
+- React 19
+- TypeScript
+- Vitest
 
 ## 常用命令
 
-- `npm run lint`
-- `npm run typecheck`
-- `npm test`
+```bash
+npm install
+npm run dev
+npm run lint
+npm run typecheck
+npm run test
+```
 
-## 关联文档
+## 说明
 
-- [`../升级2.md`](../升级2.md)
-- [`../升级2-实施要求与验收测试规范.md`](../升级2-实施要求与验收测试规范.md)
-- [`../升级2-任务分解与执行清单-A1-H4.md`](../升级2-任务分解与执行清单-A1-H4.md)
+前端页面与后端能力边界说明统一在根目录文档：
+
+- `../README.md`
+- `../ARCHITECTURE.md`
+- `../RUNBOOK.md`
+- `../EVAL.md`

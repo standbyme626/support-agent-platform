@@ -1,173 +1,257 @@
 # support-agent-platform
 
-`support-agent-platform` 是一个以工单为核心的 `workflow-first, agent-assisted` 客服协同平台：
+**版本：v0.3.0（2026-03-12）**
 
-- `workflow-first`：建单、分派、升级、关闭、SLA、handoff 由确定性流程控制。
-- `agent-assisted`：意图分类、检索、摘要、推荐动作由 Agent/LLM 增强。
-- OpenClaw 只负责 `ingress/session/routing`，不承载业务规则。
-- 升级2已交付 `web_console/` Ops Console，形成页面 + API 联调闭环。
+`support-agent-platform` 是一个面向内部服务台场景的 **workflow-first, agent-assisted** 工单平台：
+主干由可审计工作流驱动，Agent 能力嵌入关键节点做增强，而不是放任自治决策。
 
-## 升级现状
+## 一句话定位
 
-- 已完成 ticket 生命周期增强：`inbox`、`lifecycle_stage`、SLA 截止时间、`resolved/closed/escalated` 时间戳与 `resolution_note`。
-- 已完成协同命令增强：`/claim /reassign /escalate /resolve /close`。
-- OpenClaw 仍只做接入与路由，不承载业务规则。
-- 参考仓统一放在 `refs/`，仅用于对照阅读，不参与运行与提交流程。
+一个把“多渠道报修入口、工单流转、协同处理、运营工作台、AI辅助”收敛到同一套 ticket core 的内部支持平台。
 
-### 升级2（A1~H4）状态
+## 解决的业务问题
 
-- 已完成 8 个目标页面：Dashboard、Tickets、Ticket Detail、Timeline、Traces、Queues、KB、Channels/Gateway。
-- 已完成升级2页面对应 `/api/*` 联调与错误语义统一（`code/message/request_id`）。
-- 已完成升级2收口项（P0/P1/P2）：
-  - P0：修复 Ticket 动作反馈准确性（失败不再显示成功）并补充对应测试；补齐前端最小 e2e 场景（Ticket 动作链、Trace drill-down、KB CRUD、Channels 观测）。
-  - P1：补齐 Ticket List/Detail 的定制字段可见性与可筛选性；为 Ticket List、Trace、Queue、Channels 增加显式刷新入口。
-  - P2：新增统一反馈组件 `ActionFeedback`，统一成功/失败提示样式与语义（已在 Ticket / KB 场景接入）。
-- 前端质量闸门（`web_console`）：`lint`、`typecheck`、`vitest` 均通过；当前测试为 `33/33` 通过（含 `tests/e2e/upgrade2-minimal-flow.test.tsx`）。
-- 实施与验收详见：
-  - [`升级2.md`](./升级2.md)
-  - [`升级2-实施要求与验收测试规范.md`](./升级2-实施要求与验收测试规范.md)
-  - [`升级2-任务分解与执行清单-A1-H4.md`](./升级2-任务分解与执行清单-A1-H4.md)
+这个系统针对以下高频痛点设计：
+
+1. 消息入口分散：企业微信/内部渠道消息进入后，难统一到一个可追踪工单主线。
+2. 处理过程不透明：谁认领、谁转派、为何升级、是否超 SLA，缺少统一视图。
+3. 重复判断成本高：相同问题反复人工检索 FAQ/SOP/历史案例，效率低。
+4. 用户追问难恢复上下文：多轮沟通后难快速回放已发生动作与证据来源。
+5. 内部协同链条割裂：处理群、工单系统、前端工作台之间状态不一致。
+
+## 面向角色
+
+- 员工/内部用户：发起报修、咨询、投诉，获得回执。
+- 一线处理人员：认领、转派、升级、解决、关闭工单。
+- 值班/主管：监控队列、SLA风险、审批高风险动作。
+- 运维/平台工程：排查网关链路、trace、replay、可靠性指标。
+
+## 为什么是 Workflow-First, Agent-Assisted
+
+- 不是纯工作流：分类、摘要、检索、推荐动作、运营问答、协同问答等节点引入 Agent 能力，提高处理质量与速度。
+- 不是完全自治 Agent：工单生命周期、SLA、handoff、resolve/close、审批是高约束流程，必须可控、可审计、可恢复。
+- 设计选择：**确定性流程控制高风险动作，Agent 负责认知增强与建议生成**。
+
+## 为什么 OpenClaw 只做 ingress/session/routing
+
+OpenClaw 在本项目中是入口层，不是业务规则层。
+
+- 负责：渠道接入、会话绑定、路由、回发、签名与重放防护、重试观测。
+- 不负责：ticket 生命周期决策、SLA判定、handoff规则、审批策略。
+- 业务主干落在：`core/` + `workflows/` + `scripts/ops_api_server.py`。
+
+这条边界在代码中是硬约束（见 `openclaw_adapter/gateway.py` 注释与实现）。
+
+## 系统总览
+
+### 图1：系统总架构图
+
+说明：企业微信/内部消息入口先进入 OpenClaw Gateway，再进入三个工作流；三条工作流共享同一套 ticket/case core，并复用 retrieval、llm、trace、hitl 能力；Web Console 通过 Ops API 参与处理。
+
+```mermaid
+flowchart LR
+    A[企业微信 / 内部消息入口] --> B[OpenClaw Gateway\ningress/session/routing]
+
+    B --> C1[Workflow 1\n员工请求入口]
+    B --> C2[Workflow 2\n处理人员协同]
+    B --> C3[Workflow 3\n前端工作台处理]
+
+    C1 --> D[ticket/case core]
+    C2 --> D
+    C3 --> D
+
+    D --> E1[retrieval\nlexical/vector/hybrid]
+    D --> E2[llm\nprompt registry + fallback]
+    D --> E3[trace\n链路与审计]
+    D --> E4[hitl\napproval runtime]
+
+    F[web_console\nNext.js Ops Console] <--> G[Ops API\nscripts/ops_api_server.py]
+    G <--> D
+```
+
+## 三个工作流
+
+### Workflow 1：员工请求入口工作流（Support Intake）
+
+- 目标：把入口消息转成可追踪 ticket，并输出可执行回复。
+- 角色：员工/内部用户。
+- 输入：渠道消息（报修/咨询/投诉等）。
+- 输出：FAQ直答或建单回执；必要时触发 handoff 与协同推送。
+- 状态：`open/pending/handoff/escalated/resolved/closed`（ticket.status）+ `pending_claim/pending_approval/...`（handoff_state）。
+- 页面支持：Dashboard、Tickets、Ticket Detail、Timeline。
+- API支持：入口为渠道 webhook -> OpenClaw -> `SupportIntakeWorkflow`；工单查询通过 `/api/tickets`、`/api/tickets/{id}`、`/api/tickets/{id}/events`。
+
+### Workflow 2：处理人员协同工作流（Case Collaboration）
+
+- 目标：让处理人员在协同场景下完成认领/转派/升级/解决/关闭。
+- 角色：客服、维修、值班同学。
+- 输入：`/claim /reassign /escalate /resolve /close /state`。
+- 输出：工单状态更新、审批挂起或恢复、事件审计。
+- 状态：`pending_claim`、`claimed`、`waiting_customer`、`waiting_internal`、`pending_approval`、`escalated`、`resolved`、`closed`、`completed`。
+- 页面支持：Queues、Tickets、Ticket Detail、Channels。
+- API支持：`POST /api/tickets/{id}/claim|reassign|escalate|resolve|close`，`GET /api/approvals/pending`，`POST /api/approvals/{id}/approve|reject`。
+
+### Workflow 3：前端工作台处理工作流（Ops Console）
+
+- 目标：在统一工作台完成正式处理、监控与知识维护。
+- 角色：客服、运营、主管。
+- 输入：页面动作（筛选、查看、处理、审批、KB CRUD、trace drill-down）。
+- 输出：处理结果、队列监控、知识更新、链路解释。
+- 状态：与 ticket/status + handoff_state 同步。
+- 页面支持：Dashboard、Tickets、Ticket Detail、Traces、Queues、KB、Channels。
+- API支持：`/api/dashboard/*`、`/api/tickets*`、`/api/traces*`、`/api/queues*`、`/api/kb*`、`/api/channels*`、`/api/openclaw*`、`/api/copilot/*`。
+
+## 四个 Agent
+
+> 这里的 “Agent” 指“具备上下文理解 + 工具编排/检索 + 输出建议 + trace可追踪”的能力单元，不是简单 if/else 函数。
+
+### 1) Intake Agent
+
+- 目标：完成入口理解、检索与建单建议。
+- 位置：`workflows/support_intake_workflow.py` + `core/workflow_engine.py`。
+- 主要工具：`IntentRouter`、`Retriever`、`SummaryEngine`、`TicketAPI`、`ToolRouter`。
+- 输入输出：入口消息 -> ticket/reply/recommendations/handoff decision。
+- 边界：不直接绕过工单规则做高风险终态动作。
+
+### 2) Case Copilot Agent
+
+- 目标：为单工单提供摘要、推荐动作、相似案例、grounding。
+- 位置：`/api/tickets/{id}/assist`、`/similar-cases`、`/grounding-sources`。
+- 主要工具：`SummaryEngine`、`Retriever`、`RecommendedActionsEngine`。
+- 输入输出：ticket + events -> assist payload + llm trace。
+- 边界：输出建议，不直接执行敏感动作。
+
+### 3) Operator / Supervisor Agent
+
+- 目标：回答运营视角问题（队列压力、SLA风险、优先级建议）。
+- 位置：`/api/copilot/operator/query`、`/api/copilot/queue/query`。
+- 主要工具：队列聚合、dashboard summary、grounding 检索。
+- 输入输出：运营问题 -> 风险与优先处理建议。
+- 边界：当前实现为规则化回答 + grounding（`llm_trace.provider=fallback`），不直接改写工单。
+
+### 4) Dispatch / Collaboration Agent
+
+- 目标：支持协同调度问答与内部分配建议。
+- 位置：`/api/copilot/dispatch/query` + `CaseCollabWorkflow`。
+- 主要工具：队列汇总、风险排序、协同命令处理。
+- 输入输出：调度问题/命令 -> 优先队列建议/状态更新。
+- 边界：高风险动作仍走审批闸门。
+
+## 技术栈（以代码为准）
+
+### 后端
+
+- Python 3.11+（已接入）
+- API层：`http.server` + `ThreadingHTTPServer`（已接入，当前不是 FastAPI）
+- 配置：TOML + `.env` + secrets loader（已接入）
+- 存储：SQLite + repository/migrations（已接入）
+
+### AI 与检索
+
+- LLM provider：OpenAI-compatible provider + fallback router（已接入）
+- Prompt Registry：`prompt_key/prompt_version/scenario/expected_schema`（已接入）
+- LLM trace：provider/model/prompt_version/latency/retry/token_usage（已接入）
+- Retrieval：lexical/vector/hybrid + rerank + source attribution（已接入）
+
+### 接入与网关
+
+- OpenClaw adapter：ingress/session/routing（已接入）
+- signature/replay guard/retry observability（已接入）
+- WeCom bridge server（已接入）
+
+### 前端
+
+- `web_console`：Next.js 15 + React 19 + TypeScript + Vitest（已接入）
+
+### 测试与CI
+
+- Python：pytest + ruff + mypy + Make quality gates（已接入）
+- Frontend：eslint + tsc + vitest（已接入）
+- CI：GitHub Actions（quality + container smoke + acceptance）（已接入）
 
 ## 快速启动
 
-1. 环境要求
-   - Python 3.11+
-2. 安装依赖
-   - `cd support-agent-platform`
-   - `python -m venv .venv`
-   - `source .venv/bin/activate`
-   - `pip install -e ".[dev]"`
-3. 配置环境变量
-   - `cp .env.example .env`
-   - `export SUPPORT_AGENT_ENV=dev`
-   - 可选：`export SUPPORT_AGENT_SQLITE_PATH=/absolute/path/tickets.db`
-   - LLM（业务层）使用 OpenAI 兼容接口，可通过 `.env` 直接切换：
-     - `OPENAI_BASE_URL=http://100.90.236.32:11434/v1`
-     - `OPENAI_MODEL=qwen3.5:9b`
-     - `OPENAI_API_KEY=ollama-local`
-   - 设计边界不变：OpenClaw 只负责 ingress/session/routing，LLM 推理在项目后端执行。
-4. 执行质量闸门
-   - `make check`
-   - `make ci`
-5. 运行常用运维脚本
-   - `python scripts/healthcheck.py --env dev`
-   - `python scripts/gateway_status.py --env dev`
-   - `python scripts/replay_gateway_event.py --env dev --channel telegram --session-id demo-001 --text "设备故障需要处理" --trace-id trace_demo_001`
-   - `python scripts/trace_debug.py --env dev --trace-id trace_demo_001 --limit 20`
-   - `python -m scripts.deploy_release --env dev`
-   - `python -m scripts.verify_release --env dev --require-active-release`
-   - `python -m scripts.rollback_release --env dev`
-   - `python -m scripts.run_acceptance --env dev`
-   - `python -m scripts.trace_kpi --env dev --output storage/acceptance/trace_kpi_from_log.json`
-   - 企业微信桥接服务（让 OpenClaw 仅做 ingress/routing）：
-     - `python -m scripts.wecom_bridge_server --env dev --host 127.0.0.1 --port 18081`
-     - `openclaw --profile support-agent-wecom config set channels.wecom.bridgeUrl "http://127.0.0.1:18081/wecom/process"`
-     - 重启 OpenClaw profile 后生效
+### 1) 后端环境
 
-## 目录结构
+```bash
+cd support-agent-platform
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+cp .env.example .env
+export SUPPORT_AGENT_ENV=dev
+```
 
-- `openclaw_adapter/`：OpenClaw 接入层（入口标准化、session 映射、渠道路由、回发）。
-- `channel_adapters/`：`feishu/telegram/wecom` 渠道适配器。
-- `workflows/`：两条业务工作流（Support Intake、Case Collaboration）。
-- `core/`：业务核心引擎（intent/tool/ticket/summary/handoff/SLA/trace）。
-- `tools/`：工单相关工具函数（create/assign/escalate/close/search）。
-- `storage/`：SQLite 仓储、迁移脚本、日志与本地数据。
-- `scripts/`：运维与调试脚本（health/status/replay/trace）。
-- `tests/`：`unit/integration/workflow/regression` 四层测试。
-- `seed_data/`：KB 文档与 SLA 规则样本。
-- `web_console/`：升级2前端 Ops Console（页面、组件、API 客户端、前端测试）。
-- `refs/`：外部参考仓（只读对照，不纳入提交）。
+### 2) 启动 Ops API
 
-## 运行命令
+```bash
+python -m scripts.ops_api_server --env dev --host 127.0.0.1 --port 18082
+```
 
-- `make format`：格式化代码。
-- `make lint`：静态检查（ruff）。
-- `make typecheck`：类型检查（mypy）。
-- `make test`：运行所有测试（pytest）。
-- `make test-unit`：运行单元测试。
-- `make test-workflow`：运行工作流测试。
-- `make test-regression`：运行回归测试。
-- `make test-integration`：运行集成测试。
-- `make smoke-replay`：运行入口回放烟雾测试。
-- `make acceptance`：运行固定样本自动验收并产出 `storage/acceptance` 报告。
-- `make acceptance-gate`：独立执行 acceptance + trace-kpi（不强耦合 `make check`）。
-- `make trace-kpi`：从 trace 日志计算链路 KPI 并写入文件。
-- `make ci`：CI 同步质量闸门（validate + lint + typecheck + unit + workflow + regression + integration + smoke）。
-- `make container-smoke`：在容器内执行 smoke replay（`docker compose run --rm smoke`）。
-- `make deploy-release ENV=dev`：执行发布前检查并生成可回滚快照。
-- `make verify-release ENV=dev`：执行发布后验证（健康检查 + 网关状态 + release state）。
-- `make rollback-release ENV=dev`：按快照回滚最近一次发布。
-- `make release-cycle ENV=dev`：一条命令执行 `deploy -> verify -> rollback`。
-- `make validate-structure`：校验目录与关键文件结构。
-- `make check`：完整质量闸门（validate + lint + typecheck + unit + workflow + regression + integration + smoke）。
-- 若本地存在 `refs/` 参考仓，建议对本仓代码做路径限定 lint：  
-  `python -m ruff check core storage workflows channel_adapters openclaw_adapter tests`
+### 3) 启动企业微信 bridge（可选）
+
+```bash
+python -m scripts.wecom_bridge_server --env dev --host 127.0.0.1 --port 18081
+```
+
+### 4) 启动前端
+
+```bash
+cd web_console
+npm install
+npm run dev
+```
+
+## 主要目录说明
+
+- `core/`：ticket lifecycle、intent/tool/handoff/sla/recommendation、trace、hitl。
+- `workflows/`：`SupportIntakeWorkflow`、`CaseCollabWorkflow`、链路组合。
+- `llm/`：provider、fallback、prompt registry、eval。
+- `openclaw_adapter/`：gateway、session mapper、signature/replay/retry、channel routing。
+- `scripts/`：ops api、bridge、replay、trace debug、acceptance/release 脚本。
+- `storage/`：SQLite 模型、仓储、迁移与产物目录。
+- `tests/`：unit/workflow/integration/regression。
+- `web_console/`：Ops Console 页面、组件、API 客户端、前端测试。
+- `seed_data/`：FAQ/SOP/history_case、SLA规则、acceptance样本。
+
+## 关键页面
+
+- `/`：Dashboard（运营概览）
+- `/tickets`：工单列表
+- `/tickets/[ticketId]`：工单详情 + 时间线 + AI Assist
+- `/traces`：链路列表
+- `/traces/[traceId]`：链路详情
+- `/queues`：队列视图
+- `/kb/faq`、`/kb/sop`、`/kb/cases`：知识库管理
+- `/channels`：渠道与 OpenClaw 可靠性观察
+
+## 演示链路（员工报修 -> 建单 -> 协同 -> 前端处理 -> 进度查询）
+
+1. 员工报修：
+   `python scripts/replay_gateway_event.py --env dev --channel wecom --session-id demo-u1 --text "停车场抬杆故障" --trace-id trace_demo_u1`
+2. 建单确认：
+   `curl "http://127.0.0.1:18082/api/tickets?page=1&page_size=20"`
+3. 协同处理：
+   `POST /api/tickets/{ticket_id}/claim` -> `.../escalate`（会触发审批挂起）
+4. 前端处理：
+   在 `web_console` 打开 Ticket Detail、Queues、Approvals 完成审批与动作。
+5. 进度查询：
+   使用 `GET /api/tickets/{ticket_id}` / `/events` 查看状态演进；
+   员工侧二次追问目前走同会话回执与工单上下文处理（专用“进度问答意图路由”仍在规划外）。
+
+## 当前版本能力边界（明确不做）
+
+1. 不做 fully autonomous multi-agent planner。
+2. 不让 OpenClaw 承载 ticket 业务决策。
+3. 不提供多租户/RBAC/复杂组织权限体系。
+4. 不提供分布式多写存储（当前为 SQLite 单实例形态）。
+5. 不承诺“员工进度查询”独立意图 API（当前以工单详情与会话回执组合实现）。
 
 ## 文档索引
 
-- [PROJECT_SCOPE.md](./PROJECT_SCOPE.md)：项目定位、边界和禁止项。
-- [ARCHITECTURE.md](./ARCHITECTURE.md)：系统边界、模块关系、关键时序。
-- [RUNBOOK.md](./RUNBOOK.md)：运维脚本与故障排查。
-- [EVAL.md](./EVAL.md)：验收指标、测试覆盖、演示观察点、风险边界。
-- [ACCEPTANCE_CHECKLIST.md](./ACCEPTANCE_CHECKLIST.md)：MVP 验收清单（Z1）。
-- [DEMO_SCRIPT.md](./DEMO_SCRIPT.md)：可复现演示脚本（Z2）。
-- [ROADMAP.md](./ROADMAP.md)：后续迭代路线图（Z3）。
-- [升级2.md](./升级2.md)：升级2页面与API蓝图。
-- [升级2-实施要求与验收测试规范.md](./升级2-实施要求与验收测试规范.md)：升级2执行约束、验收与测试标准。
-- [升级2-任务分解与执行清单-A1-H4.md](./升级2-任务分解与执行清单-A1-H4.md)：升级2文件级任务分解与完成记录。
-
-## 常见问题
-
-### 1) 报错 `Config file not found`
-
-- 确认 `SUPPORT_AGENT_ENV` 为 `dev` 或 `prod`。
-- 确认 `config/environments/<env>.toml` 存在。
-
-### 2) `sqlite` 文件路径不符合预期
-
-- 通过 `SUPPORT_AGENT_SQLITE_PATH` 覆盖默认路径。
-- 用 `python scripts/healthcheck.py --env dev` 查看当前生效路径。
-
-### 3) 为什么 OpenClaw 没有业务规则
-
-- 这是设计约束。OpenClaw 仅做接入与路由，业务决策在 `core/` 与 `workflows/`。
-
-### 4) 如何切换 LLM 节点或模型
-
-- 只改 `.env`（或系统环境变量）即可，无需修改 workflow 代码：
-  - `OPENAI_BASE_URL`：模型网关地址（支持本地 Ollama 与云端 OpenAI-compatible）。
-  - `OPENAI_MODEL`：模型名（例如 `qwen3.5:9b`）。
-  - `LLM_STREAM`：是否启用流式（当前默认 `false`）。
-
-### 5) 企业微信为什么不再走 OpenClaw 内置 Agent
-
-- 当 `channels.wecom.bridgeUrl` 被配置后，企业微信插件会把消息转发到本项目 bridge。
-- bridge 在本仓库内执行 `SupportIntakeWorkflow`（含 LLM/RAG/工单规则）。
-- OpenClaw 仍只承担渠道接入、session、routing。
-
-### 6) 为什么没有前端后台
-
-- 升级1阶段以前端不在范围内；升级2已新增 `web_console/` 作为 Ops Console 前端。
-
-### 7) 为什么 `make lint` 会扫到 `refs/` 报错
-
-- `refs/` 是第三方参考代码，不受本仓编码规范约束。
-- 提交前请使用路径限定 lint，仅检查本仓业务代码目录。
-
-## 容器与 CI
-
-- 本地容器 smoke（干净环境）：
-  - `docker compose run --rm smoke`
-- CI 定义：
-  - `.github/workflows/ci.yml` 包含 `quality`、`smoke-container`、`acceptance` 三个阶段。
-  - `acceptance` 为独立 job，不强耦合 `check` 目标。
-
-## 发布与回滚
-
-- 推荐命令链（dev）：
-  - `make release-cycle ENV=dev`
-- 分步执行（dev）：
-  - `make deploy-release ENV=dev`
-  - `make verify-release ENV=dev`
-  - `make rollback-release ENV=dev`
-- 当发布/验证失败时，脚本会输出 `commands` 与 `diagnostics` 字段，可直接复制复现排障。
+- [ARCHITECTURE.md](./ARCHITECTURE.md)
+- [RUNBOOK.md](./RUNBOOK.md)
+- [EVAL.md](./EVAL.md)
+- [CHANGELOG.md](./CHANGELOG.md)
+- [RELEASE_NOTES.md](./RELEASE_NOTES.md)
+- [UPGRADE3_FINAL.md](./UPGRADE3_FINAL.md)

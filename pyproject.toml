@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "support-agent-platform"
-version = "0.1.0"
+version = "0.3.0"
 description = "Workflow-first support ticket platform ingress foundation"
 requires-python = ">=3.11"
 dependencies = [

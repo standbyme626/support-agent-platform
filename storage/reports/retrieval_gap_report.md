@@ -1,6 +1,6 @@
 # Retrieval Gap Report
 
-- generated_at: 2026-03-12T11:43:10.359988+00:00
+- generated_at: 2026-03-12T15:04:47.429711+00:00
 - sample_count: 12
 - lexical_top3_hit_rate: 0.25
 - vector_top3_hit_rate: 0.5
