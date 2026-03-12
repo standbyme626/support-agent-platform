@@ -14,6 +14,9 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from config import AppConfig, load_app_config
+from core.hitl.approval_policy import ApprovalPolicy
+from core.hitl.approval_runtime import ApprovalRuntime
+from core.hitl.handoff_context import build_approval_context
 from core.intent_router import IntentDecision
 from core.recommended_actions_engine import RecommendedActionsEngine
 from core.retrieval.source_attribution import build_source_payloads
@@ -38,9 +41,11 @@ TICKET_EVENTS_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/events$")
 TICKET_ASSIST_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/assist$")
 TICKET_SIMILAR_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/similar-cases$")
 TICKET_GROUNDING_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/grounding-sources$")
+TICKET_PENDING_ACTIONS_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/pending-actions$")
 TICKET_ACTION_RE = re.compile(
     r"^/api/tickets/(?P<ticket_id>[^/]+)/(claim|reassign|escalate|resolve|close)$"
 )
+APPROVAL_ACTION_RE = re.compile(r"^/api/approvals/(?P<approval_id>[^/]+)/(approve|reject)$")
 TRACE_DETAIL_RE = re.compile(r"^/api/traces/(?P<trace_id>[^/]+)$")
 KB_DOC_RE = re.compile(r"^/api/kb/(?P<doc_id>[^/]+)$")
 
@@ -55,6 +60,7 @@ class OpsApiRuntime:
     retriever: Retriever
     summary_engine: SummaryEngine
     recommendation_engine: RecommendedActionsEngine
+    approval_runtime: ApprovalRuntime
     kb_store_path: Path
 
 
@@ -85,6 +91,11 @@ def build_runtime(environment: str | None) -> OpsApiRuntime:
     retriever = Retriever(_seed_root())
     summary_engine = SummaryEngine(model_adapter=build_summary_model_adapter(app_config.llm))
     recommendation_engine = RecommendedActionsEngine()
+    approval_runtime = ApprovalRuntime(
+        ticket_api=ticket_api,
+        policy=ApprovalPolicy.default(),
+        trace_logger=bindings.trace_logger,
+    )
 
     kb_store_path = _default_kb_store_path(app_config)
     if not kb_store_path.exists():
@@ -99,6 +110,7 @@ def build_runtime(environment: str | None) -> OpsApiRuntime:
         retriever=retriever,
         summary_engine=summary_engine,
         recommendation_engine=recommendation_engine,
+        approval_runtime=approval_runtime,
         kb_store_path=kb_store_path,
     )
 
@@ -729,6 +741,36 @@ def _resolve_action(
     if not actor_id:
         raise ValueError("actor_id is required")
 
+    action_payload = dict(body)
+    action_payload["actor_id"] = actor_id
+    maybe_trace_id = str(body.get("trace_id") or "").strip() or None
+    approval_result = runtime.approval_runtime.request_approval_if_needed(
+        ticket_id=ticket_id,
+        action_type=action,
+        actor_id=actor_id,
+        payload=action_payload,
+        context=build_approval_context(
+            ticket=runtime.ticket_api.require_ticket(ticket_id),
+            action_type=action,
+            payload=action_payload,
+        ),
+        timeout_minutes=(
+            int(body["timeout_minutes"]) if isinstance(body.get("timeout_minutes"), int) else None
+        ),
+        trace_id=maybe_trace_id,
+    )
+    if approval_result.requires_approval and approval_result.pending_action is not None:
+        ticket_payload = _ticket_to_dict(approval_result.ticket)
+        ticket_payload.update(
+            {
+                "approval_required": True,
+                "approval_id": approval_result.pending_action.approval_id,
+                "approval_status": approval_result.pending_action.status,
+                "approval_action_type": approval_result.pending_action.action_type,
+            }
+        )
+        return ticket_payload
+
     if action == "claim":
         ticket = runtime.ticket_api.assign_ticket(ticket_id, assignee=actor_id, actor_id=actor_id)
     elif action == "reassign":
@@ -777,7 +819,78 @@ def _resolve_action(
     else:
         raise ValueError(f"unsupported action: {action}")
 
-    return _ticket_to_dict(ticket)
+    payload = _ticket_to_dict(ticket)
+    payload["approval_required"] = False
+    return payload
+
+
+def _execute_action_without_approval(
+    runtime: OpsApiRuntime, *, ticket_id: str, action: str, payload: dict[str, Any]
+) -> Ticket:
+    actor_id = str(payload.get("actor_id") or "").strip()
+    if not actor_id:
+        raise ValueError("actor_id is required")
+    if action == "claim":
+        return runtime.ticket_api.assign_ticket(ticket_id, assignee=actor_id, actor_id=actor_id)
+    if action == "reassign":
+        target_queue = str(payload.get("target_queue") or "").strip()
+        target_assignee = str(payload.get("target_assignee") or "").strip()
+        updates: dict[str, Any] = {}
+        if target_queue:
+            updates["queue"] = target_queue
+        if updates:
+            runtime.ticket_api.update_ticket(ticket_id, updates, actor_id=actor_id)
+        ticket = (
+            runtime.ticket_api.assign_ticket(ticket_id, assignee=target_assignee, actor_id=actor_id)
+            if target_assignee
+            else runtime.ticket_api.require_ticket(ticket_id)
+        )
+        runtime.ticket_api.add_event(
+            ticket_id,
+            event_type="ticket_reassign_requested",
+            actor_type="agent",
+            actor_id=actor_id,
+            payload={
+                "target_queue": target_queue,
+                "target_assignee": target_assignee,
+                "requested_via": "approval_runtime",
+            },
+        )
+        return ticket
+    if action == "escalate":
+        note = str(payload.get("note") or "升级处理")
+        return runtime.ticket_api.escalate_ticket(ticket_id, actor_id=actor_id, reason=note)
+    if action == "resolve":
+        resolution_note = str(payload.get("resolution_note") or "已处理")
+        resolution_code = str(payload.get("resolution_code") or "") or None
+        return runtime.ticket_api.resolve_ticket(
+            ticket_id,
+            actor_id=actor_id,
+            resolution_note=resolution_note,
+            resolution_code=resolution_code,
+        )
+    if action == "close":
+        resolution_note = str(
+            payload.get("resolution_note") or payload.get("close_reason") or "已关闭"
+        )
+        return runtime.ticket_api.close_ticket(
+            ticket_id,
+            actor_id=actor_id,
+            resolution_note=resolution_note,
+            close_reason=str(payload.get("close_reason") or "agent_close"),
+            resolution_code=(
+                str(payload.get("resolution_code")) if payload.get("resolution_code") else None
+            ),
+        )
+    raise ValueError(f"unsupported action: {action}")
+
+
+def _pending_action_to_dict(item: Any) -> dict[str, Any]:
+    if hasattr(item, "as_dict"):
+        return dict(item.as_dict())
+    if isinstance(item, dict):
+        return dict(item)
+    return {}
 
 
 def handle_api_request(
@@ -833,6 +946,16 @@ def handle_api_request(
         if method == "GET" and (match := TICKET_EVENTS_RE.match(path)):
             ticket_id = match.group("ticket_id")
             return _json_response(req_id, {"items": _ticket_timeline_events(runtime, ticket_id)})
+
+        if method == "GET" and (match := TICKET_PENDING_ACTIONS_RE.match(path)):
+            ticket_id = match.group("ticket_id")
+            actions = runtime.approval_runtime.list_ticket_actions(ticket_id)
+            return _json_response(
+                req_id,
+                {
+                    "items": [_pending_action_to_dict(item) for item in actions],
+                },
+            )
 
         if method == "GET" and (match := TICKET_ASSIST_RE.match(path)):
             ticket_id = match.group("ticket_id")
@@ -948,11 +1071,79 @@ def handle_api_request(
         if method == "GET" and path == "/api/retrieval/health":
             return _json_response(req_id, {"data": _retrieval_health_payload(runtime)})
 
+        if method == "GET" and path == "/api/approvals/pending":
+            pending_items = [
+                _pending_action_to_dict(item)
+                for item in runtime.approval_runtime.list_pending_actions()
+            ]
+            return _json_response(req_id, _paginate(pending_items, query=query))
+
         if method == "POST" and (match := TICKET_ACTION_RE.match(path)):
             ticket_id = match.group("ticket_id")
             action = path.rsplit("/", 1)[-1]
             updated = _resolve_action(runtime, ticket_id=ticket_id, action=action, body=payload)
             return _json_response(req_id, {"data": updated})
+
+        if method == "POST" and (match := APPROVAL_ACTION_RE.match(path)):
+            approval_id = match.group("approval_id")
+            decision = path.rsplit("/", 1)[-1]
+            actor_id = str(payload.get("actor_id") or "").strip()
+            if not actor_id:
+                return _error(
+                    req_id,
+                    code="invalid_payload",
+                    message="actor_id is required",
+                    status=HTTPStatus.BAD_REQUEST,
+                )
+            note = str(payload.get("note") or "").strip() or None
+            trace_id = str(payload.get("trace_id") or "").strip() or None
+
+            if decision == "approve":
+                ticket, pending_action = runtime.approval_runtime.get_pending_action(approval_id)
+                action_payload = dict(pending_action.payload)
+                action_payload.setdefault("actor_id", pending_action.requested_by)
+                executed_ticket = _execute_action_without_approval(
+                    runtime,
+                    ticket_id=ticket.ticket_id,
+                    action=pending_action.action_type,
+                    payload=action_payload,
+                )
+                decided = runtime.approval_runtime.mark_approved(
+                    approval_id,
+                    actor_id=actor_id,
+                    execution_ticket=executed_ticket,
+                    note=note,
+                    trace_id=trace_id,
+                )
+                return _json_response(
+                    req_id,
+                    {
+                        "data": _ticket_to_dict(decided.ticket),
+                        "approval": decided.pending_action.as_dict(),
+                    },
+                )
+
+            if decision == "reject":
+                decided = runtime.approval_runtime.mark_rejected(
+                    approval_id,
+                    actor_id=actor_id,
+                    note=note,
+                    trace_id=trace_id,
+                )
+                return _json_response(
+                    req_id,
+                    {
+                        "data": _ticket_to_dict(decided.ticket),
+                        "approval": decided.pending_action.as_dict(),
+                    },
+                )
+
+            return _error(
+                req_id,
+                code="invalid_payload",
+                message=f"unsupported approval decision: {decision}",
+                status=HTTPStatus.BAD_REQUEST,
+            )
 
         if method == "GET" and path == "/api/queues":
             return _json_response(req_id, {"items": _queue_summary(runtime)})

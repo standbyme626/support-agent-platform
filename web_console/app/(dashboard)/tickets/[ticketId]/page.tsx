@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { PendingApprovalList } from "@/components/hitl/pending-approval-list";
 import { TicketActionsPanel } from "@/components/tickets/ticket-actions-panel";
 import { TicketDetailHeader } from "@/components/tickets/ticket-detail-header";
 import { TicketSummaryCard } from "@/components/tickets/ticket-summary-card";
@@ -9,6 +10,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { ErrorState } from "@/components/shared/error-state";
 import { LoadingState } from "@/components/shared/loading-state";
 import { useTicketDetail } from "@/lib/hooks/useTicketDetail";
+import { useTicketPendingActions } from "@/lib/hooks/useTicketPendingActions";
 import { useI18n } from "@/lib/i18n";
 import type { TicketActionPayload, TicketActionType } from "@/lib/api/tickets";
 
@@ -62,8 +64,9 @@ export default function TicketDetailPage() {
     refetch
   } =
     useTicketDetail(ticketId);
+  const pendingApprovals = useTicketPendingActions(ticketId);
 
-  if (loading) {
+  if (loading || pendingApprovals.loading) {
     return <LoadingState title={t("工单详情同步中。", "Ticket detail is syncing.")} />;
   }
 
@@ -229,6 +232,24 @@ export default function TicketDetailPage() {
               <p style={{ color: "var(--muted)" }}>{t("暂无推荐动作。", "No recommended actions available.")}</p>
             )}
           </article>
+          <div style={{ marginTop: 12 }}>
+            <PendingApprovalList
+              title={t("工单待审批", "Ticket Pending Approvals")}
+              items={pendingApprovals.items.filter((item) => item.status === "pending_approval")}
+              loading={pendingApprovals.loading}
+              actionLoadingId={pendingApprovals.actionLoadingId}
+              error={pendingApprovals.error}
+              onRefresh={() => void pendingApprovals.refetch()}
+              onApprove={async (approvalId, note) => {
+                await pendingApprovals.approve(approvalId, note, ticket.assignee ?? "u_supervisor_01");
+                await refetch();
+              }}
+              onReject={async (approvalId, note) => {
+                await pendingApprovals.reject(approvalId, note, ticket.assignee ?? "u_supervisor_01");
+                await refetch();
+              }}
+            />
+          </div>
           <div style={{ marginTop: 12 }}>
             <TicketActionsPanel
               ticket={ticket}

@@ -4,6 +4,7 @@ import { useDashboardSummary } from "@/lib/hooks/useDashboardSummary";
 import { useDashboardRecentErrors } from "@/lib/hooks/useDashboardRecentErrors";
 import { useQueueSummary } from "@/lib/hooks/useQueueSummary";
 import { useGatewayHealth } from "@/lib/hooks/useGatewayHealth";
+import { usePendingApprovals } from "@/lib/hooks/usePendingApprovals";
 
 vi.mock("@/lib/hooks/useDashboardSummary", () => ({
   useDashboardSummary: vi.fn()
@@ -21,10 +22,15 @@ vi.mock("@/lib/hooks/useGatewayHealth", () => ({
   useGatewayHealth: vi.fn()
 }));
 
+vi.mock("@/lib/hooks/usePendingApprovals", () => ({
+  usePendingApprovals: vi.fn()
+}));
+
 const mockUseDashboardSummary = vi.mocked(useDashboardSummary);
 const mockUseDashboardRecentErrors = vi.mocked(useDashboardRecentErrors);
 const mockUseQueueSummary = vi.mocked(useQueueSummary);
 const mockUseGatewayHealth = vi.mocked(useGatewayHealth);
+const mockUsePendingApprovals = vi.mocked(usePendingApprovals);
 
 describe("DashboardPage", () => {
   it("renders loading state", () => {
@@ -60,6 +66,15 @@ describe("DashboardPage", () => {
       replayDuplicateRatio: 0,
       retryObservabilityRate: 1,
       refetch: vi.fn()
+    });
+    mockUsePendingApprovals.mockReturnValue({
+      loading: false,
+      actionLoadingId: null,
+      error: null,
+      items: [],
+      refetch: vi.fn(),
+      approve: vi.fn(),
+      reject: vi.fn()
     });
 
     render(<DashboardPage />);
@@ -141,12 +156,36 @@ describe("DashboardPage", () => {
       retryObservabilityRate: 1,
       refetch: vi.fn()
     });
+    mockUsePendingApprovals.mockReturnValue({
+      loading: false,
+      actionLoadingId: null,
+      error: null,
+      items: [
+        {
+          approval_id: "apr_1",
+          ticket_id: "TCK-1",
+          action_type: "escalate",
+          risk_level: "high",
+          status: "pending_approval",
+          requested_by: "u_ops_01",
+          requested_at: "2026-03-11T00:00:00+00:00",
+          timeout_at: "2026-03-11T01:00:00+00:00",
+          reason: "escalation_requires_manual_confirmation",
+          payload: {},
+          context: {}
+        }
+      ],
+      refetch: vi.fn(),
+      approve: vi.fn(),
+      reject: vi.fn()
+    });
 
     render(<DashboardPage />);
 
     expect(screen.getByText("今日新建")).toBeInTheDocument();
     expect(screen.getByText("SLA 风险")).toBeInTheDocument();
     expect(screen.getByText("近期 Trace 错误")).toBeInTheDocument();
+    expect(screen.getByText("审批待处理")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "打开 SLA 风险" })).toHaveAttribute(
       "href",
       "/tickets?sla_state=breached"
@@ -186,6 +225,15 @@ describe("DashboardPage", () => {
       replayDuplicateRatio: 0,
       retryObservabilityRate: 1,
       refetch: vi.fn()
+    });
+    mockUsePendingApprovals.mockReturnValue({
+      loading: false,
+      actionLoadingId: null,
+      error: null,
+      items: [],
+      refetch: vi.fn(),
+      approve: vi.fn(),
+      reject: vi.fn()
     });
 
     render(<DashboardPage />);

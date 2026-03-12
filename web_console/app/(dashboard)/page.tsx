@@ -3,11 +3,13 @@
 import { useGatewayHealth } from "@/lib/hooks/useGatewayHealth";
 import { AssigneeWorkloadCard } from "@/components/queues/assignee-workload-card";
 import { QueueSummaryCard } from "@/components/queues/queue-summary-card";
+import { PendingApprovalList } from "@/components/hitl/pending-approval-list";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ErrorState } from "@/components/shared/error-state";
 import { LoadingState } from "@/components/shared/loading-state";
 import { StatCard, type SlaSemanticState } from "@/components/shared/stat-card";
 import { useDashboardRecentErrors } from "@/lib/hooks/useDashboardRecentErrors";
+import { usePendingApprovals } from "@/lib/hooks/usePendingApprovals";
 import { useDashboardSummary } from "@/lib/hooks/useDashboardSummary";
 import { useI18n } from "@/lib/i18n";
 import { useQueueSummary } from "@/lib/hooks/useQueueSummary";
@@ -29,8 +31,9 @@ export default function DashboardPage() {
   const recentErrors = useDashboardRecentErrors();
   const queueSummary = useQueueSummary();
   const gateway = useGatewayHealth();
+  const pendingApprovals = usePendingApprovals();
 
-  if (summary.loading || recentErrors.loading || queueSummary.loading) {
+  if (summary.loading || recentErrors.loading || queueSummary.loading || pendingApprovals.loading) {
     return <LoadingState title={t("总览数据同步中。", "Dashboard is syncing.")} />;
   }
 
@@ -131,7 +134,29 @@ export default function DashboardPage() {
           href="/traces?error_only=true"
           state={traceErrorCount > 0 ? "warning" : "normal"}
         />
+        <StatCard
+          title={t("待审批", "Pending Approvals")}
+          value={pendingApprovals.items.length}
+          hint={t("高风险动作等待审批", "High-risk actions waiting for approval")}
+          href="/tickets?handoff_state=pending_approval"
+          state={pendingApprovals.items.length > 0 ? "warning" : "normal"}
+        />
       </div>
+
+      <PendingApprovalList
+        title={t("审批待处理", "Approval Inbox")}
+        items={pendingApprovals.items}
+        loading={pendingApprovals.loading}
+        actionLoadingId={pendingApprovals.actionLoadingId}
+        error={pendingApprovals.error}
+        onRefresh={() => void pendingApprovals.refetch()}
+        onApprove={(approvalId, note) =>
+          pendingApprovals.approve(approvalId, note, "u_supervisor_01")
+        }
+        onReject={(approvalId, note) =>
+          pendingApprovals.reject(approvalId, note, "u_supervisor_01")
+        }
+      />
 
       <h2 className="section-title" style={{ marginTop: 20 }}>
         {t("SLA / Trace / Channel 状态块", "SLA / Trace / Channel Blocks")}

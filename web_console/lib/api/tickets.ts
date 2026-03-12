@@ -133,6 +133,68 @@ export type TicketActionPayload = {
   close_reason?: string;
 };
 
+export type ApprovalDecisionType = "approve" | "reject";
+
+export type PendingApprovalItem = {
+  approval_id: string;
+  ticket_id: string;
+  action_type: string;
+  risk_level: string;
+  status: string;
+  requested_by: string;
+  requested_at: string | null;
+  timeout_at: string | null;
+  reason: string;
+  payload: Record<string, unknown>;
+  context: Record<string, unknown>;
+  approved_by?: string | null;
+  rejected_by?: string | null;
+  decided_at?: string | null;
+  decision_note?: string | null;
+};
+
+export type PendingApprovalsResponse = {
+  request_id?: string;
+  items: PendingApprovalItem[];
+  page: number;
+  page_size: number;
+  total: number;
+};
+
+export type TicketPendingActionsResponse = {
+  request_id?: string;
+  items: PendingApprovalItem[];
+};
+
+export type ApprovalDecisionPayload = {
+  actor_id: string;
+  note?: string;
+};
+
+function normalizePendingApproval(item: unknown): PendingApprovalItem {
+  const record =
+    item && typeof item === "object" && !Array.isArray(item) ? (item as Record<string, unknown>) : {};
+  const payload = toPayloadRecord(record.payload);
+  const context = toPayloadRecord(record.context);
+  return {
+    approval_id: String(record.approval_id ?? ""),
+    ticket_id: String(record.ticket_id ?? ""),
+    action_type: String(record.action_type ?? ""),
+    risk_level: String(record.risk_level ?? "high"),
+    status: String(record.status ?? "pending_approval"),
+    requested_by: String(record.requested_by ?? ""),
+    requested_at: record.requested_at ? String(record.requested_at) : null,
+    timeout_at: record.timeout_at ? String(record.timeout_at) : null,
+    reason: String(record.reason ?? ""),
+    payload,
+    context,
+    approved_by: record.approved_by ? String(record.approved_by) : null,
+    rejected_by: record.rejected_by ? String(record.rejected_by) : null,
+    decided_at: record.decided_at ? String(record.decided_at) : null,
+    decision_note: record.decision_note ? String(record.decision_note) : null
+  };
+}
+
 function toSearchParams(query: TicketQuery) {
   const params = new URLSearchParams();
   Object.entries(query).forEach(([key, value]) => {
@@ -235,4 +297,49 @@ export async function runTicketAction(
       Accept: "application/json"
     }
   });
+}
+
+export async function fetchPendingApprovals(query?: { page?: number; page_size?: number }) {
+  const params = new URLSearchParams();
+  if (query?.page) {
+    params.set("page", String(query.page));
+  }
+  if (query?.page_size) {
+    params.set("page_size", String(query.page_size));
+  }
+  const suffix = params.toString();
+  const path = suffix ? `/api/approvals/pending?${suffix}` : "/api/approvals/pending";
+  const response = await getJson<PendingApprovalsResponse>(path);
+  return {
+    ...response,
+    items: response.items.map((item) => normalizePendingApproval(item))
+  };
+}
+
+export async function fetchTicketPendingActions(ticketId: string) {
+  const response = await getJson<TicketPendingActionsResponse>(
+    `/api/tickets/${encodeURIComponent(ticketId)}/pending-actions`
+  );
+  return {
+    ...response,
+    items: response.items.map((item) => normalizePendingApproval(item))
+  };
+}
+
+export async function decideApproval(
+  approvalId: string,
+  decision: ApprovalDecisionType,
+  payload: ApprovalDecisionPayload
+) {
+  return getJson<TicketDetailResponse>(
+    `/api/approvals/${encodeURIComponent(approvalId)}/${decision}`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      }
+    }
+  );
 }

@@ -4,6 +4,9 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import ClassVar
 
+from core.hitl.approval_policy import ApprovalPolicy
+from core.hitl.approval_runtime import ApprovalRuntime
+from core.hitl.handoff_context import build_approval_context
 from core.ticket_api import TicketAPI
 from storage.models import Ticket
 
@@ -32,8 +35,17 @@ class CaseCollabWorkflow:
         }
     )
 
-    def __init__(self, ticket_api: TicketAPI) -> None:
+    def __init__(
+        self,
+        ticket_api: TicketAPI,
+        *,
+        approval_runtime: ApprovalRuntime | None = None,
+    ) -> None:
         self._ticket_api = ticket_api
+        self._approval_runtime = approval_runtime or ApprovalRuntime(
+            ticket_api=ticket_api,
+            policy=ApprovalPolicy.default(),
+        )
 
     def push_new_ticket(self, ticket_id: str) -> dict[str, str]:
         ticket = self._ticket_api.require_ticket(ticket_id)
@@ -83,6 +95,41 @@ class CaseCollabWorkflow:
             if not args:
                 raise ValueError("/reassign requires target assignee")
             assignee = args[0]
+            request = self._approval_runtime.request_approval_if_needed(
+                ticket_id=ticket_id,
+                action_type="reassign",
+                actor_id=actor_id,
+                payload={
+                    "actor_id": actor_id,
+                    "target_assignee": assignee,
+                },
+                context=build_approval_context(
+                    ticket=self._ticket_api.require_ticket(ticket_id),
+                    action_type="reassign",
+                    command_line=command_line,
+                    payload={"target_assignee": assignee},
+                ),
+            )
+            if request.requires_approval and request.pending_action is not None:
+                self._ticket_api.add_event(
+                    ticket_id,
+                    event_type="collab_reassign_pending_approval",
+                    actor_type="agent",
+                    actor_id=actor_id,
+                    payload={
+                        "approval_id": request.pending_action.approval_id,
+                        "target_assignee": assignee,
+                        "command": command_line,
+                    },
+                )
+                return CaseCollabAction(
+                    "reassign",
+                    request.ticket,
+                    (
+                        f"{ticket_id} reassign pending approval "
+                        f"({request.pending_action.approval_id})"
+                    ),
+                )
             updated = self._ticket_api.assign_ticket(
                 ticket_id,
                 assignee=assignee,
@@ -108,19 +155,42 @@ class CaseCollabWorkflow:
 
         if command == "escalate":
             reason = " ".join(args).strip() or "manual escalation"
+            request = self._approval_runtime.request_approval_if_needed(
+                ticket_id=ticket_id,
+                action_type="escalate",
+                actor_id=actor_id,
+                payload={"actor_id": actor_id, "note": reason},
+                context=build_approval_context(
+                    ticket=self._ticket_api.require_ticket(ticket_id),
+                    action_type="escalate",
+                    command_line=command_line,
+                    payload={"note": reason},
+                ),
+            )
+            if request.requires_approval and request.pending_action is not None:
+                self._ticket_api.add_event(
+                    ticket_id,
+                    event_type="collab_escalate_pending_approval",
+                    actor_type="agent",
+                    actor_id=actor_id,
+                    payload={
+                        "approval_id": request.pending_action.approval_id,
+                        "reason": reason,
+                        "command": command_line,
+                    },
+                )
+                return CaseCollabAction(
+                    "escalate",
+                    request.ticket,
+                    (
+                        f"{ticket_id} escalation pending approval "
+                        f"({request.pending_action.approval_id})"
+                    ),
+                )
             updated = self._ticket_api.escalate_ticket(
                 ticket_id,
                 actor_id=actor_id,
                 reason=reason,
-            )
-            updated = self._ticket_api.update_ticket(
-                ticket_id,
-                {
-                    "handoff_state": "pending_approval",
-                    "last_agent_action": "escalate",
-                    "risk_level": "high",
-                },
-                actor_id=actor_id,
             )
             self._ticket_api.add_event(
                 ticket_id,

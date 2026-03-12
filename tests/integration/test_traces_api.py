@@ -194,7 +194,11 @@ def test_traces_api_list_filters_and_detail(monkeypatch: MonkeyPatch, tmp_path: 
             assert by_channel["total"] >= 1
             assert all(item["channel"] == "wecom" for item in by_channel["items"])
 
-            by_handoff = _json(client, "GET", f"{base}/api/traces?handoff=true&page=1&page_size=20")
+            by_handoff = _json(
+                client,
+                "GET",
+                f"{base}/api/traces?handoff=true&trace_id={trace_a}&page=1&page_size=20",
+            )
             assert any(item["trace_id"] == trace_a for item in by_handoff["items"])
 
             by_prompt_version = _json(

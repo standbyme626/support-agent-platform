@@ -82,7 +82,22 @@ def test_ticket_actions_chain_and_timeline(monkeypatch: MonkeyPatch, tmp_path: P
                 f"{base}/api/tickets/{ticket.ticket_id}/escalate",
                 {"actor_id": "u_ops_02", "note": "need supervisor"},
             )
-            assert escalated["data"]["status"] == "escalated"
+            assert escalated["data"]["status"] == "pending"
+            assert escalated["data"]["handoff_state"] == "pending_approval"
+            approval_id = str(escalated["data"]["approval_id"])
+            assert approval_id
+
+            pending = _json(client, "GET", f"{base}/api/approvals/pending?page=1&page_size=20")
+            pending_ids = {item["approval_id"] for item in pending["items"]}
+            assert approval_id in pending_ids
+
+            approved = _json(
+                client,
+                "POST",
+                f"{base}/api/approvals/{approval_id}/approve",
+                {"actor_id": "u_supervisor_01", "note": "approved"},
+            )
+            assert approved["data"]["status"] == "escalated"
 
             resolved = _json(
                 client,
@@ -112,13 +127,76 @@ def test_ticket_actions_chain_and_timeline(monkeypatch: MonkeyPatch, tmp_path: P
             event_types = {item["event_type"] for item in events["items"]}
             assert "ticket_assigned" in event_types
             assert "ticket_reassign_requested" in event_types
-            assert "ticket_escalated" in event_types
+            assert "approval_requested" in event_types
+            assert "approval_decision" in event_types
             assert "ticket_resolved" in event_types
             assert "ticket_closed" in event_types
 
             for item in events["items"]:
                 assert item["actor_id"]
                 assert item["created_at"]
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)
+
+
+def test_approval_reject_and_timeout_paths(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("SUPPORT_AGENT_ENV", "dev")
+    monkeypatch.setenv(
+        "SUPPORT_AGENT_SQLITE_PATH", str(tmp_path / "ticket_approval_reject_timeout.db")
+    )
+    monkeypatch.setenv("LLM_ENABLED", "0")
+
+    runtime = build_runtime("dev")
+    ticket = runtime.ticket_api.create_ticket(
+        channel="wecom",
+        session_id="sess-ticket-approval-002",
+        thread_id="thread-ticket-approval-002",
+        title="停车场道闸故障",
+        latest_message="道闸无法抬杆",
+        intent="repair",
+        priority="P2",
+        queue="support",
+    )
+
+    server, thread = _start_server("dev")
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+
+    try:
+        with httpx.Client(timeout=10.0, trust_env=False) as client:
+            first_request = _json(
+                client,
+                "POST",
+                f"{base}/api/tickets/{ticket.ticket_id}/escalate",
+                {"actor_id": "u_ops_01", "note": "need supervisor"},
+            )
+            approval_id = str(first_request["data"]["approval_id"])
+            assert approval_id
+
+            rejected = _json(
+                client,
+                "POST",
+                f"{base}/api/approvals/{approval_id}/reject",
+                {"actor_id": "u_supervisor_01", "note": "insufficient context"},
+            )
+            assert rejected["approval"]["status"] == "rejected"
+
+            timeout_request = _json(
+                client,
+                "POST",
+                f"{base}/api/tickets/{ticket.ticket_id}/escalate",
+                {"actor_id": "u_ops_01", "note": "need supervisor", "timeout_minutes": 0},
+            )
+            assert timeout_request["data"]["status"] == "open"
+            assert timeout_request["data"]["handoff_state"] == "pending_approval"
+
+            pending = _json(client, "GET", f"{base}/api/approvals/pending?page=1&page_size=20")
+            assert pending["items"] == []
+
+            actions = _json(client, "GET", f"{base}/api/tickets/{ticket.ticket_id}/pending-actions")
+            statuses = {item["status"] for item in actions["items"]}
+            assert {"rejected", "timeout"}.issubset(statuses)
     finally:
         server.shutdown()
         server.server_close()

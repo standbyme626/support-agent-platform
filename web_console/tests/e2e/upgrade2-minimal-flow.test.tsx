@@ -5,6 +5,7 @@ import KbFaqPage from "@/app/(dashboard)/kb/faq/page";
 import ChannelsPage from "@/app/(dashboard)/channels/page";
 import { useParams } from "next/navigation";
 import { useTicketDetail } from "@/lib/hooks/useTicketDetail";
+import { useTicketPendingActions } from "@/lib/hooks/useTicketPendingActions";
 import { useTraceList } from "@/lib/hooks/useTraceList";
 import { useKB } from "@/lib/hooks/useKB";
 import { useGatewayHealth } from "@/lib/hooks/useGatewayHealth";
@@ -15,6 +16,10 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/lib/hooks/useTicketDetail", () => ({
   useTicketDetail: vi.fn()
+}));
+
+vi.mock("@/lib/hooks/useTicketPendingActions", () => ({
+  useTicketPendingActions: vi.fn()
 }));
 
 vi.mock("@/lib/hooks/useTraceList", () => ({
@@ -31,6 +36,7 @@ vi.mock("@/lib/hooks/useGatewayHealth", () => ({
 
 const mockUseParams = vi.mocked(useParams);
 const mockUseTicketDetail = vi.mocked(useTicketDetail);
+const mockUseTicketPendingActions = vi.mocked(useTicketPendingActions);
 const mockUseTraceList = vi.mocked(useTraceList);
 const mockUseKB = vi.mocked(useKB);
 const mockUseGatewayHealth = vi.mocked(useGatewayHealth);
@@ -38,6 +44,15 @@ const mockUseGatewayHealth = vi.mocked(useGatewayHealth);
 describe("Upgrade2 minimal front-end flow smoke", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    mockUseTicketPendingActions.mockReturnValue({
+      loading: false,
+      actionLoadingId: null,
+      error: null,
+      items: [],
+      refetch: vi.fn(),
+      approve: vi.fn(),
+      reject: vi.fn()
+    });
   });
 
   it("covers ticket action chain", async () => {

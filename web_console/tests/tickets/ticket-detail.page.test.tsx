@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import TicketDetailPage from "@/app/(dashboard)/tickets/[ticketId]/page";
 import { useTicketDetail } from "@/lib/hooks/useTicketDetail";
+import { useTicketPendingActions } from "@/lib/hooks/useTicketPendingActions";
 import { useParams } from "next/navigation";
 
 vi.mock("next/navigation", () => ({
@@ -11,12 +12,26 @@ vi.mock("@/lib/hooks/useTicketDetail", () => ({
   useTicketDetail: vi.fn()
 }));
 
+vi.mock("@/lib/hooks/useTicketPendingActions", () => ({
+  useTicketPendingActions: vi.fn()
+}));
+
 const mockUseParams = vi.mocked(useParams);
 const mockUseTicketDetail = vi.mocked(useTicketDetail);
+const mockUseTicketPendingActions = vi.mocked(useTicketPendingActions);
 
 describe("TicketDetailPage", () => {
   beforeEach(() => {
     mockUseParams.mockReturnValue({ ticketId: "TCK-DETAIL-1" });
+    mockUseTicketPendingActions.mockReturnValue({
+      loading: false,
+      actionLoadingId: null,
+      error: null,
+      items: [],
+      refetch: vi.fn(),
+      approve: vi.fn(),
+      reject: vi.fn()
+    });
   });
 
   it("renders loading state", () => {

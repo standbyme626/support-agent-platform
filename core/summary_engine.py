@@ -141,3 +141,23 @@ class SummaryEngine:
             "degraded": True,
             "degrade_reason": reason,
         }
+
+
+def compact_summary_text(text: str, *, max_chars: int = 280) -> str:
+    normalized = " ".join(text.split())
+    if len(normalized) <= max_chars:
+        return normalized
+    return f"{normalized[: max_chars - 3]}..."
+
+
+def build_handoff_summary(
+    ticket: Ticket, events: list[TicketEvent], *, summary: str | None = None
+) -> str:
+    if summary:
+        return compact_summary_text(summary)
+    timeline = ",".join(event.event_type for event in events[-5:]) or "none"
+    fallback = (
+        f"ticket={ticket.ticket_id} status={ticket.status} "
+        f"intent={ticket.intent} timeline={timeline}"
+    )
+    return compact_summary_text(fallback)

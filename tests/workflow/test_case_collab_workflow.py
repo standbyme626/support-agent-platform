@@ -54,8 +54,9 @@ def test_case_collab_commands_end_to_end(tmp_path: Path) -> None:
         actor_id="agent-b",
         command_line="/escalate customer is blocked",
     )
-    assert escalate.ticket.status == "escalated"
+    assert escalate.ticket.status == "pending"
     assert escalate.ticket.handoff_state == "pending_approval"
+    assert "pending approval" in escalate.message
 
     resolved = collab.handle_command(
         ticket_id=ticket_id,
@@ -73,3 +74,20 @@ def test_case_collab_commands_end_to_end(tmp_path: Path) -> None:
     assert closed.ticket.status == "closed"
     assert closed.ticket.handoff_state == "completed"
     assert "final_action_trail" in closed.ticket.metadata
+
+
+def test_case_collab_sensitive_reassign_requires_approval(tmp_path: Path) -> None:
+    api, ticket_id = _prepare_ticket(tmp_path)
+    collab = CaseCollabWorkflow(api)
+
+    collab.push_new_ticket(ticket_id)
+    collab.handle_command(ticket_id=ticket_id, actor_id="agent-a", command_line="/claim")
+    pending = collab.handle_command(
+        ticket_id=ticket_id,
+        actor_id="agent-a",
+        command_line="/reassign security_oncall",
+    )
+
+    assert pending.command == "reassign"
+    assert pending.ticket.handoff_state == "pending_approval"
+    assert "pending approval" in pending.message

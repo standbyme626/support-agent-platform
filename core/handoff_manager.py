@@ -217,13 +217,25 @@ class HandoffManager:
         )
         return ticket
 
-    def resume(self, ticket_api: TicketAPI, ticket_id: str, *, actor_id: str, note: str) -> Ticket:
+    def resume(
+        self,
+        ticket_api: TicketAPI,
+        ticket_id: str,
+        *,
+        actor_id: str,
+        note: str,
+        approval_id: str | None = None,
+        context: Mapping[str, object] | None = None,
+    ) -> Ticket:
+        payload_context = dict(context or {})
+        resume_state = str(payload_context.get("resume_handoff_state") or "").strip()
         ticket = ticket_api.update_ticket(
             ticket_id,
             {
                 "status": "pending",
                 "needs_handoff": False,
                 "latest_message": note,
+                "handoff_state": resume_state or "accepted",
             },
             actor_id=actor_id,
         )
@@ -232,7 +244,11 @@ class HandoffManager:
             event_type="handoff_resumed",
             actor_type="agent",
             actor_id=actor_id,
-            payload={"note": note},
+            payload={
+                "note": note,
+                "approval_id": approval_id,
+                "context": payload_context,
+            },
         )
         return ticket
 
@@ -249,9 +265,7 @@ class HandoffManager:
             return True
         if trigger == "low_confidence":
             threshold = (
-                rule.low_confidence_threshold
-                if rule.low_confidence_threshold is not None
-                else 0.45
+                rule.low_confidence_threshold if rule.low_confidence_threshold is not None else 0.45
             )
             return intent.is_low_confidence or intent.confidence < threshold
         if trigger == "customer_request_human":

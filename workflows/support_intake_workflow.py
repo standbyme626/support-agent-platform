@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from core.hitl.handoff_context import HANDOFF_CONTEXT_KEY, build_handoff_context
 from core.retrieval.source_attribution import build_source_payloads
+from core.summary_engine import build_handoff_summary
 from core.ticket_api import TicketAPI
 from core.workflow_engine import WorkflowEngine, WorkflowOutcome
 from storage.models import InboundEnvelope
@@ -114,6 +116,18 @@ class SupportIntakeWorkflow:
             ],
             top_k=5,
         )
+        handoff_context = build_handoff_context(
+            ticket=outcome.ticket,
+            summary=build_handoff_summary(
+                outcome.ticket,
+                self._ticket_api.list_events(ticket_id),
+                summary=outcome.summary,
+            ),
+            recommended_actions=[item.as_dict() for item in outcome.recommendations],
+            grounding_sources=grounding_sources,
+            trace_events=self._derive_ticket_action(outcome)[1],
+            llm_trace=outcome.llm_trace,
+        )
         lifecycle_stage = "awaiting_human" if outcome.handoff.should_handoff else "drafted"
         self._ticket_api.update_ticket(
             ticket_id,
@@ -148,6 +162,7 @@ class SupportIntakeWorkflow:
                     ),
                     "llm_trace": dict(outcome.llm_trace),
                     "ai_degraded": bool(outcome.llm_trace.get("degraded")),
+                    HANDOFF_CONTEXT_KEY: handoff_context,
                 },
             },
             actor_id="support-intake",
@@ -219,6 +234,13 @@ class SupportIntakeWorkflow:
                     "handoff_policy_version": outcome.handoff.policy_version,
                     "handoff_rule_paths": list(outcome.handoff.matched_rule_paths),
                 },
+            )
+            self._ticket_api.add_event(
+                ticket_id,
+                event_type="handoff_context_captured",
+                actor_type="agent",
+                actor_id="support-intake",
+                payload={"context": handoff_context},
             )
 
     def _derive_ticket_action(self, outcome: WorkflowOutcome) -> tuple[str, list[str]]:

@@ -292,6 +292,16 @@ class TicketAPI:
             actor_id=actor_id,
         )
 
+    def list_all_tickets(self, *, limit: int = 5000) -> list[Ticket]:
+        return self._repository.list_tickets(limit=limit, offset=0)
+
+    def pending_actions(self, ticket_id: str) -> list[dict[str, Any]]:
+        ticket = self.require_ticket(ticket_id)
+        raw = ticket.metadata.get("pending_actions")
+        if not isinstance(raw, list):
+            return []
+        return [dict(item) for item in raw if isinstance(item, dict)]
+
     @staticmethod
     def _ensure_not_closed(ticket: Ticket) -> None:
         if ticket.status == "closed":
