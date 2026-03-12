@@ -1367,9 +1367,17 @@ def handle_api_request(
             page_size = _parse_int(query.get("page_size"), default=20, minimum=1, maximum=200)
             summaries = [
                 _trace_summary(runtime, trace_id, trace_events)
-                for trace_id, trace_events in sorted(_trace_groups(runtime).items(), reverse=True)
+                for trace_id, trace_events in _trace_groups(runtime).items()
                 if trace_events
             ]
+            summaries.sort(
+                key=lambda item: (
+                    _parse_iso_datetime(str(item.get("created_at") or ""))
+                    or datetime.min.replace(tzinfo=UTC),
+                    str(item.get("trace_id") or ""),
+                ),
+                reverse=True,
+            )
             filtered_traces: list[dict[str, Any]] = []
             for item in summaries:
                 if query.get("trace_id") and item.get("trace_id") != query["trace_id"]:

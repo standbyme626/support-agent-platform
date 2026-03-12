@@ -65,7 +65,11 @@ def load_app_config(environment: str | None = None, *, root_dir: Path | None = N
     )
     gateway = GatewayConfig(
         name=config_data["gateway"]["name"],
-        log_path=_resolve_path(config_data["gateway"]["log_path"], root_dir=project_root),
+        log_path=_resolve_path(
+            config_data["gateway"]["log_path"],
+            root_dir=project_root,
+            env_override="SUPPORT_AGENT_GATEWAY_LOG_PATH",
+        ),
     )
     llm_data = config_data.get("llm", {})
     llm = LLMConfig(

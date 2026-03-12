@@ -30,10 +30,29 @@ def _json(
     return data
 
 
-def test_traces_api_list_filters_and_detail(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+def _configure_runtime_env(
+    monkeypatch: MonkeyPatch, tmp_path: Path, *, sqlite_name: str, trace_log_name: str
+) -> None:
     monkeypatch.setenv("SUPPORT_AGENT_ENV", "dev")
-    monkeypatch.setenv("SUPPORT_AGENT_SQLITE_PATH", str(tmp_path / "traces_api.db"))
+    monkeypatch.setenv("SUPPORT_AGENT_SQLITE_PATH", str(tmp_path / sqlite_name))
+    monkeypatch.setenv("SUPPORT_AGENT_GATEWAY_LOG_PATH", str(tmp_path / trace_log_name))
     monkeypatch.setenv("LLM_ENABLED", "0")
+
+
+def _run_traces_api_list_filters_and_detail_scenario(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+    *,
+    sqlite_name: str,
+    trace_log_name: str,
+    expected_prompt_version_total: int | None = None,
+) -> None:
+    _configure_runtime_env(
+        monkeypatch,
+        tmp_path,
+        sqlite_name=sqlite_name,
+        trace_log_name=trace_log_name,
+    )
 
     runtime = build_runtime("dev")
     ticket_a = runtime.ticket_api.create_ticket(
@@ -230,6 +249,8 @@ def test_traces_api_list_filters_and_detail(monkeypatch: MonkeyPatch, tmp_path: 
                 "GET",
                 f"{base}/api/traces?prompt_version=v2&page=1&page_size=20",
             )
+            if expected_prompt_version_total is not None:
+                assert by_prompt_version["total"] == expected_prompt_version_total
             assert any(item["trace_id"] == trace_a for item in by_prompt_version["items"])
 
             by_ticket = _json(
@@ -286,3 +307,48 @@ def test_traces_api_list_filters_and_detail(monkeypatch: MonkeyPatch, tmp_path: 
         server.shutdown()
         server.server_close()
         thread.join(timeout=3)
+
+
+def test_traces_api_list_filters_and_detail(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    _run_traces_api_list_filters_and_detail_scenario(
+        monkeypatch,
+        tmp_path,
+        sqlite_name="traces_api.db",
+        trace_log_name="traces_api.log",
+    )
+
+
+def test_traces_api_list_filters_and_detail_isolated_after_prior_trace_writes(
+    monkeypatch: MonkeyPatch, tmp_path: Path
+) -> None:
+    _configure_runtime_env(
+        monkeypatch,
+        tmp_path,
+        sqlite_name="traces_api_polluted.db",
+        trace_log_name="traces_api_polluted.log",
+    )
+    polluted_runtime = build_runtime("dev")
+    for index in range(30):
+        polluted_runtime.trace_logger.log(
+            "summary_generated",
+            {
+                "provider": "openai-compatible",
+                "model": "qwen3.5:9b",
+                "prompt_key": "case_summary",
+                "prompt_version": "v2",
+                "success": True,
+                "fallback_used": False,
+                "degraded": False,
+            },
+            trace_id=f"trace_polluted_{index:03d}",
+            ticket_id=f"TICKET-POLLUTED-{index:03d}",
+            session_id=f"SESSION-POLLUTED-{index:03d}",
+        )
+
+    _run_traces_api_list_filters_and_detail_scenario(
+        monkeypatch,
+        tmp_path,
+        sqlite_name="traces_api.db",
+        trace_log_name="traces_api.log",
+        expected_prompt_version_total=1,
+    )
