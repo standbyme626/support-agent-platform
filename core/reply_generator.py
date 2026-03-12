@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import Any, ClassVar, Literal, Protocol
+from typing import Any, ClassVar, Protocol
 
 from llm.manager import LLMGenerationError
 from storage.models import KBDocument, Ticket, TicketEvent
@@ -10,8 +10,12 @@ from storage.models import KBDocument, Ticket, TicketEvent
 from .handoff_manager import HandoffDecision
 from .intent_router import IntentDecision
 from .recommended_actions_engine import RecommendedAction
-
-ReplyGenerationType = Literal["faq", "progress", "handoff", "generic"]
+from .reply_orchestration import (
+    ReplyContext,
+    ReplyGenerationType,
+    build_reply_variables,
+    resolve_generation_type,
+)
 
 
 class ReplyModelAdapter(Protocol):
@@ -41,6 +45,8 @@ class ReplyGenerator:
         "progress": "progress_reply",
         "handoff": "handoff_reply",
         "generic": "intake_user_reply",
+        "disambiguation": "disambiguation_reply",
+        "switch": "switch_reply",
     }
 
     def __init__(
@@ -65,8 +71,18 @@ class ReplyGenerator:
         events: list[TicketEvent],
         fallback_reply: str,
         tone: str = "professional_warm",
+        session_mode: str | None = None,
+        disambiguation_decision: str | None = None,
+        disambiguation_reason: str | None = None,
+        forced_generation_type: ReplyGenerationType | None = None,
     ) -> ReplyGenerationResult:
-        generation_type = self._resolve_generation_type(intent, handoff)
+        generation_type = resolve_generation_type(
+            intent=intent,
+            handoff=handoff,
+            forced_generation_type=forced_generation_type,
+            disambiguation_decision=disambiguation_decision,
+            disambiguation_reason=disambiguation_reason,
+        )
         prompt_key = self._PROMPT_BY_TYPE[generation_type]
         grounding_sources = [f"{doc.source_type}:{doc.doc_id}" for doc in retrieved_docs[:5]]
 
@@ -80,16 +96,21 @@ class ReplyGenerator:
                 reason="llm_disabled",
             )
 
-        variables = self._build_variables(
-            message_text=message_text,
-            intent=intent,
-            ticket=ticket,
-            summary=summary,
-            retrieved_docs=retrieved_docs,
-            recommendations=recommendations,
-            handoff=handoff,
-            events=events,
-            tone=tone,
+        variables = build_reply_variables(
+            ReplyContext(
+                message_text=message_text,
+                intent=intent,
+                ticket=ticket,
+                summary=summary,
+                retrieved_docs=retrieved_docs,
+                recommendations=recommendations,
+                handoff=handoff,
+                events=events,
+                tone=tone,
+                session_mode=session_mode,
+                disambiguation_decision=disambiguation_decision,
+                disambiguation_reason=disambiguation_reason,
+            )
         )
         try:
             raw_text, trace = self._model_adapter.generate_with_trace(
@@ -154,79 +175,6 @@ class ReplyGenerator:
         )
 
     @staticmethod
-    def _resolve_generation_type(
-        intent: IntentDecision, handoff: HandoffDecision
-    ) -> ReplyGenerationType:
-        if handoff.should_handoff:
-            return "handoff"
-        if intent.intent == "faq":
-            return "faq"
-        if intent.intent == "progress_query":
-            return "progress"
-        return "generic"
-
-    @staticmethod
-    def _build_variables(
-        *,
-        message_text: str,
-        intent: IntentDecision,
-        ticket: Ticket,
-        summary: str,
-        retrieved_docs: list[KBDocument],
-        recommendations: list[RecommendedAction],
-        handoff: HandoffDecision,
-        events: list[TicketEvent],
-        tone: str,
-    ) -> dict[str, str]:
-        grounding = [
-            {
-                "doc_id": doc.doc_id,
-                "source_type": doc.source_type,
-                "title": doc.title,
-                "score": doc.score,
-            }
-            for doc in retrieved_docs[:3]
-        ]
-        recommendation_payload = [
-            {
-                "action": item.action,
-                "reason": item.reason,
-                "source": item.source,
-                "risk": item.risk,
-                "confidence": item.confidence,
-                "evidence": [
-                    {"doc_id": evidence.doc_id, "source_type": evidence.source_type}
-                    for evidence in item.evidence
-                ],
-            }
-            for item in recommendations[:3]
-        ]
-        latest_events = [
-            {
-                "event_type": event.event_type,
-                "actor": event.actor_id,
-            }
-            for event in events[-5:]
-        ]
-        return {
-            "user_message": message_text,
-            "intent": intent.intent,
-            "intent_confidence": f"{intent.confidence:.2f}",
-            "ticket_id": ticket.ticket_id,
-            "ticket_status": ticket.status,
-            "ticket_priority": ticket.priority,
-            "ticket_queue": ticket.queue,
-            "ticket_assignee": ticket.assignee or "unassigned",
-            "handoff_decision": "true" if handoff.should_handoff else "false",
-            "handoff_reason": handoff.reason,
-            "summary": summary,
-            "grounding_sources": json.dumps(grounding, ensure_ascii=False),
-            "recommendations": json.dumps(recommendation_payload, ensure_ascii=False),
-            "latest_events": json.dumps(latest_events, ensure_ascii=False),
-            "tone": tone,
-        }
-
-    @staticmethod
     def _parse_structured_reply(raw_text: str) -> dict[str, str]:
         cleaned = raw_text.strip()
         if cleaned.startswith("```"):
@@ -255,7 +203,7 @@ class ReplyGenerator:
         trace = dict(metadata)
         trace.setdefault("provider", "openai_compatible")
         trace.setdefault("model", None)
-        trace.setdefault("prompt_key", prompt_key)
+        trace["prompt_key"] = prompt_key
         trace.setdefault("prompt_version", None)
         trace.setdefault("latency_ms", None)
         trace.setdefault("request_id", None)

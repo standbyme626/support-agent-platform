@@ -270,6 +270,50 @@ def test_reply_generator_builds_generic_reply_from_llm() -> None:
     assert result.metadata["prompt_key"] == "intake_user_reply"
 
 
+def test_reply_generator_builds_disambiguation_reply_from_context() -> None:
+    generator = ReplyGenerator(
+        model_adapter=_JsonReplyAdapter(reply_text="请确认继续当前还是新问题")
+    )
+    result = generator.generate(
+        message_text="帮我看看",
+        intent=_intent("repair"),
+        ticket=_ticket(),
+        retrieved_docs=_docs(),
+        summary="澄清摘要",
+        recommendations=_recommendations(),
+        handoff=_handoff(False),
+        events=_events(),
+        fallback_reply="fallback",
+        disambiguation_decision="awaiting_disambiguation",
+        disambiguation_reason="low_confidence_with_multi_tickets",
+    )
+
+    assert result.generation_type == "disambiguation"
+    assert result.metadata["prompt_key"] == "disambiguation_reply"
+
+
+def test_reply_generator_builds_switch_reply_when_explicit_ticket_is_detected() -> None:
+    generator = ReplyGenerator(
+        model_adapter=_JsonReplyAdapter(reply_text="已切换到你指定的工单继续跟进")
+    )
+    result = generator.generate(
+        message_text="看 TCK-REPLY-001 这个单",
+        intent=_intent("repair"),
+        ticket=_ticket(),
+        retrieved_docs=_docs(),
+        summary="切换摘要",
+        recommendations=_recommendations(),
+        handoff=_handoff(False),
+        events=_events(),
+        fallback_reply="fallback",
+        disambiguation_decision="continue_current",
+        disambiguation_reason="explicit_ticket_in_message",
+    )
+
+    assert result.generation_type == "switch"
+    assert result.metadata["prompt_key"] == "switch_reply"
+
+
 def test_reply_generator_fallback_when_provider_failed() -> None:
     generator = ReplyGenerator(model_adapter=_ProviderFailAdapter())
     result = generator.generate(
@@ -323,5 +367,51 @@ def test_reply_generator_fallback_when_schema_parse_failed() -> None:
     )
 
     assert result.reply_text == "fallback"
+    assert result.metadata["fallback_used"] is True
+    assert result.metadata["degrade_reason"] == "schema_parse_error"
+
+
+def test_reply_generator_disambiguation_fallback_keeps_contract() -> None:
+    generator = ReplyGenerator(model_adapter=_TimeoutAdapter())
+    result = generator.generate(
+        message_text="帮我看看",
+        intent=_intent("repair"),
+        ticket=_ticket(),
+        retrieved_docs=_docs(),
+        summary="澄清摘要",
+        recommendations=_recommendations(),
+        handoff=_handoff(False),
+        events=_events(),
+        fallback_reply="fallback",
+        disambiguation_decision="awaiting_disambiguation",
+        disambiguation_reason="low_confidence_with_multi_tickets",
+    )
+
+    assert result.reply_text == "fallback"
+    assert result.generation_type == "disambiguation"
+    assert result.metadata["prompt_key"] == "disambiguation_reply"
+    assert result.metadata["fallback_used"] is True
+    assert result.metadata["degrade_reason"] == "llm_timeout"
+
+
+def test_reply_generator_switch_fallback_keeps_contract() -> None:
+    generator = ReplyGenerator(model_adapter=_InvalidSchemaAdapter())
+    result = generator.generate(
+        message_text="看 TCK-REPLY-001 这个单",
+        intent=_intent("repair"),
+        ticket=_ticket(),
+        retrieved_docs=_docs(),
+        summary="切换摘要",
+        recommendations=_recommendations(),
+        handoff=_handoff(False),
+        events=_events(),
+        fallback_reply="fallback",
+        disambiguation_decision="continue_current",
+        disambiguation_reason="explicit_ticket_in_message",
+    )
+
+    assert result.reply_text == "fallback"
+    assert result.generation_type == "switch"
+    assert result.metadata["prompt_key"] == "switch_reply"
     assert result.metadata["fallback_used"] is True
     assert result.metadata["degrade_reason"] == "schema_parse_error"

@@ -14,10 +14,11 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from config import AppConfig, load_app_config
+from core.disambiguation import NewIssueDetector
 from core.hitl.approval_policy import ApprovalPolicy
 from core.hitl.approval_runtime import ApprovalRuntime
 from core.hitl.handoff_context import build_approval_context
-from core.intent_router import IntentDecision
+from core.intent_router import IntentDecision, IntentRouter
 from core.recommended_actions_engine import RecommendedActionsEngine
 from core.retrieval.source_attribution import build_source_payloads
 from core.retriever import Retriever
@@ -38,10 +39,12 @@ DEFAULT_ERROR_MESSAGE = "请求处理失败，请稍后重试。"
 
 TICKET_DETAIL_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)$")
 TICKET_EVENTS_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/events$")
+TICKET_REPLY_EVENTS_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/reply-events$")
 TICKET_ASSIST_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/assist$")
 TICKET_SIMILAR_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/similar-cases$")
 TICKET_GROUNDING_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/grounding-sources$")
 TICKET_PENDING_ACTIONS_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/pending-actions$")
+TICKET_SWITCH_ACTIVE_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/switch-active$")
 TICKET_ACTION_RE = re.compile(
     r"^/api/tickets/(?P<ticket_id>[^/]+)/(claim|reassign|escalate|resolve|close)$"
 )
@@ -49,6 +52,12 @@ APPROVAL_ACTION_RE = re.compile(r"^/api/approvals/(?P<approval_id>[^/]+)/(approv
 COPILOT_TICKET_QUERY_RE = re.compile(r"^/api/copilot/ticket/(?P<ticket_id>[^/]+)/query$")
 TRACE_DETAIL_RE = re.compile(r"^/api/traces/(?P<trace_id>[^/]+)$")
 KB_DOC_RE = re.compile(r"^/api/kb/(?P<doc_id>[^/]+)$")
+SESSION_DETAIL_RE = re.compile(r"^/api/sessions/(?P<session_id>[^/]+)$")
+SESSION_TICKETS_RE = re.compile(r"^/api/sessions/(?P<session_id>[^/]+)/tickets$")
+SESSION_REPLY_EVENTS_RE = re.compile(r"^/api/sessions/(?P<session_id>[^/]+)/reply-events$")
+SESSION_RESET_RE = re.compile(r"^/api/sessions/(?P<session_id>[^/]+)/reset$")
+SESSION_NEW_ISSUE_RE = re.compile(r"^/api/sessions/(?P<session_id>[^/]+)/new-issue$")
+COPILOT_DISAMBIGUATE_PATH = "/api/copilot/disambiguate"
 
 
 @dataclass(frozen=True)
@@ -309,6 +318,268 @@ def _ticket_timeline_events(runtime: OpsApiRuntime, ticket_id: str) -> list[dict
         timeline.append(_trace_event_to_dict(item, ticket_id=ticket_id, index=index))
     timeline.sort(key=_event_sort_key)
     return timeline
+
+
+def _reply_event_to_dict(event: dict[str, Any], *, index: int) -> dict[str, Any]:
+    payload_raw = event.get("payload")
+    payload = dict(payload_raw) if isinstance(payload_raw, dict) else {}
+    llm_trace = _normalize_llm_trace(payload)
+    trace_id = event.get("trace_id")
+    ticket_id = event.get("ticket_id")
+    session_id = event.get("session_id")
+    trace_id_text = str(trace_id) if trace_id else None
+    ticket_id_text = str(ticket_id) if ticket_id else None
+    session_id_text = str(session_id) if session_id else None
+    created_at_raw = event.get("timestamp")
+    created_at = str(created_at_raw) if created_at_raw else None
+    generation_type = str(payload["generation_type"]) if payload.get("generation_type") else None
+    tone = str(payload["tone"]) if payload.get("tone") else None
+    workflow = str(payload["workflow"]) if payload.get("workflow") else None
+    reply_preview = str(payload["reply_preview"]) if payload.get("reply_preview") else None
+    grounding_sources = [
+        str(item) for item in payload.get("grounding_sources", []) if isinstance(item, str)
+    ]
+    fallback_key = trace_id_text or ticket_id_text or session_id_text or "unknown"
+    return {
+        "event_id": f"reply_evt_{fallback_key}_{index}",
+        "event_type": "reply_generated",
+        "trace_id": trace_id_text,
+        "ticket_id": ticket_id_text,
+        "session_id": session_id_text,
+        "created_at": created_at,
+        "source": "trace",
+        "provider": llm_trace.get("provider"),
+        "model": llm_trace.get("model"),
+        "prompt_key": llm_trace.get("prompt_key"),
+        "prompt_version": llm_trace.get("prompt_version"),
+        "request_id": llm_trace.get("request_id"),
+        "token_usage": llm_trace.get("token_usage"),
+        "retry_count": llm_trace.get("retry_count"),
+        "success": llm_trace.get("success"),
+        "error": llm_trace.get("error"),
+        "fallback_used": llm_trace.get("fallback_used"),
+        "degraded": llm_trace.get("degraded"),
+        "degrade_reason": llm_trace.get("degrade_reason"),
+        "generation_type": generation_type,
+        "tone": tone,
+        "workflow": workflow,
+        "reply_preview": reply_preview,
+        "grounding_sources": grounding_sources,
+        "payload": payload,
+    }
+
+
+def _ticket_reply_events(runtime: OpsApiRuntime, ticket_id: str) -> list[dict[str, Any]]:
+    events = runtime.trace_logger.query_by_ticket(ticket_id, limit=1000)
+    items: list[dict[str, Any]] = []
+    for index, item in enumerate(events):
+        if not isinstance(item, dict):
+            continue
+        if str(item.get("event_type") or "") != "reply_generated":
+            continue
+        items.append(_reply_event_to_dict(item, index=index))
+    items.sort(key=_event_sort_key)
+    return items
+
+
+def _session_reply_events(runtime: OpsApiRuntime, session_id: str) -> list[dict[str, Any]]:
+    events = runtime.trace_logger.query_by_session(session_id, limit=1000)
+    items: list[dict[str, Any]] = []
+    for index, item in enumerate(events):
+        if not isinstance(item, dict):
+            continue
+        if str(item.get("event_type") or "") != "reply_generated":
+            continue
+        items.append(_reply_event_to_dict(item, index=index))
+    items.sort(key=_event_sort_key)
+    return items
+
+
+def _session_payload(runtime: OpsApiRuntime, session_id: str) -> dict[str, Any] | None:
+    binding = runtime.gateway.bindings.session_mapper.get(session_id)
+    if binding is None:
+        return None
+    session_context = runtime.gateway.bindings.session_mapper.get_session_context(session_id)
+    active_ticket_id = (
+        str(session_context.get("active_ticket_id") or binding.ticket_id or "").strip() or None
+    )
+    recent_ticket_ids = [
+        str(item).strip()
+        for item in session_context.get("recent_ticket_ids", [])
+        if str(item).strip()
+    ]
+    if active_ticket_id:
+        recent_ticket_ids = [item for item in recent_ticket_ids if item != active_ticket_id]
+    return {
+        "session_id": binding.session_id,
+        "thread_id": binding.thread_id,
+        "active_ticket_id": active_ticket_id,
+        "recent_ticket_ids": recent_ticket_ids,
+        "session_mode": session_context.get("session_mode"),
+        "last_intent": session_context.get("last_intent"),
+        "updated_at": session_context.get("updated_at")
+        or (binding.updated_at.isoformat() if binding.updated_at else None),
+        "metadata": dict(binding.metadata),
+    }
+
+
+def _session_ticket_list(runtime: OpsApiRuntime, session_id: str) -> list[dict[str, Any]]:
+    binding = runtime.gateway.bindings.session_mapper.get(session_id)
+    if binding is None:
+        return []
+    session_tickets = [
+        ticket
+        for ticket in runtime.repository.list_tickets(limit=2000, offset=0)
+        if ticket.session_id == session_id
+    ]
+    by_ticket_id = {ticket.ticket_id: ticket for ticket in session_tickets}
+    ordered_ids = runtime.gateway.bindings.session_mapper.list_session_ticket_ids(
+        session_id,
+        include_active=True,
+        include_recent=True,
+        limit=50,
+    )
+    ordered: list[Ticket] = []
+    seen: set[str] = set()
+    for ticket_id in ordered_ids:
+        ticket = by_ticket_id.get(ticket_id)
+        if ticket is None or ticket.ticket_id in seen:
+            continue
+        ordered.append(ticket)
+        seen.add(ticket.ticket_id)
+    min_dt = datetime.min.replace(tzinfo=UTC)
+    for ticket in sorted(session_tickets, key=lambda item: item.updated_at or min_dt, reverse=True):
+        if ticket.ticket_id in seen:
+            continue
+        ordered.append(ticket)
+        seen.add(ticket.ticket_id)
+    return [_ticket_to_dict(ticket) for ticket in ordered]
+
+
+def _disambiguation_options(
+    *,
+    session_id: str,
+    active_ticket_id: str | None,
+    candidate_ticket_ids: list[str],
+) -> list[dict[str, Any]]:
+    options: list[dict[str, Any]] = []
+    if active_ticket_id:
+        options.append(
+            {
+                "action": "continue_current",
+                "ticket_id": active_ticket_id,
+                "label": f"继续当前工单（{active_ticket_id}）",
+                "endpoint": f"/api/tickets/{active_ticket_id}/switch-active",
+                "method": "POST",
+                "payload": {"session_id": session_id},
+            }
+        )
+    options.append(
+        {
+            "action": "create_new",
+            "label": "按新问题处理",
+            "endpoint": f"/api/sessions/{session_id}/new-issue",
+            "method": "POST",
+            "payload": {},
+        }
+    )
+    for ticket_id in candidate_ticket_ids:
+        if ticket_id == active_ticket_id:
+            continue
+        options.append(
+            {
+                "action": "switch_ticket",
+                "ticket_id": ticket_id,
+                "label": f"切换到工单 {ticket_id}",
+                "endpoint": f"/api/tickets/{ticket_id}/switch-active",
+                "method": "POST",
+                "payload": {"session_id": session_id},
+            }
+        )
+    return options
+
+
+def _copilot_disambiguate_payload(
+    runtime: OpsApiRuntime,
+    *,
+    session_id: str,
+    message_text: str,
+) -> dict[str, Any]:
+    binding = runtime.gateway.bindings.session_mapper.get(session_id)
+    if binding is None:
+        raise KeyError(session_id)
+    session_context = runtime.gateway.bindings.session_mapper.get_session_context(session_id)
+    active_ticket_id = (
+        str(session_context.get("active_ticket_id") or "").strip()
+        or str(binding.ticket_id or "").strip()
+        or None
+    )
+    candidate_ticket_ids = runtime.gateway.bindings.session_mapper.list_session_ticket_ids(
+        session_id,
+        include_active=True,
+        include_recent=True,
+        limit=10,
+    )
+    active_ticket = runtime.ticket_api.get_ticket(active_ticket_id) if active_ticket_id else None
+    intent = IntentRouter().route(message_text)
+    decision = NewIssueDetector().evaluate(
+        message_text=message_text,
+        intent=intent,
+        candidate_ticket_ids=candidate_ticket_ids,
+        active_ticket_id=active_ticket_id,
+        requested_ticket_id=None,
+        session_mode=str(session_context.get("session_mode") or "").strip() or None,
+        last_intent=str(session_context.get("last_intent") or "").strip() or None,
+        active_ticket=active_ticket,
+    )
+    if decision.decision == "awaiting_disambiguation" and decision.active_ticket_id:
+        runtime.ticket_api.switch_active_session_ticket(
+            session_id,
+            decision.active_ticket_id,
+            metadata={
+                "session_mode": "awaiting_disambiguation",
+                "last_intent": decision.intent.intent,
+            },
+        )
+    updated_session = _session_payload(runtime, session_id)
+    if updated_session is None:
+        raise KeyError(session_id)
+    candidate_tickets: list[dict[str, Any]] = []
+    for ticket_id in decision.candidate_ticket_ids:
+        ticket = runtime.ticket_api.get_ticket(ticket_id)
+        if ticket is None:
+            continue
+        candidate_tickets.append(
+            {
+                "ticket_id": ticket.ticket_id,
+                "title": ticket.title,
+                "status": ticket.status,
+                "intent": ticket.intent,
+                "updated_at": ticket.updated_at.isoformat() if ticket.updated_at else None,
+            }
+        )
+    return {
+        "session_id": session_id,
+        "message_text": message_text,
+        "decision": decision.decision,
+        "confidence": decision.confidence,
+        "reason": decision.reason,
+        "intent": {
+            "intent": decision.intent.intent,
+            "confidence": decision.intent.confidence,
+            "is_low_confidence": decision.intent.is_low_confidence,
+            "reason": decision.intent.reason,
+        },
+        "suggested_ticket_id": decision.suggested_ticket_id,
+        "active_ticket_id": decision.active_ticket_id,
+        "candidate_tickets": candidate_tickets,
+        "options": _disambiguation_options(
+            session_id=session_id,
+            active_ticket_id=decision.active_ticket_id,
+            candidate_ticket_ids=list(decision.candidate_ticket_ids),
+        ),
+        "session": updated_session,
+    }
 
 
 def _filter_tickets(runtime: OpsApiRuntime, query: dict[str, str]) -> list[Ticket]:
@@ -1098,6 +1369,42 @@ def handle_api_request(
                 },
             )
 
+        if method == "GET" and (match := SESSION_DETAIL_RE.match(path)):
+            session_id = match.group("session_id")
+            data = _session_payload(runtime, session_id)
+            if data is None:
+                return _error(
+                    req_id,
+                    code="session_not_found",
+                    message=f"session {session_id} not found",
+                    status=HTTPStatus.NOT_FOUND,
+                )
+            return _json_response(req_id, {"data": data})
+
+        if method == "GET" and (match := SESSION_TICKETS_RE.match(path)):
+            session_id = match.group("session_id")
+            data = _session_payload(runtime, session_id)
+            if data is None:
+                return _error(
+                    req_id,
+                    code="session_not_found",
+                    message=f"session {session_id} not found",
+                    status=HTTPStatus.NOT_FOUND,
+                )
+            return _json_response(req_id, {"items": _session_ticket_list(runtime, session_id)})
+
+        if method == "GET" and (match := SESSION_REPLY_EVENTS_RE.match(path)):
+            session_id = match.group("session_id")
+            data = _session_payload(runtime, session_id)
+            if data is None:
+                return _error(
+                    req_id,
+                    code="session_not_found",
+                    message=f"session {session_id} not found",
+                    status=HTTPStatus.NOT_FOUND,
+                )
+            return _json_response(req_id, {"items": _session_reply_events(runtime, session_id)})
+
         if method == "GET" and (match := TICKET_DETAIL_RE.match(path)):
             ticket_id = match.group("ticket_id")
             ticket = runtime.ticket_api.get_ticket(ticket_id)
@@ -1113,6 +1420,18 @@ def handle_api_request(
         if method == "GET" and (match := TICKET_EVENTS_RE.match(path)):
             ticket_id = match.group("ticket_id")
             return _json_response(req_id, {"items": _ticket_timeline_events(runtime, ticket_id)})
+
+        if method == "GET" and (match := TICKET_REPLY_EVENTS_RE.match(path)):
+            ticket_id = match.group("ticket_id")
+            ticket = runtime.ticket_api.get_ticket(ticket_id)
+            if ticket is None:
+                return _error(
+                    req_id,
+                    code="ticket_not_found",
+                    message=f"ticket {ticket_id} not found",
+                    status=HTTPStatus.NOT_FOUND,
+                )
+            return _json_response(req_id, {"items": _ticket_reply_events(runtime, ticket_id)})
 
         if method == "GET" and (match := TICKET_PENDING_ACTIONS_RE.match(path)):
             ticket_id = match.group("ticket_id")
@@ -1202,6 +1521,45 @@ def handle_api_request(
                 req_id,
                 {"items": _extract_grounding_sources(ticket, runtime.retriever)},
             )
+
+        if method == "POST" and path == COPILOT_DISAMBIGUATE_PATH:
+            session_id = str(payload.get("session_id") or "").strip()
+            message_text = str(payload.get("message_text") or payload.get("query") or "").strip()
+            if not session_id:
+                return _error(
+                    req_id,
+                    code="invalid_payload",
+                    message="session_id is required",
+                    status=HTTPStatus.BAD_REQUEST,
+                )
+            if not message_text:
+                return _error(
+                    req_id,
+                    code="invalid_payload",
+                    message="message_text is required",
+                    status=HTTPStatus.BAD_REQUEST,
+                )
+            if runtime.gateway.bindings.session_mapper.get(session_id) is None:
+                return _error(
+                    req_id,
+                    code="session_not_found",
+                    message=f"session {session_id} not found",
+                    status=HTTPStatus.NOT_FOUND,
+                )
+            try:
+                data = _copilot_disambiguate_payload(
+                    runtime,
+                    session_id=session_id,
+                    message_text=message_text,
+                )
+            except KeyError:
+                return _error(
+                    req_id,
+                    code="session_not_found",
+                    message=f"session {session_id} not found",
+                    status=HTTPStatus.NOT_FOUND,
+                )
+            return _json_response(req_id, {"data": data})
 
         if method == "POST" and path == "/api/copilot/operator/query":
             query_text, error = _require_copilot_query(req_id, payload)
@@ -1293,6 +1651,108 @@ def handle_api_request(
                 for item in runtime.approval_runtime.list_pending_actions()
             ]
             return _json_response(req_id, _paginate(pending_items, query=query))
+
+        if method == "POST" and (match := SESSION_RESET_RE.match(path)):
+            session_id = match.group("session_id")
+            if runtime.gateway.bindings.session_mapper.get(session_id) is None:
+                return _error(
+                    req_id,
+                    code="session_not_found",
+                    message=f"session {session_id} not found",
+                    status=HTTPStatus.NOT_FOUND,
+                )
+            actor_id = str(payload.get("actor_id") or "ops-api").strip()
+            runtime.gateway.bindings.session_mapper.reset_session_context(
+                session_id,
+                metadata={
+                    "session_mode": "awaiting_new_issue",
+                    "last_intent": "session_reset",
+                    "updated_by": actor_id,
+                },
+                keep_recent=True,
+            )
+            data = _session_payload(runtime, session_id)
+            if data is None:
+                return _error(
+                    req_id,
+                    code="session_not_found",
+                    message=f"session {session_id} not found",
+                    status=HTTPStatus.NOT_FOUND,
+                )
+            return _json_response(req_id, {"data": data})
+
+        if method == "POST" and (match := SESSION_NEW_ISSUE_RE.match(path)):
+            session_id = match.group("session_id")
+            if runtime.gateway.bindings.session_mapper.get(session_id) is None:
+                return _error(
+                    req_id,
+                    code="session_not_found",
+                    message=f"session {session_id} not found",
+                    status=HTTPStatus.NOT_FOUND,
+                )
+            actor_id = str(payload.get("actor_id") or "ops-api").strip()
+            runtime.gateway.bindings.session_mapper.begin_new_issue(
+                session_id,
+                metadata={
+                    "session_mode": "awaiting_new_issue",
+                    "last_intent": "new_issue_requested",
+                    "updated_by": actor_id,
+                },
+            )
+            data = _session_payload(runtime, session_id)
+            if data is None:
+                return _error(
+                    req_id,
+                    code="session_not_found",
+                    message=f"session {session_id} not found",
+                    status=HTTPStatus.NOT_FOUND,
+                )
+            return _json_response(req_id, {"data": data})
+
+        if method == "POST" and (match := TICKET_SWITCH_ACTIVE_RE.match(path)):
+            ticket_id = match.group("ticket_id")
+            ticket = runtime.ticket_api.require_ticket(ticket_id)
+            session_id = str(payload.get("session_id") or ticket.session_id).strip()
+            if not session_id:
+                return _error(
+                    req_id,
+                    code="invalid_payload",
+                    message="session_id is required",
+                    status=HTTPStatus.BAD_REQUEST,
+                )
+            if session_id != ticket.session_id:
+                return _error(
+                    req_id,
+                    code="invalid_payload",
+                    message="ticket does not belong to target session",
+                    status=HTTPStatus.BAD_REQUEST,
+                )
+            actor_id = str(payload.get("actor_id") or "ops-api").strip()
+            runtime.ticket_api.switch_active_session_ticket(
+                session_id,
+                ticket_id,
+                metadata={
+                    "updated_by": actor_id,
+                    "session_mode": "multi_issue",
+                },
+            )
+            session_data = _session_payload(runtime, session_id)
+            if session_data is None:
+                return _error(
+                    req_id,
+                    code="session_not_found",
+                    message=f"session {session_id} not found",
+                    status=HTTPStatus.NOT_FOUND,
+                )
+            return _json_response(
+                req_id,
+                {
+                    "data": {
+                        "ticket": _ticket_to_dict(ticket),
+                        "session": session_data,
+                    }
+                },
+            )
 
         if method == "POST" and (match := TICKET_ACTION_RE.match(path)):
             ticket_id = match.group("ticket_id")
