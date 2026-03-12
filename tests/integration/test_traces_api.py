@@ -140,6 +140,30 @@ def test_traces_api_list_filters_and_detail(monkeypatch: MonkeyPatch, tmp_path: 
         ticket_id=ticket_a.ticket_id,
         session_id=ticket_a.session_id,
     )
+    runtime.trace_logger.log(
+        "approval_requested",
+        {
+            "approval_id": "apr_trace_a_001",
+            "action": "ticket_escalate",
+            "actor_id": "u_ops_01",
+            "timeout_at": "2026-03-12T10:00:00+00:00",
+        },
+        trace_id=trace_a,
+        ticket_id=ticket_a.ticket_id,
+        session_id=ticket_a.session_id,
+    )
+    runtime.trace_logger.log(
+        "approval_decision",
+        {
+            "approval_id": "apr_trace_a_001",
+            "status": "approved",
+            "actor_id": "u_supervisor_01",
+            "decided_at": "2026-03-12T10:01:00+00:00",
+        },
+        trace_id=trace_a,
+        ticket_id=ticket_a.ticket_id,
+        session_id=ticket_a.session_id,
+    )
 
     trace_b = f"trace_api_{uuid.uuid4().hex[:10]}"
     runtime.trace_logger.log(
@@ -245,6 +269,19 @@ def test_traces_api_list_filters_and_detail(monkeypatch: MonkeyPatch, tmp_path: 
             assert "route_decision" in event_types
             assert "handoff_decision" in event_types
             assert "summary_generated" in event_types
+            assert "approval_requested" in event_types
+            assert "approval_decision" in event_types
+            approval_requested_event = next(
+                item for item in detail["events"] if item["event_type"] == "approval_requested"
+            )
+            assert approval_requested_event["payload"]["approval_id"] == "apr_trace_a_001"
+            assert approval_requested_event["payload"]["actor_id"] == "u_ops_01"
+            approval_decision_event = next(
+                item for item in detail["events"] if item["event_type"] == "approval_decision"
+            )
+            assert approval_decision_event["payload"]["status"] == "approved"
+            assert approval_decision_event["payload"]["actor_id"] == "u_supervisor_01"
+            assert approval_decision_event["payload"]["decided_at"]
     finally:
         server.shutdown()
         server.server_close()

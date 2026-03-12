@@ -46,6 +46,7 @@ TICKET_ACTION_RE = re.compile(
     r"^/api/tickets/(?P<ticket_id>[^/]+)/(claim|reassign|escalate|resolve|close)$"
 )
 APPROVAL_ACTION_RE = re.compile(r"^/api/approvals/(?P<approval_id>[^/]+)/(approve|reject)$")
+COPILOT_TICKET_QUERY_RE = re.compile(r"^/api/copilot/ticket/(?P<ticket_id>[^/]+)/query$")
 TRACE_DETAIL_RE = re.compile(r"^/api/traces/(?P<trace_id>[^/]+)$")
 KB_DOC_RE = re.compile(r"^/api/kb/(?P<doc_id>[^/]+)$")
 
@@ -675,6 +676,168 @@ def _extract_grounding_sources(ticket: Ticket, retriever: Retriever) -> list[dic
     return build_source_payloads(ticket.latest_message, detailed, top_k=5)
 
 
+def _require_copilot_query(
+    request_id: str, payload: dict[str, Any]
+) -> tuple[str | None, ApiResponse | None]:
+    query_text = str(payload.get("query") or "").strip()
+    if query_text:
+        return query_text, None
+    return None, _error(
+        request_id,
+        code="invalid_payload",
+        message="query is required",
+        status=HTTPStatus.BAD_REQUEST,
+    )
+
+
+def _default_copilot_llm_trace(scope: str) -> dict[str, Any]:
+    return {
+        "provider": "fallback",
+        "model": None,
+        "prompt_key": f"copilot_{scope}_query",
+        "prompt_version": "v1",
+        "latency_ms": None,
+        "request_id": None,
+        "token_usage": None,
+        "retry_count": 0,
+        "success": True,
+        "error": None,
+        "fallback_used": True,
+        "degraded": False,
+        "degrade_reason": None,
+    }
+
+
+def _copilot_grounding_sources(
+    runtime: OpsApiRuntime, query_text: str, *, top_k: int = 5
+) -> list[dict[str, Any]]:
+    detailed = runtime.retriever.search_grounded_with_details(
+        query_text, top_k=top_k, mode="hybrid"
+    )
+    return build_source_payloads(query_text, detailed, top_k=top_k)
+
+
+def _build_copilot_operator_payload(runtime: OpsApiRuntime, query_text: str) -> dict[str, Any]:
+    summary = _dashboard_summary(runtime)
+    grounding_sources = _copilot_grounding_sources(runtime, query_text, top_k=5)
+    sla_risk = int(summary["sla_warning_count"]) + int(summary["sla_breached_count"])
+    answer = (
+        f"Operator建议：当前处理中{summary['in_progress_count']}单，"
+        f"SLA风险{sla_risk}单，升级单{summary['escalated_count']}。"
+        "优先处理升级与SLA风险工单。"
+    )
+    risk_flags = ["low_grounding"] if not grounding_sources else []
+    return {
+        "scope": "operator",
+        "query": query_text,
+        "answer": answer,
+        "dashboard_summary": summary,
+        "grounding_sources": grounding_sources,
+        "risk_flags": risk_flags,
+        "llm_trace": _default_copilot_llm_trace("operator"),
+        "generated_at": datetime.now(UTC).isoformat(),
+    }
+
+
+def _build_copilot_queue_payload(
+    runtime: OpsApiRuntime, query_text: str, *, queue_name: str | None = None
+) -> dict[str, Any]:
+    rows = _queue_summary(runtime)
+    if queue_name:
+        rows = [item for item in rows if str(item.get("queue_name")) == queue_name]
+    ranked = sorted(
+        rows,
+        key=lambda item: (
+            int(item.get("breached_count", 0)),
+            int(item.get("warning_count", 0)),
+            int(item.get("escalated_count", 0)),
+            int(item.get("in_progress_count", 0)),
+        ),
+        reverse=True,
+    )
+    focus = ranked[0] if ranked else None
+    focus_queue = str(focus.get("queue_name")) if focus else queue_name or "n/a"
+    answer = (
+        f"Queue建议：优先关注队列 {focus_queue}。"
+        if focus
+        else "Queue建议：当前无可分析队列数据。"
+    )
+    grounding_sources = _copilot_grounding_sources(runtime, query_text, top_k=5)
+    risk_flags = ["low_grounding"] if not grounding_sources else []
+    return {
+        "scope": "queue",
+        "query": query_text,
+        "queue_name": focus_queue,
+        "answer": answer,
+        "queue_summary": ranked[:10],
+        "grounding_sources": grounding_sources,
+        "risk_flags": risk_flags,
+        "llm_trace": _default_copilot_llm_trace("queue"),
+        "generated_at": datetime.now(UTC).isoformat(),
+    }
+
+
+def _build_copilot_ticket_payload(
+    runtime: OpsApiRuntime, ticket: Ticket, query_text: str
+) -> dict[str, Any]:
+    events = runtime.ticket_api.list_events(ticket.ticket_id)
+    summary = runtime.summary_engine.case_summary(ticket, events)
+    llm_trace = _normalize_llm_trace(runtime.summary_engine.last_generation_metadata())
+    grounding_sources = _extract_grounding_sources(ticket, runtime.retriever)
+    metadata_risk_flags = ticket.metadata.get("risk_flags")
+    risk_flags = (
+        [str(item) for item in metadata_risk_flags if isinstance(item, str)]
+        if isinstance(metadata_risk_flags, list)
+        else []
+    )
+    if not grounding_sources:
+        risk_flags = sorted({*risk_flags, "low_grounding"})
+    answer = f"{summary} 结合问题“{query_text}”，建议按推荐动作逐项执行并同步客户进度。"
+    return {
+        "scope": "ticket",
+        "query": query_text,
+        "ticket_id": ticket.ticket_id,
+        "answer": answer,
+        "summary": summary,
+        "grounding_sources": grounding_sources,
+        "risk_flags": risk_flags,
+        "llm_trace": llm_trace,
+        "generated_at": datetime.now(UTC).isoformat(),
+    }
+
+
+def _build_copilot_dispatch_payload(runtime: OpsApiRuntime, query_text: str) -> dict[str, Any]:
+    rows = _queue_summary(runtime)
+    priorities = sorted(
+        rows,
+        key=lambda item: (
+            int(item.get("escalated_count", 0)),
+            int(item.get("breached_count", 0)),
+            int(item.get("in_progress_count", 0)),
+        ),
+        reverse=True,
+    )
+    top_queue = str(priorities[0]["queue_name"]) if priorities else "n/a"
+    answer = (
+        f"Dispatch建议：优先向队列 {top_queue} 投放处理资源，"
+        "并优先分配升级与超时风险工单。"
+        if priorities
+        else "Dispatch建议：暂无可调度的队列负载数据。"
+    )
+    grounding_sources = _copilot_grounding_sources(runtime, query_text, top_k=5)
+    risk_flags = ["low_grounding"] if not grounding_sources else []
+    return {
+        "scope": "dispatch",
+        "query": query_text,
+        "answer": answer,
+        "dispatch_priority": priorities[:5],
+        "grounding_sources": grounding_sources,
+        "risk_flags": risk_flags,
+        "llm_trace": _default_copilot_llm_trace("dispatch"),
+        "generated_at": datetime.now(UTC).isoformat(),
+    }
+
+
 def _retrieval_health_payload(runtime: OpsApiRuntime) -> dict[str, Any]:
     return {
         "status": "ok",
@@ -1034,6 +1197,55 @@ def handle_api_request(
             return _json_response(
                 req_id,
                 {"items": _extract_grounding_sources(ticket, runtime.retriever)},
+            )
+
+        if method == "POST" and path == "/api/copilot/operator/query":
+            query_text, error = _require_copilot_query(req_id, payload)
+            if error is not None:
+                return error
+            return _json_response(
+                req_id,
+                {"data": _build_copilot_operator_payload(runtime, query_text=query_text or "")},
+            )
+
+        if method == "POST" and path == "/api/copilot/queue/query":
+            query_text, error = _require_copilot_query(req_id, payload)
+            if error is not None:
+                return error
+            queue_name = str(payload.get("queue") or "").strip() or None
+            return _json_response(
+                req_id,
+                {
+                    "data": _build_copilot_queue_payload(
+                        runtime,
+                        query_text=query_text or "",
+                        queue_name=queue_name,
+                    )
+                },
+            )
+
+        if method == "POST" and (match := COPILOT_TICKET_QUERY_RE.match(path)):
+            query_text, error = _require_copilot_query(req_id, payload)
+            if error is not None:
+                return error
+            ticket_id = match.group("ticket_id")
+            ticket = runtime.ticket_api.require_ticket(ticket_id)
+            return _json_response(
+                req_id,
+                {
+                    "data": _build_copilot_ticket_payload(
+                        runtime, ticket, query_text=query_text or ""
+                    )
+                },
+            )
+
+        if method == "POST" and path == "/api/copilot/dispatch/query":
+            query_text, error = _require_copilot_query(req_id, payload)
+            if error is not None:
+                return error
+            return _json_response(
+                req_id,
+                {"data": _build_copilot_dispatch_payload(runtime, query_text=query_text or "")},
             )
 
         if method == "POST" and path == "/api/retrieval/search":
