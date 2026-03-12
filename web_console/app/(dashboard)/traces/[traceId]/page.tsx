@@ -67,9 +67,26 @@ export default function TraceDetailPage() {
           {t("模型提供方", "Provider")}={toText(data.provider)}
         </div>
         <div style={{ color: "var(--muted)", marginTop: 4 }}>
+          {t("模型", "Model")}={toText(data.model)} · {t("Prompt", "Prompt")}={toText(data.prompt_key)}@
+          {toText(data.prompt_version)}
+        </div>
+        <div style={{ color: "var(--muted)", marginTop: 4 }}>
+          {t("重试次数", "Retry")}={data.retry_count !== null ? data.retry_count : "-"} ·{" "}
+          {t("成功", "Success")}={data.success === null ? "-" : data.success ? "true" : "false"} ·{" "}
+          {t("错误", "Error")}={toText(data.error)}
+        </div>
+        <div style={{ color: "var(--muted)", marginTop: 4 }}>
           {t("延迟", "Latency")}={data.latency_ms !== null ? `${data.latency_ms}ms` : "-"} ·{" "}
+          request_id={toText(data.request_id)} ·{" "}
           {t("创建时间", "Created At")}={toText(data.created_at)}
         </div>
+        {data.degraded ? (
+          <div style={{ marginTop: 8 }}>
+            <span className="pill pill-breached">
+              {t("已降级", "Degraded")} {toText(data.degrade_reason)}
+            </span>
+          </div>
+        ) : null}
       </article>
 
       <div
@@ -87,7 +104,11 @@ export default function TraceDetailPage() {
           errorOnly={data.error_only}
         />
         <TraceToolCallsCard toolCalls={data.tool_calls} />
-        <TraceGroundingCard retrievedDocs={data.retrieved_docs} summary={data.summary} />
+        <TraceGroundingCard
+          retrievedDocs={data.retrieved_docs}
+          groundingSources={data.grounding_sources}
+          summary={data.summary}
+        />
         <article className="card">
           <h3>{t("Handoff Reason", "Handoff Reason")}</h3>
           <div style={{ marginTop: 10, color: "var(--muted)", fontSize: 13 }}>

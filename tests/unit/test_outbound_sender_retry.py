@@ -57,4 +57,11 @@ def test_outbound_sender_retries_retryable_error(tmp_path: Path) -> None:
     events = bindings.trace_logger.query_by_trace("trace-retry")
     event_types = [item["event_type"] for item in events]
     assert "egress_failed" in event_types
+    assert "egress_retry_scheduled" in event_types
     assert "egress_rendered" in event_types
+    failed_event = next(item for item in events if item["event_type"] == "egress_failed")
+    payload = failed_event["payload"]
+    assert isinstance(payload, dict)
+    retry_payload = payload.get("retry")
+    assert isinstance(retry_payload, dict)
+    assert retry_payload.get("classification") == "temporary"

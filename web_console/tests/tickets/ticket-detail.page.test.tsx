@@ -25,6 +25,7 @@ describe("TicketDetailPage", () => {
       error: null,
       ticket: null,
       assist: null,
+      groundingSources: [],
       similarCases: [],
       events: [],
       assignees: [],
@@ -67,11 +68,22 @@ describe("TicketDetailPage", () => {
       assist: {
         summary: "Need hardware inspection",
         recommended_actions: [{ title: "Dispatch onsite", description: "Visit within 2h" }],
+        grounding_sources: [],
         risk_flags: ["safety"],
         latest_messages: ["elevator stopped"],
         provider: "openai-compatible",
         prompt_version: "workflow_engine_v1"
       },
+      groundingSources: [
+        {
+          source_id: "case-001",
+          source_type: "history_case",
+          title: "支付重复扣费案例#001",
+          snippet: "先冻结通道后退款并告知用户",
+          score: 0.93,
+          rank: 1
+        }
+      ],
       similarCases: [{ doc_id: "doc-1", title: "Elevator reboot", source_type: "history_case", score: 0.92 }],
       events: [
         {
@@ -107,6 +119,7 @@ describe("TicketDetailPage", () => {
       error: "detail api timeout",
       ticket: null,
       assist: null,
+      groundingSources: [],
       similarCases: [],
       events: [],
       assignees: [],

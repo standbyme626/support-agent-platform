@@ -51,6 +51,9 @@ export function ChannelHealthCard({ rows }: { rows: ChannelHealthItem[] }) {
                 <th>{t("已连接", "Connected")}</th>
                 <th>{t("最近事件", "Last Event")}</th>
                 <th>{t("重试状态", "Retry State")}</th>
+                <th>{t("签名状态", "Signature")}</th>
+                <th>{t("重放重复", "Replay Duplicates")}</th>
+                <th>{t("重试可观测", "Retry Obs.")}</th>
                 <th>{t("最近错误", "Last Error")}</th>
               </tr>
             </thead>
@@ -65,6 +68,9 @@ export function ChannelHealthCard({ rows }: { rows: ChannelHealthItem[] }) {
                   </td>
                   <td>{toDateTimeText(row.last_event_at)}</td>
                   <td>{row.retry_state}</td>
+                  <td>{row.signature_state}</td>
+                  <td>{row.replay_duplicates}</td>
+                  <td>{(row.retry_observability * 100).toFixed(1)}%</td>
                   <td>{toErrorText(row.last_error)}</td>
                 </tr>
               ))}

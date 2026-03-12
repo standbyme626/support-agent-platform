@@ -88,7 +88,14 @@ class ToolRouter:
         source = str(args.get("source_type", "faq"))
         query = self._require_str(args, "query")
         top_k = int(args.get("top_k", 3))
-        return search_kb(retriever=self._retriever, source_type=source, query=query, top_k=top_k)
+        retrieval_mode = str(args.get("retrieval_mode", "")).strip() or None
+        return search_kb(
+            retriever=self._retriever,
+            source_type=source,
+            query=query,
+            top_k=top_k,
+            retrieval_mode=retrieval_mode,
+        )
 
     def _run_create_ticket(self, args: dict[str, Any]) -> Any:
         required = [

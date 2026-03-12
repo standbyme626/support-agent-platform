@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
+import time
 from pathlib import Path
 
 from channel_adapters.feishu_adapter import FeishuAdapter
@@ -129,3 +132,51 @@ def test_gateway_channel_routing_duplicate_and_invalid_payload(tmp_path: Path) -
     assert invalid_fs["error"]["code"] == "missing_session_id"
     assert invalid_wc["status"] == "invalid_payload"
     assert invalid_wc["error"]["code"] == "missing_session_id"
+
+
+def test_gateway_wecom_signature_validation_and_audit(tmp_path: Path) -> None:
+    gateway = _build_gateway(tmp_path)
+
+    missing_signature = gateway.receive(
+        "wecom",
+        {
+            "FromUserName": "wc_sig",
+            "Content": "hello",
+            "MsgId": "wc-sig-1",
+            "require_signature": True,
+            "source": "wecom_bridge",
+            "require_source_validation": True,
+        },
+    )
+    assert missing_signature["status"] == "invalid_payload"
+    assert missing_signature["error"]["code"] == "missing_signature"
+
+    secret = "integration-secret"
+    timestamp = str(int(time.time()))
+    nonce = "nonce-int"
+    signature = hmac.new(
+        secret.encode(),
+        f"{timestamp}:{nonce}".encode(),
+        hashlib.sha256,
+    ).hexdigest()
+    accepted = gateway.receive(
+        "wecom",
+        {
+            "FromUserName": "wc_sig",
+            "Content": "hello signed",
+            "MsgId": "wc-sig-2",
+            "require_signature": True,
+            "source": "wecom_bridge",
+            "require_source_validation": True,
+            "signature": signature,
+            "secret": secret,
+            "timestamp": timestamp,
+            "nonce": nonce,
+        },
+    )
+    assert accepted["status"] == "ok"
+
+    traces = gateway.bindings.trace_logger.read_recent(limit=30)
+    event_types = [item["event_type"] for item in traces]
+    assert "signature_rejected" in event_types
+    assert "signature_validated" in event_types

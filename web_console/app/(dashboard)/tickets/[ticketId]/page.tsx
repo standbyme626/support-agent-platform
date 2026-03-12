@@ -47,7 +47,20 @@ export default function TicketDetailPage() {
     );
   }
 
-  const { loading, error, ticket, assist, similarCases, events, assignees, actionLoading, actionError, runAction, refetch } =
+  const {
+    loading,
+    error,
+    ticket,
+    assist,
+    groundingSources,
+    similarCases,
+    events,
+    assignees,
+    actionLoading,
+    actionError,
+    runAction,
+    refetch
+  } =
     useTicketDetail(ticketId);
 
   if (loading) {
@@ -97,6 +110,29 @@ export default function TicketDetailPage() {
               <li>{t("审批要求", "Approval Required")}: {toText(ticket.metadata?.approval_required)}</li>
               <li>{t("最近消息", "Latest Message")}: {ticket.latest_message || "-"}</li>
             </ul>
+            {groundingSources.length ? (
+              <>
+                <h4 style={{ marginTop: 12, marginBottom: 6, fontSize: 13 }}>
+                  {t("Grounding Sources", "Grounding Sources")}
+                </h4>
+                <ul className="list">
+                  {groundingSources.map((item, index) => (
+                    <li className="list-item" key={`${item.source_id ?? "source"}-${index}`}>
+                      <strong>{item.title ?? t("未命名来源", "Untitled source")}</strong>
+                      <div style={{ color: "var(--muted)", fontSize: 13 }}>
+                        {t("来源", "Source")}={item.source_type ?? "-"} · {t("排名", "Rank")}={item.rank ?? "-"} ·{" "}
+                        {t("分数", "Score")}={item.score ?? "-"}
+                      </div>
+                      {item.snippet ? (
+                        <div style={{ color: "var(--muted)", fontSize: 12, marginTop: 4 }}>
+                          {item.snippet}
+                        </div>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
             {assist?.latest_messages?.length ? (
               <>
                 <h4 style={{ marginTop: 12, marginBottom: 6, fontSize: 13 }}>{t("关联上下文", "Context Messages")}</h4>

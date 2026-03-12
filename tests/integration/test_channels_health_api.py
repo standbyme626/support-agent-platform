@@ -51,9 +51,11 @@ def test_channels_health_and_events_api(monkeypatch: MonkeyPatch, tmp_path: Path
         with httpx.Client(timeout=10.0, trust_env=False) as client:
             health_payload = _get_json(client, f"{base}/api/channels/health")
             events_payload = _get_json(client, f"{base}/api/channels/events")
+            signature_payload = _get_json(client, f"{base}/api/channels/signature-status")
 
             assert isinstance(health_payload.get("items"), list)
             assert isinstance(events_payload.get("items"), list)
+            assert isinstance(signature_payload.get("items"), list)
 
             health_items = health_payload["items"]
             assert len(health_items) >= 1
@@ -63,6 +65,9 @@ def test_channels_health_and_events_api(monkeypatch: MonkeyPatch, tmp_path: Path
                 "last_event_at",
                 "last_error",
                 "retry_state",
+                "signature_state",
+                "replay_duplicates",
+                "retry_observability",
             }
             for row in health_items:
                 assert required_health_fields.issubset(set(row.keys()))
@@ -75,6 +80,10 @@ def test_channels_health_and_events_api(monkeypatch: MonkeyPatch, tmp_path: Path
                 assert required_event_fields.issubset(set(row.keys()))
                 assert isinstance(row["payload"], dict)
             assert any(str(row.get("channel")) == "telegram" for row in events_items)
+
+            signature_items = signature_payload["items"]
+            for row in signature_items:
+                assert {"channel", "checked", "valid", "rejected"}.issubset(set(row.keys()))
     finally:
         server.shutdown()
         server.server_close()

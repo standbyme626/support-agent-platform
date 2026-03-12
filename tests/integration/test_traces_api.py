@@ -80,7 +80,21 @@ def test_traces_api_list_filters_and_detail(monkeypatch: MonkeyPatch, tmp_path: 
     )
     runtime.trace_logger.log(
         "ticket_context_retrieved",
-        {"doc_ids": ["doc-elevator-1", "doc-elevator-2"]},
+        {
+            "doc_ids": ["doc-elevator-1", "doc-elevator-2"],
+            "grounding_sources": [
+                {
+                    "source_type": "history_case",
+                    "source_id": "doc-elevator-1",
+                    "title": "电梯停运应急案例",
+                    "snippet": "先断电复位并通知值班工程师",
+                    "score": 0.91,
+                    "rank": 1,
+                    "reason": "rerank:title_match",
+                    "retrieval_mode": "hybrid",
+                }
+            ],
+        },
         trace_id=trace_a,
         ticket_id=ticket_a.ticket_id,
         session_id=ticket_a.session_id,
@@ -95,6 +109,26 @@ def test_traces_api_list_filters_and_detail(monkeypatch: MonkeyPatch, tmp_path: 
     runtime.trace_logger.log(
         "recommended_actions",
         {"actions": [{"action": "dispatch_engineer"}]},
+        trace_id=trace_a,
+        ticket_id=ticket_a.ticket_id,
+        session_id=ticket_a.session_id,
+    )
+    runtime.trace_logger.log(
+        "summary_generated",
+        {
+            "provider": "openai-compatible",
+            "model": "qwen3.5:9b",
+            "prompt_key": "case_summary",
+            "prompt_version": "v2",
+            "latency_ms": 86,
+            "request_id": "req-trace-a",
+            "token_usage": {"prompt_tokens": 22, "completion_tokens": 11, "total_tokens": 33},
+            "retry_count": 1,
+            "success": True,
+            "error": None,
+            "fallback_used": False,
+            "degraded": False,
+        },
         trace_id=trace_a,
         ticket_id=ticket_a.ticket_id,
         session_id=ticket_a.session_id,
@@ -136,9 +170,21 @@ def test_traces_api_list_filters_and_detail(monkeypatch: MonkeyPatch, tmp_path: 
         with httpx.Client(timeout=10.0, trust_env=False) as client:
             traces = _json(client, "GET", f"{base}/api/traces?page=1&page_size=20")
             assert traces["total"] >= 2
-            trace_ids = {item["trace_id"] for item in traces["items"]}
-            assert trace_a in trace_ids
-            assert trace_b in trace_ids
+            by_trace_a = _json(
+                client,
+                "GET",
+                f"{base}/api/traces?trace_id={trace_a}&page=1&page_size=20",
+            )
+            assert by_trace_a["total"] >= 1
+            assert any(item["trace_id"] == trace_a for item in by_trace_a["items"])
+
+            by_trace_b = _json(
+                client,
+                "GET",
+                f"{base}/api/traces?trace_id={trace_b}&page=1&page_size=20",
+            )
+            assert by_trace_b["total"] >= 1
+            assert any(item["trace_id"] == trace_b for item in by_trace_b["items"])
 
             by_channel = _json(
                 client,
@@ -150,6 +196,13 @@ def test_traces_api_list_filters_and_detail(monkeypatch: MonkeyPatch, tmp_path: 
 
             by_handoff = _json(client, "GET", f"{base}/api/traces?handoff=true&page=1&page_size=20")
             assert any(item["trace_id"] == trace_a for item in by_handoff["items"])
+
+            by_prompt_version = _json(
+                client,
+                "GET",
+                f"{base}/api/traces?prompt_version=v2&page=1&page_size=20",
+            )
+            assert any(item["trace_id"] == trace_a for item in by_prompt_version["items"])
 
             by_ticket = _json(
                 client,
@@ -174,11 +227,20 @@ def test_traces_api_list_filters_and_detail(monkeypatch: MonkeyPatch, tmp_path: 
             assert detail["route_decision"]["intent"] == "repair"
             assert "search_kb" in detail["tool_calls"]
             assert "doc-elevator-1" in detail["retrieved_docs"]
+            assert detail["grounding_sources"][0]["source_id"] == "doc-elevator-1"
             assert detail["handoff"] is True
+            assert detail["model"] == "qwen3.5:9b"
+            assert detail["prompt_key"] == "case_summary"
+            assert detail["prompt_version"] == "v2"
+            assert detail["retry_count"] == 1
+            assert detail["success"] is True
+            assert detail["error"] is None
+            assert detail["degraded"] is False
             assert isinstance(detail["events"], list)
             event_types = {item["event_type"] for item in detail["events"]}
             assert "route_decision" in event_types
             assert "handoff_decision" in event_types
+            assert "summary_generated" in event_types
     finally:
         server.shutdown()
         server.server_close()

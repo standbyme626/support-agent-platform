@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import time
-from typing import Any
+from typing import Any, ClassVar
 
 from channel_adapters.base import BaseChannelAdapter, ChannelAdapterError
 from storage.models import InboundEnvelope, OutboundEnvelope
@@ -11,11 +11,28 @@ from storage.models import InboundEnvelope, OutboundEnvelope
 
 class WeComAdapter(BaseChannelAdapter):
     channel = "wecom"
+    _DEFAULT_ALLOWED_SOURCES: ClassVar[set[str]] = {"wecom", "wecom_bridge", "openclaw_replay"}
 
     def verify_inbound(self, payload: dict[str, Any]) -> None:
-        signature = payload.get("signature")
+        signature = payload.get("signature") or payload.get("msg_signature")
         if not signature:
             return
+
+        source = self._extract_source(payload)
+        allowed_sources = self._resolve_allowed_sources(payload)
+        if bool(payload.get("require_source_validation")) and not source:
+            raise ChannelAdapterError(
+                channel=self.channel,
+                code="missing_source",
+                message="wecom source validation requires source",
+            )
+        if source and allowed_sources and source not in allowed_sources:
+            raise ChannelAdapterError(
+                channel=self.channel,
+                code="invalid_source",
+                message=f"wecom source is not trusted: {source}",
+                context={"allowed_sources": sorted(allowed_sources)},
+            )
 
         secret = str(payload.get("secret") or "")
         timestamp = str(payload.get("timestamp") or "")
@@ -54,6 +71,28 @@ class WeComAdapter(BaseChannelAdapter):
                 code="invalid_signature",
                 message="wecom signature mismatch",
             )
+
+    def _extract_source(self, payload: dict[str, Any]) -> str | None:
+        for key in ("source", "source_name", "origin"):
+            value = payload.get(key)
+            if value is None:
+                continue
+            text = str(value).strip().lower()
+            if text:
+                return text
+        return None
+
+    def _resolve_allowed_sources(self, payload: dict[str, Any]) -> set[str]:
+        raw = payload.get("allowed_sources")
+        if isinstance(raw, str):
+            values = [item.strip().lower() for item in raw.split(",") if item.strip()]
+            if values:
+                return set(values)
+        if isinstance(raw, list):
+            values = [str(item).strip().lower() for item in raw if str(item).strip()]
+            if values:
+                return set(values)
+        return set(self._DEFAULT_ALLOWED_SOURCES)
 
     def idempotency_key(self, payload: dict[str, Any]) -> str | None:
         msg_id = payload.get("MsgId")
@@ -95,6 +134,7 @@ class WeComAdapter(BaseChannelAdapter):
             "external_message_id": external_message_id,
             "contract_version": "wecom.v2",
             "idempotency_key_source": key_source,
+            "source": self._extract_source(payload),
         }
         return InboundEnvelope(
             channel=self.channel,

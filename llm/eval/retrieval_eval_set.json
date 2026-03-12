@@ -1,0 +1,86 @@
+[
+  {
+    "id": "rq-001",
+    "query": "支付重复扣费需要退款怎么办",
+    "source_type": "grounded",
+    "expected_doc_ids": ["case-001"],
+    "expected_source_types": ["history_case"]
+  },
+  {
+    "id": "rq-002",
+    "query": "设备离线故障已经影响住户",
+    "source_type": "grounded",
+    "expected_doc_ids": ["case-002"],
+    "expected_source_types": ["history_case"]
+  },
+  {
+    "id": "rq-003",
+    "query": "客户投诉升级要求马上人工接管",
+    "source_type": "grounded",
+    "expected_doc_ids": ["case-003"],
+    "expected_source_types": ["history_case"]
+  },
+  {
+    "id": "rq-004",
+    "query": "服务中断告警要联系值班工程师",
+    "source_type": "grounded",
+    "expected_doc_ids": ["case-004"],
+    "expected_source_types": ["history_case"]
+  },
+  {
+    "id": "rq-005",
+    "query": "发票争议需要核对交易记录",
+    "source_type": "grounded",
+    "expected_doc_ids": ["case-005"],
+    "expected_source_types": ["history_case"]
+  },
+  {
+    "id": "rq-006",
+    "query": "账号锁定后怎么重置凭据",
+    "source_type": "grounded",
+    "expected_doc_ids": ["case-006"],
+    "expected_source_types": ["history_case"]
+  },
+  {
+    "id": "rq-007",
+    "query": "权限误配需要回滚并补审批链",
+    "source_type": "grounded",
+    "expected_doc_ids": ["case-007"],
+    "expected_source_types": ["history_case"]
+  },
+  {
+    "id": "rq-008",
+    "query": "物流延迟投诉怎么触发补偿流程",
+    "source_type": "grounded",
+    "expected_doc_ids": ["case-008"],
+    "expected_source_types": ["history_case"]
+  },
+  {
+    "id": "rq-009",
+    "query": "消息丢失要重放并校验幂等键",
+    "source_type": "grounded",
+    "expected_doc_ids": ["case-009"],
+    "expected_source_types": ["history_case"]
+  },
+  {
+    "id": "rq-010",
+    "query": "现场维修延期如何同步新的SLA",
+    "source_type": "grounded",
+    "expected_doc_ids": ["case-010"],
+    "expected_source_types": ["history_case"]
+  },
+  {
+    "id": "rq-011",
+    "query": "怎么查询工单处理进度",
+    "source_type": "faq",
+    "expected_doc_ids": ["faq-002"],
+    "expected_source_types": ["faq"]
+  },
+  {
+    "id": "rq-012",
+    "query": "用户要投诉处理并升级人工客服",
+    "source_type": "grounded",
+    "expected_doc_ids": ["sop-002"],
+    "expected_source_types": ["sop", "history_case"]
+  }
+]

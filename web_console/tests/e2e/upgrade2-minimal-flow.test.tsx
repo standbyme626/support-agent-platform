@@ -66,11 +66,13 @@ describe("Upgrade2 minimal front-end flow smoke", () => {
       assist: {
         summary: "Need hardware inspection",
         recommended_actions: [],
+        grounding_sources: [],
         risk_flags: [],
         latest_messages: [],
         provider: "openai-compatible",
         prompt_version: "workflow_engine_v1"
       },
+      groundingSources: [],
       similarCases: [],
       events: [],
       assignees: ["u_ops_01", "u_ops_02"],
@@ -102,6 +104,16 @@ describe("Upgrade2 minimal front-end flow smoke", () => {
           workflow: "support-intake",
           channel: "wecom",
           provider: "openai-compatible",
+          model: "qwen3.5-27b",
+          prompt_key: "case_summary",
+          prompt_version: "v2",
+          request_id: "req-trace-001",
+          retry_count: 0,
+          success: true,
+          error: null,
+          fallback_used: false,
+          degraded: false,
+          degrade_reason: null,
           route_decision: { intent: "repair" },
           handoff: false,
           handoff_reason: null,
@@ -195,9 +207,60 @@ describe("Upgrade2 minimal front-end flow smoke", () => {
           connected: true,
           last_event_at: "2026-03-11T01:02:03+00:00",
           last_error: null,
-          retry_state: "idle"
+          retry_state: "idle",
+          signature_state: "verified",
+          replay_duplicates: 0,
+          retry_observability: 1
         }
       ],
+      signatures: [
+        {
+          channel: "telegram",
+          checked: 1,
+          valid: 1,
+          rejected: 0,
+          last_checked_at: "2026-03-11T01:02:03+00:00",
+          last_error_code: null
+        }
+      ],
+      replays: [
+        {
+          timestamp: "2026-03-11T01:02:03+00:00",
+          trace_id: "trace-h-001",
+          channel: "telegram",
+          session_id: "session-1",
+          idempotency_key: "telegram:1001",
+          accepted: true,
+          replay_count: 0
+        }
+      ],
+      retries: [
+        {
+          timestamp: "2026-03-11T01:02:03+00:00",
+          trace_id: "trace-h-001",
+          channel: "telegram",
+          session_id: "session-1",
+          event_type: "egress_failed",
+          attempt: 1,
+          classification: "temporary",
+          should_retry: true,
+          error_code: "temporary_send_failure",
+          error_message: "flaky network"
+        }
+      ],
+      sessions: [
+        {
+          session_id: "session-1",
+          thread_id: "thread-1",
+          ticket_id: "TICKET-1",
+          updated_at: "2026-03-11T01:02:03+00:00",
+          channel: "telegram",
+          last_message_id: "telegram:1001",
+          replay_count: 0
+        }
+      ],
+      replayDuplicateRatio: 0,
+      retryObservabilityRate: 1,
       events: [
         {
           timestamp: "2026-03-11T01:02:03+00:00",

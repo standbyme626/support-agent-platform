@@ -57,7 +57,11 @@ def process_wecom_message(runtime: _RuntimeLike, payload: dict[str, Any]) -> Bri
     chat_id = _pick_string(payload, "chatid", "ChatId") or sender_id
     chat_type = (_pick_string(payload, "chattype", "ChatType") or "single").lower()
     msg_id = _pick_string(payload, "msgid", "MsgId")
-    req_id = _pick_string(payload, "req_id", "ReqId", "trace_id") or msg_id or f"trace-{int(time.time())}"
+    req_id = (
+        _pick_string(payload, "req_id", "ReqId", "trace_id")
+        or msg_id
+        or f"trace-{int(time.time())}"
+    )
 
     if not text:
         return BridgeResult(handled=True, reply_text="", status="ignored_empty")
@@ -72,6 +76,7 @@ def process_wecom_message(runtime: _RuntimeLike, payload: dict[str, Any]) -> Bri
     session_id = _compose_session_id(sender_id=sender_id, chat_id=chat_id, chat_type=chat_type)
     ingress_payload = {
         "trace_id": req_id,
+        "source": "wecom_bridge",
         "session_id": session_id,
         "FromUserName": sender_id,
         "Content": text,

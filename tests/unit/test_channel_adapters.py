@@ -133,6 +133,42 @@ def test_wecom_signature_verification() -> None:
     )
 
 
+def test_wecom_signature_source_validation() -> None:
+    adapter = WeComAdapter()
+    secret = "wecom-secret"
+    timestamp = str(int(time.time()))
+    nonce = "nonce-source"
+    signature = hmac.new(
+        secret.encode(),
+        f"{timestamp}:{nonce}".encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+    adapter.verify_inbound(
+        {
+            "signature": signature,
+            "secret": secret,
+            "timestamp": timestamp,
+            "nonce": nonce,
+            "source": "wecom_bridge",
+            "require_source_validation": True,
+        }
+    )
+
+    with pytest.raises(ChannelAdapterError) as exc_info:
+        adapter.verify_inbound(
+            {
+                "signature": signature,
+                "secret": secret,
+                "timestamp": timestamp,
+                "nonce": nonce,
+                "source": "untrusted",
+                "require_source_validation": True,
+            }
+        )
+    assert exc_info.value.code == "invalid_source"
+
+
 def test_channel_idempotency_key_fallbacks() -> None:
     telegram = TelegramAdapter()
     assert (

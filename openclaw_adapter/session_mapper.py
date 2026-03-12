@@ -94,6 +94,96 @@ class SessionMapper:
             return 0
         return int(row["count"])
 
+    def list_bindings(self, *, limit: int = 200, offset: int = 0) -> list[SessionBinding]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT session_id, thread_id, ticket_id, metadata_json, updated_at
+                FROM session_bindings
+                ORDER BY updated_at DESC
+                LIMIT ? OFFSET ?
+                """,
+                (limit, offset),
+            ).fetchall()
+        return [
+            SessionBinding(
+                session_id=str(row["session_id"]),
+                thread_id=str(row["thread_id"]),
+                ticket_id=(str(row["ticket_id"]) if row["ticket_id"] else None),
+                metadata=json.loads(str(row["metadata_json"])),
+                updated_at=datetime.fromisoformat(str(row["updated_at"])),
+            )
+            for row in rows
+        ]
+
+    def list_replay_events(self, *, limit: int = 100) -> list[dict[str, Any]]:
+        events: list[dict[str, Any]] = []
+        for binding in self.list_bindings(limit=500):
+            raw_items = binding.metadata.get("replay_events")
+            if not isinstance(raw_items, list):
+                continue
+            for item in raw_items:
+                if not isinstance(item, dict):
+                    continue
+                events.append(
+                    {
+                        "session_id": binding.session_id,
+                        "ticket_id": binding.ticket_id,
+                        "thread_id": binding.thread_id,
+                        "timestamp": str(item.get("timestamp") or ""),
+                        "channel": item.get("channel"),
+                        "idempotency_key": item.get("idempotency_key"),
+                        "trace_id": item.get("trace_id"),
+                    }
+                )
+        events.sort(key=lambda item: str(item.get("timestamp") or ""), reverse=True)
+        return events[:limit]
+
+    def record_idempotency_key(
+        self,
+        *,
+        session_id: str,
+        idempotency_key: str,
+        trace_id: str | None,
+        channel: str | None,
+        history_limit: int = 50,
+    ) -> tuple[bool, SessionBinding]:
+        binding = self.get_or_create(session_id, metadata={"channel": channel} if channel else None)
+        processed_message_ids = [
+            str(item)
+            for item in binding.metadata.get("processed_message_ids", [])
+            if str(item).strip()
+        ]
+        is_duplicate = idempotency_key in processed_message_ids
+
+        metadata_updates: dict[str, Any] = {
+            "last_message_id": idempotency_key,
+            "last_trace_id": trace_id,
+        }
+        if not is_duplicate:
+            processed_message_ids.append(idempotency_key)
+            metadata_updates["processed_message_ids"] = processed_message_ids[-history_limit:]
+        else:
+            replay_events = [
+                dict(item)
+                for item in binding.metadata.get("replay_events", [])
+                if isinstance(item, dict)
+            ]
+            replay_events.append(
+                {
+                    "timestamp": datetime.now(UTC).isoformat(),
+                    "channel": channel,
+                    "idempotency_key": idempotency_key,
+                    "trace_id": trace_id,
+                }
+            )
+            metadata_updates["replay_count"] = int(binding.metadata.get("replay_count", 0)) + 1
+            metadata_updates["last_replay_at"] = replay_events[-1]["timestamp"]
+            metadata_updates["replay_events"] = replay_events[-history_limit:]
+
+        updated = self.get_or_create(session_id, metadata=metadata_updates)
+        return (not is_duplicate, updated)
+
     def _initialize_schema(self) -> None:
         with self._connect() as conn:
             conn.execute(

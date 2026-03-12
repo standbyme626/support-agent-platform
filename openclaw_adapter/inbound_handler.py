@@ -8,6 +8,8 @@ from core.trace_logger import new_trace_id
 from storage.models import InboundEnvelope
 
 from .bindings import GatewayBindings
+from .replay_guard import ReplayGuard
+from .signature_validator import SignatureValidationResult, SignatureValidator
 
 
 class InboundHandler:
@@ -15,10 +17,36 @@ class InboundHandler:
 
     def __init__(self, bindings: GatewayBindings) -> None:
         self._bindings = bindings
+        self._signature_validator = SignatureValidator()
+        self._replay_guard = ReplayGuard(
+            session_mapper=bindings.session_mapper,
+            trace_logger=bindings.trace_logger,
+        )
 
     def handle(self, channel: str, payload: dict[str, Any]) -> InboundEnvelope:
         adapter = self._bindings.channel_router.resolve(channel)
-        adapter.verify_inbound(payload)
+        trace_hint = str(payload.get("trace_id") or "")
+        session_hint = self._session_hint(payload)
+        try:
+            validation = self._signature_validator.validate(
+                channel=channel,
+                payload=payload,
+                adapter=adapter,
+            )
+        except ChannelAdapterError as error:
+            self._audit_signature_rejected(
+                channel=channel,
+                error=error,
+                trace_id=trace_hint or None,
+                session_id=session_hint,
+            )
+            raise
+        self._audit_signature_validated(
+            result=validation,
+            trace_id=trace_hint or None,
+            session_id=session_hint,
+        )
+
         inbound = adapter.build_inbound(payload)
         trace_id = str(
             payload.get("trace_id") or inbound.metadata.get("trace_id") or new_trace_id()
@@ -39,27 +67,17 @@ class InboundHandler:
                 **inbound.metadata,
             },
         )
-        if idempotency_key:
-            processed_message_ids = [
-                str(item) for item in binding.metadata.get("processed_message_ids", [])
-            ]
-            if idempotency_key in processed_message_ids:
-                raise ChannelAdapterError(
-                    channel=inbound.channel,
-                    code="duplicate_webhook",
-                    message=f"duplicate inbound webhook: {idempotency_key}",
-                    retryable=False,
-                    context={"idempotency_key": idempotency_key},
-                )
-            processed_message_ids.append(idempotency_key)
-            processed_message_ids = processed_message_ids[-30:]
-            binding = self._bindings.session_mapper.get_or_create(
-                session_id=inbound.session_id,
-                metadata={
-                    "processed_message_ids": processed_message_ids,
-                    "last_message_id": idempotency_key,
-                },
-            )
+
+        replay_decision = self._replay_guard.evaluate(
+            channel=inbound.channel,
+            session_id=inbound.session_id,
+            idempotency_key=idempotency_key,
+            trace_id=trace_id,
+        )
+        self._replay_guard.enforce(decision=replay_decision)
+        refreshed_binding = self._bindings.session_mapper.get(inbound.session_id)
+        if refreshed_binding is not None:
+            binding = refreshed_binding
 
         passthrough_metadata = {
             **inbound.metadata,
@@ -68,6 +86,7 @@ class InboundHandler:
             "thread_id": binding.thread_id,
             "ticket_id": binding.ticket_id,
             "idempotency_key": idempotency_key,
+            "replay_count": int(binding.metadata.get("replay_count", 0)),
         }
         enriched_inbound = replace(inbound, metadata=passthrough_metadata)
 
@@ -80,9 +99,55 @@ class InboundHandler:
                 "ticket_id": binding.ticket_id,
                 "inbox": inbox,
                 "idempotency_key": idempotency_key,
+                "replay_count": int(binding.metadata.get("replay_count", 0)),
             },
             trace_id=trace_id,
             ticket_id=binding.ticket_id,
             session_id=inbound.session_id,
         )
         return enriched_inbound
+
+    @staticmethod
+    def _session_hint(payload: dict[str, Any]) -> str | None:
+        for key in ("session_id", "FromUserName"):
+            value = payload.get(key)
+            if value is None:
+                continue
+            text = str(value).strip()
+            if text:
+                return text
+        return None
+
+    def _audit_signature_validated(
+        self,
+        *,
+        result: SignatureValidationResult,
+        trace_id: str | None,
+        session_id: str | None,
+    ) -> None:
+        if not result.signature_checked and not result.source_checked:
+            return
+        self._bindings.trace_logger.log(
+            "signature_validated",
+            result.to_payload(),
+            trace_id=trace_id,
+            session_id=session_id,
+        )
+
+    def _audit_signature_rejected(
+        self,
+        *,
+        channel: str,
+        error: ChannelAdapterError,
+        trace_id: str | None,
+        session_id: str | None,
+    ) -> None:
+        self._bindings.trace_logger.log(
+            "signature_rejected",
+            {
+                "channel": channel,
+                "error": error.to_dict(),
+            },
+            trace_id=trace_id,
+            session_id=session_id,
+        )

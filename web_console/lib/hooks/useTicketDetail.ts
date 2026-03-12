@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import {
   fetchAssignees,
+  fetchGroundingSources,
   fetchSimilarCases,
   fetchTicketAssist,
   fetchTicketDetail,
   fetchTicketEvents,
   runTicketAction,
+  type GroundingSourceItem,
   sortTicketEvents,
   type SimilarCaseItem,
   type TicketActionPayload,
@@ -24,6 +26,7 @@ type State = {
   actionError: string | null;
   ticket: TicketItem | null;
   assist: TicketAssistResponse | null;
+  groundingSources: GroundingSourceItem[];
   similarCases: SimilarCaseItem[];
   events: TicketEventItem[];
   assignees: string[];
@@ -37,6 +40,7 @@ export function useTicketDetail(ticketId: string) {
     actionError: null,
     ticket: null,
     assist: null,
+    groundingSources: [],
     similarCases: [],
     events: [],
     assignees: []
@@ -45,9 +49,10 @@ export function useTicketDetail(ticketId: string) {
   async function load() {
     setState((previous) => ({ ...previous, loading: true, error: null }));
     try {
-      const [detail, assist, similarCases, events, assignees] = await Promise.all([
+      const [detail, assist, groundingSources, similarCases, events, assignees] = await Promise.all([
         fetchTicketDetail(ticketId),
         fetchTicketAssist(ticketId),
+        fetchGroundingSources(ticketId),
         fetchSimilarCases(ticketId),
         fetchTicketEvents(ticketId),
         fetchAssignees()
@@ -58,6 +63,7 @@ export function useTicketDetail(ticketId: string) {
         error: null,
         ticket: detail.data,
         assist,
+        groundingSources: groundingSources.items,
         similarCases: similarCases.items,
         events: sortTicketEvents(events.items),
         assignees: assignees.items

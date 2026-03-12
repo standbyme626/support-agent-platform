@@ -49,9 +49,18 @@ def test_tool_router_dispatches_core_tools(tmp_path: Path) -> None:
 
     grounded = router.execute(
         "search_kb",
-        {"source_type": "grounded", "query": "支付 重复 扣费", "top_k": 3},
+        {
+            "source_type": "grounded",
+            "query": "支付 重复 扣费",
+            "top_k": 3,
+            "retrieval_mode": "hybrid",
+        },
     )
     assert grounded.output
     assert any(item["source_type"] == "history_case" for item in grounded.output)
     assert all("ranking_reason" in item for item in grounded.output)
     assert all("rank" in item for item in grounded.output)
+    assert all("snippet" in item for item in grounded.output)
+    assert all(
+        item.get("retrieval_mode") in {"lexical", "vector", "hybrid"} for item in grounded.output
+    )

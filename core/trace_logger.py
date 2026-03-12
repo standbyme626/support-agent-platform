@@ -54,6 +54,17 @@ class JsonTraceLogger:
         events = [item for item in self._load_all() if item.get("ticket_id") == ticket_id]
         return events[-limit:]
 
+    def latest_by_ticket(
+        self, ticket_id: str, *, event_type: str | None = None
+    ) -> dict[str, Any] | None:
+        events = self.query_by_ticket(ticket_id, limit=2000)
+        if event_type is None:
+            return events[-1] if events else None
+        for item in reversed(events):
+            if str(item.get("event_type") or "") == event_type:
+                return item
+        return None
+
     def query_by_session(self, session_id: str, *, limit: int = 200) -> list[dict[str, Any]]:
         events = [item for item in self._load_all() if item.get("session_id") == session_id]
         return events[-limit:]

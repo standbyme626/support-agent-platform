@@ -53,6 +53,12 @@ describe("DashboardPage", () => {
       routes: [],
       channelHealth: [],
       events: [],
+      signatures: [],
+      replays: [],
+      retries: [],
+      sessions: [],
+      replayDuplicateRatio: 0,
+      retryObservabilityRate: 1,
       refetch: vi.fn()
     });
 
@@ -120,10 +126,19 @@ describe("DashboardPage", () => {
           connected: true,
           last_event_at: "2026-03-11T00:00:00+00:00",
           last_error: null,
-          retry_state: "idle"
+          retry_state: "idle",
+          signature_state: "verified",
+          replay_duplicates: 0,
+          retry_observability: 1
         }
       ],
       events: [],
+      signatures: [],
+      replays: [],
+      retries: [],
+      sessions: [],
+      replayDuplicateRatio: 0,
+      retryObservabilityRate: 1,
       refetch: vi.fn()
     });
 
@@ -164,6 +179,12 @@ describe("DashboardPage", () => {
       routes: [],
       channelHealth: [],
       events: [],
+      signatures: [],
+      replays: [],
+      retries: [],
+      sessions: [],
+      replayDuplicateRatio: 0,
+      retryObservabilityRate: 1,
       refetch: vi.fn()
     });
 

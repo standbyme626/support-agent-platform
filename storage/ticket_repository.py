@@ -267,6 +267,15 @@ class TicketRepository:
         created_at = datetime.now(UTC)
         generated_event_id = event_id or f"evt_{uuid.uuid4().hex[:12]}"
         body = payload or {}
+        idempotency_key = str(body.get("idempotency_key") or "").strip()
+        if idempotency_key:
+            deduped = self.find_event_by_idempotency_key(
+                ticket_id=ticket_id,
+                event_type=event_type,
+                idempotency_key=idempotency_key,
+            )
+            if deduped is not None:
+                return deduped
 
         with self._connect() as conn:
             conn.execute(
@@ -297,6 +306,58 @@ class TicketRepository:
         if event is None:
             raise RuntimeError(f"Failed to load created event {generated_event_id}")
         return event
+
+    def find_ticket_by_idempotency_key(self, idempotency_key: str) -> Ticket | None:
+        normalized_key = idempotency_key.strip()
+        if not normalized_key:
+            return None
+
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT *
+                FROM tickets
+                ORDER BY updated_at DESC
+                LIMIT 500
+                """
+            ).fetchall()
+
+        for row in rows:
+            metadata = json.loads(str(row["metadata_json"]))
+            if str(metadata.get("idempotency_key") or "").strip() == normalized_key:
+                return self._row_to_ticket(row)
+        return None
+
+    def find_event_by_idempotency_key(
+        self,
+        *,
+        ticket_id: str,
+        event_type: str | None,
+        idempotency_key: str,
+    ) -> TicketEvent | None:
+        normalized_key = idempotency_key.strip()
+        if not normalized_key:
+            return None
+
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT *
+                FROM ticket_events
+                WHERE ticket_id = ?
+                ORDER BY created_at DESC
+                LIMIT 500
+                """,
+                (ticket_id,),
+            ).fetchall()
+
+        for row in rows:
+            if event_type is not None and str(row["event_type"]) != event_type:
+                continue
+            payload = json.loads(str(row["payload_json"]))
+            if str(payload.get("idempotency_key") or "").strip() == normalized_key:
+                return self._row_to_event(row)
+        return None
 
     def get_event(self, event_id: str) -> TicketEvent | None:
         with self._connect() as conn:

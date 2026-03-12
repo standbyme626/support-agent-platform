@@ -27,6 +27,7 @@ class LLMConfig:
     api_key: str
     model: str
     timeout_seconds: float
+    retry_count: int
     temperature: float
     max_tokens: int | None
     stream: bool
@@ -70,13 +71,29 @@ def load_app_config(environment: str | None = None, *, root_dir: Path | None = N
     llm = LLMConfig(
         enabled=_env_bool("LLM_ENABLED", default=bool(llm_data.get("enabled", True))),
         provider=os.getenv("LLM_PROVIDER", str(llm_data.get("provider", "openai_compatible"))),
-        base_url=os.getenv("OPENAI_BASE_URL", str(llm_data.get("base_url", "http://127.0.0.1:11434/v1"))),
-        api_key=os.getenv("OPENAI_API_KEY", str(llm_data.get("api_key", "ollama-local"))),
-        model=os.getenv("OPENAI_MODEL", str(llm_data.get("model", "qwen3.5:9b"))),
-        timeout_seconds=_env_float(
+        base_url=_env_str_with_fallback(
+            "OPENAI_BASE_URL",
+            "OPENAI_API_BASE",
+            default=str(llm_data.get("base_url", "http://127.0.0.1:11434/v1")),
+        ),
+        api_key=_env_csv_first_value(
+            "OPENAI_API_KEY",
+            "API_KEY_ROTATION_LIST",
+            "DASHSCOPE_API_KEY_POOL",
+            default=str(llm_data.get("api_key", "ollama-local")),
+        ),
+        model=_env_csv_first_value(
+            "OPENAI_MODEL",
+            "OPENAI_MODEL_NAME",
+            "MODEL_CANDIDATES",
+            default=str(llm_data.get("model", "qwen3.5:9b")),
+        ),
+        timeout_seconds=_env_float_with_fallback(
+            "LLM_TIMEOUT",
             "LLM_TIMEOUT_SECONDS",
             default=float(llm_data.get("timeout_seconds", 45.0)),
         ),
+        retry_count=_env_int("LLM_RETRY", default=int(llm_data.get("retry_count", 1))),
         temperature=_env_float("LLM_TEMPERATURE", default=float(llm_data.get("temperature", 0.2))),
         max_tokens=_env_optional_int(
             "LLM_MAX_TOKENS",
@@ -154,6 +171,44 @@ def _env_float(key: str, *, default: float) -> float:
         return default
     try:
         return float(value)
+    except ValueError:
+        return default
+
+
+def _env_float_with_fallback(primary: str, secondary: str, *, default: float) -> float:
+    primary_value = _env_float(primary, default=default)
+    if primary in os.environ:
+        return primary_value
+    return _env_float(secondary, default=default)
+
+
+def _env_str_with_fallback(primary: str, secondary: str, *, default: str) -> str:
+    primary_value = os.getenv(primary)
+    if primary_value is not None and primary_value.strip():
+        return primary_value.strip()
+    secondary_value = os.getenv(secondary)
+    if secondary_value is not None and secondary_value.strip():
+        return secondary_value.strip()
+    return default
+
+
+def _env_csv_first_value(*keys: str, default: str) -> str:
+    for key in keys:
+        value = os.getenv(key)
+        if value is None or not value.strip():
+            continue
+        first = value.split(",", 1)[0].strip()
+        if first:
+            return first
+    return default
+
+
+def _env_int(key: str, *, default: int) -> int:
+    value = os.getenv(key)
+    if value is None or value.strip() == "":
+        return default
+    try:
+        return int(value)
     except ValueError:
         return default
 

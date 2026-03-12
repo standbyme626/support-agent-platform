@@ -39,6 +39,9 @@ def test_openclaw_status_and_routes_api(monkeypatch: MonkeyPatch, tmp_path: Path
         with httpx.Client(timeout=10.0, trust_env=False) as client:
             status_payload = _get_json(client, f"{base}/api/openclaw/status")
             routes_payload = _get_json(client, f"{base}/api/openclaw/routes")
+            retries_payload = _get_json(client, f"{base}/api/openclaw/retries")
+            replays_payload = _get_json(client, f"{base}/api/openclaw/replays")
+            sessions_payload = _get_json(client, f"{base}/api/openclaw/sessions")
 
             assert "data" in status_payload
             assert isinstance(status_payload["data"], dict)
@@ -54,6 +57,19 @@ def test_openclaw_status_and_routes_api(monkeypatch: MonkeyPatch, tmp_path: Path
             for route in routes:
                 assert {"channel", "mode"}.issubset(set(route.keys()))
                 assert route["mode"] == "ingress/session/routing"
+
+            assert isinstance(retries_payload.get("items"), list)
+            assert {"page", "page_size", "total", "observability_rate"}.issubset(
+                set(retries_payload.keys())
+            )
+            assert isinstance(replays_payload.get("items"), list)
+            assert {"page", "page_size", "total", "duplicate_count", "duplicate_ratio"}.issubset(
+                set(replays_payload.keys())
+            )
+            assert isinstance(sessions_payload.get("items"), list)
+            assert {"page", "page_size", "total", "bound_to_ticket"}.issubset(
+                set(sessions_payload.keys())
+            )
     finally:
         server.shutdown()
         server.server_close()

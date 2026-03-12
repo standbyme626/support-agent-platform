@@ -16,6 +16,7 @@ from urllib.parse import parse_qs, urlparse
 from config import AppConfig, load_app_config
 from core.intent_router import IntentDecision
 from core.recommended_actions_engine import RecommendedActionsEngine
+from core.retrieval.source_attribution import build_source_payloads
 from core.retriever import Retriever
 from core.summary_engine import SummaryEngine
 from core.ticket_api import TicketAPI
@@ -23,9 +24,10 @@ from core.trace_logger import JsonTraceLogger
 from llm import build_summary_model_adapter
 from openclaw_adapter.bindings import build_default_bindings
 from openclaw_adapter.gateway import OpenClawGateway
-from scripts.gateway_status import collect_status
+from scripts.gateway_status import collect_status, summarize_reliability
 from storage.models import KBDocument, Ticket
 from storage.ticket_repository import TicketRepository
+from tools.search_kb import search_kb
 
 DEFAULT_HOST = os.getenv("OPS_API_HOST", "127.0.0.1")
 DEFAULT_PORT = int(os.getenv("OPS_API_PORT", "18082"))
@@ -35,6 +37,7 @@ TICKET_DETAIL_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)$")
 TICKET_EVENTS_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/events$")
 TICKET_ASSIST_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/assist$")
 TICKET_SIMILAR_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/similar-cases$")
+TICKET_GROUNDING_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/grounding-sources$")
 TICKET_ACTION_RE = re.compile(
     r"^/api/tickets/(?P<ticket_id>[^/]+)/(claim|reassign|escalate|resolve|close)$"
 )
@@ -168,6 +171,29 @@ def _parse_int(value: str | None, *, default: int, minimum: int = 1, maximum: in
     except ValueError:
         return default
     return max(minimum, min(parsed, maximum))
+
+
+def _paginate(items: list[dict[str, Any]], *, query: dict[str, str]) -> dict[str, Any]:
+    page = _parse_int(query.get("page"), default=1, minimum=1, maximum=100000)
+    page_size = _parse_int(query.get("page_size"), default=50, minimum=1, maximum=200)
+    start = (page - 1) * page_size
+    sliced = items[start : start + page_size]
+    return {
+        "items": sliced,
+        "page": page,
+        "page_size": page_size,
+        "total": len(items),
+    }
+
+
+def _reliability_snapshot(runtime: OpsApiRuntime) -> dict[str, Any]:
+    recent_events = runtime.trace_logger.read_recent(limit=1000)
+    session_bindings = runtime.gateway.bindings.session_mapper.list_bindings(limit=500)
+    return summarize_reliability(
+        recent_events=recent_events,
+        session_bindings=session_bindings,
+        item_limit=200,
+    )
 
 
 def _parse_iso_datetime(value: str | None) -> datetime | None:
@@ -434,6 +460,17 @@ def _trace_summary(
     handoff_reason = None
     channel = None
     provider = runtime.app_config.llm.provider
+    model: str | None = None
+    prompt_key: str | None = None
+    prompt_version: str | None = None
+    request_id: str | None = None
+    token_usage: dict[str, Any] | None = None
+    retry_count: int | None = None
+    llm_success: bool | None = None
+    llm_error: str | None = None
+    fallback_used = False
+    degraded = False
+    degrade_reason: str | None = None
     workflow = "support-intake"
     error_only = False
     handoff = False
@@ -457,6 +494,30 @@ def _trace_summary(
             channel = str(payload_dict["channel"])
         if "provider" in payload_dict:
             provider = str(payload_dict["provider"])
+        if "model" in payload_dict and isinstance(payload_dict.get("model"), str):
+            model = str(payload_dict["model"])
+        if "prompt_key" in payload_dict and isinstance(payload_dict.get("prompt_key"), str):
+            prompt_key = str(payload_dict["prompt_key"])
+        if "prompt_version" in payload_dict and isinstance(payload_dict.get("prompt_version"), str):
+            prompt_version = str(payload_dict["prompt_version"])
+        if "request_id" in payload_dict and payload_dict.get("request_id") is not None:
+            request_id = str(payload_dict["request_id"])
+        if "token_usage" in payload_dict and isinstance(payload_dict.get("token_usage"), dict):
+            token_usage = dict(payload_dict["token_usage"])
+        if "retry_count" in payload_dict:
+            parsed_retry = _coerce_int(payload_dict.get("retry_count"))
+            if parsed_retry is not None:
+                retry_count = parsed_retry
+        if "success" in payload_dict:
+            llm_success = bool(payload_dict["success"])
+        if "error" in payload_dict and payload_dict.get("error"):
+            llm_error = str(payload_dict["error"])
+        if "fallback_used" in payload_dict:
+            fallback_used = bool(payload_dict["fallback_used"])
+        if "degraded" in payload_dict:
+            degraded = bool(payload_dict["degraded"])
+        if "degrade_reason" in payload_dict and payload_dict.get("degrade_reason"):
+            degrade_reason = str(payload_dict["degrade_reason"])
         if "workflow" in payload_dict:
             workflow = str(payload_dict["workflow"])
         if event_type.endswith("failed") or "error" in payload_dict:
@@ -469,6 +530,17 @@ def _trace_summary(
         "workflow": workflow,
         "channel": channel,
         "provider": provider,
+        "model": model,
+        "prompt_key": prompt_key,
+        "prompt_version": prompt_version,
+        "request_id": request_id,
+        "token_usage": token_usage,
+        "retry_count": retry_count,
+        "success": llm_success,
+        "error": llm_error,
+        "fallback_used": fallback_used,
+        "degraded": degraded,
+        "degrade_reason": degrade_reason,
         "route_decision": route_decision,
         "handoff": handoff,
         "handoff_reason": handoff_reason,
@@ -550,16 +622,104 @@ def _extract_similar_cases(ticket: Ticket, retriever: Retriever) -> list[dict[st
         if cases:
             return cases[:10]
 
-    docs = retriever.search_history(ticket.latest_message, top_k=5)
+    detailed = retriever.search_with_details(
+        "history_case",
+        ticket.latest_message,
+        top_k=5,
+        mode="hybrid",
+    )
+    attributions = build_source_payloads(ticket.latest_message, detailed, top_k=5)
     return [
         {
-            "doc_id": doc.doc_id,
-            "source_type": doc.source_type,
-            "title": doc.title,
-            "score": doc.score,
+            "doc_id": item["source_id"],
+            "source_id": item["source_id"],
+            "source_type": item["source_type"],
+            "title": item["title"],
+            "score": item["score"],
+            "rank": item["rank"],
+            "reason": item["reason"],
+            "snippet": item["snippet"],
+            "retrieval_mode": item["retrieval_mode"],
         }
-        for doc in docs
+        for item in attributions
     ]
+
+
+def _extract_grounding_sources(ticket: Ticket, retriever: Retriever) -> list[dict[str, Any]]:
+    metadata_sources = ticket.metadata.get("grounding_sources")
+    if isinstance(metadata_sources, list):
+        sources: list[dict[str, Any]] = []
+        for item in metadata_sources:
+            if isinstance(item, dict):
+                sources.append(dict(item))
+        if sources:
+            return sources[:10]
+
+    detailed = retriever.search_grounded_with_details(
+        ticket.latest_message,
+        top_k=5,
+        mode="hybrid",
+    )
+    return build_source_payloads(ticket.latest_message, detailed, top_k=5)
+
+
+def _retrieval_health_payload(runtime: OpsApiRuntime) -> dict[str, Any]:
+    return {
+        "status": "ok",
+        "modes": ["lexical", "vector", "hybrid"],
+        "sources": runtime.retriever.source_stats(),
+        "updated_at": datetime.now(UTC).isoformat(),
+    }
+
+
+def _extract_llm_trace_for_ticket(runtime: OpsApiRuntime, ticket: Ticket) -> dict[str, Any]:
+    metadata_trace = ticket.metadata.get("llm_trace")
+    if isinstance(metadata_trace, dict):
+        normalized = _normalize_llm_trace(metadata_trace)
+        if normalized:
+            return normalized
+
+    latest_summary_event = runtime.trace_logger.latest_by_ticket(
+        ticket.ticket_id, event_type="summary_generated"
+    )
+    if latest_summary_event and isinstance(latest_summary_event.get("payload"), dict):
+        normalized = _normalize_llm_trace(latest_summary_event["payload"])
+        if normalized:
+            return normalized
+
+    return _normalize_llm_trace({})
+
+
+def _normalize_llm_trace(raw: dict[str, Any]) -> dict[str, Any]:
+    token_usage = raw.get("token_usage")
+    return {
+        "provider": str(raw.get("provider") or "fallback"),
+        "model": str(raw["model"]) if isinstance(raw.get("model"), str) else None,
+        "prompt_key": str(raw["prompt_key"]) if isinstance(raw.get("prompt_key"), str) else None,
+        "prompt_version": (
+            str(raw["prompt_version"]) if isinstance(raw.get("prompt_version"), str) else None
+        ),
+        "latency_ms": _coerce_int(raw.get("latency_ms")),
+        "request_id": str(raw["request_id"]) if isinstance(raw.get("request_id"), str) else None,
+        "token_usage": dict(token_usage) if isinstance(token_usage, dict) else None,
+        "retry_count": _coerce_int(raw.get("retry_count")) or 0,
+        "success": bool(raw.get("success", False)),
+        "error": str(raw["error"]) if raw.get("error") else None,
+        "fallback_used": bool(raw.get("fallback_used", False)),
+        "degraded": bool(raw.get("degraded", False)),
+        "degrade_reason": str(raw["degrade_reason"]) if raw.get("degrade_reason") else None,
+    }
+
+
+def _coerce_int(raw: object) -> int | None:
+    if isinstance(raw, int):
+        return raw
+    if raw is None:
+        return None
+    try:
+        return int(str(raw))
+    except ValueError:
+        return None
 
 
 def _resolve_action(
@@ -679,6 +839,7 @@ def handle_api_request(
             ticket = runtime.ticket_api.require_ticket(ticket_id)
             events = runtime.ticket_api.list_events(ticket_id)
             summary = runtime.summary_engine.case_summary(ticket, events)
+            latest_summary_trace = runtime.summary_engine.last_generation_metadata()
             metadata_cards = ticket.metadata.get("recommended_action_cards")
             recommendations: list[dict[str, Any]]
             if isinstance(metadata_cards, list):
@@ -707,15 +868,33 @@ def handle_api_request(
                     if isinstance(item, dict) and item.get("risk")
                 }
             )
+            llm_trace = _extract_llm_trace_for_ticket(runtime, ticket)
+            if latest_summary_trace:
+                llm_trace = {**llm_trace, **_normalize_llm_trace(latest_summary_trace)}
+            if llm_trace.get("degraded"):
+                risk_flags = sorted({*risk_flags, "llm_degraded"})
+            ticket_grounding_sources = _extract_grounding_sources(ticket, runtime.retriever)
             return _json_response(
                 req_id,
                 {
                     "summary": summary,
                     "recommended_actions": recommendations,
+                    "grounding_sources": ticket_grounding_sources,
                     "risk_flags": risk_flags,
                     "latest_messages": [ticket.latest_message],
-                    "provider": runtime.app_config.llm.provider,
-                    "prompt_version": "workflow_engine_v1",
+                    "provider": llm_trace.get("provider") or runtime.app_config.llm.provider,
+                    "model": llm_trace.get("model"),
+                    "prompt_key": llm_trace.get("prompt_key"),
+                    "prompt_version": llm_trace.get("prompt_version"),
+                    "latency_ms": llm_trace.get("latency_ms"),
+                    "request_id": llm_trace.get("request_id"),
+                    "token_usage": llm_trace.get("token_usage"),
+                    "retry_count": llm_trace.get("retry_count"),
+                    "success": llm_trace.get("success"),
+                    "error": llm_trace.get("error"),
+                    "fallback_used": llm_trace.get("fallback_used"),
+                    "degraded": llm_trace.get("degraded"),
+                    "degrade_reason": llm_trace.get("degrade_reason"),
                 },
             )
 
@@ -725,6 +904,49 @@ def handle_api_request(
             return _json_response(
                 req_id, {"items": _extract_similar_cases(ticket, runtime.retriever)}
             )
+
+        if method == "GET" and (match := TICKET_GROUNDING_RE.match(path)):
+            ticket_id = match.group("ticket_id")
+            ticket = runtime.ticket_api.require_ticket(ticket_id)
+            return _json_response(
+                req_id,
+                {"items": _extract_grounding_sources(ticket, runtime.retriever)},
+            )
+
+        if method == "POST" and path == "/api/retrieval/search":
+            query_text = str(payload.get("query") or "").strip()
+            if not query_text:
+                return _error(
+                    req_id,
+                    code="invalid_payload",
+                    message="query is required",
+                )
+            source_type = str(payload.get("source_type") or "grounded").strip().lower()
+            top_k = _parse_int(str(payload.get("top_k") or "5"), default=5, minimum=1, maximum=20)
+            retrieval_mode = str(payload.get("retrieval_mode") or "").strip() or None
+            try:
+                items = search_kb(
+                    retriever=runtime.retriever,
+                    source_type=source_type,
+                    query=query_text,
+                    top_k=top_k,
+                    retrieval_mode=retrieval_mode,
+                )
+            except ValueError as exc:
+                return _error(req_id, code="invalid_payload", message=str(exc))
+            return _json_response(
+                req_id,
+                {
+                    "items": items,
+                    "query": query_text,
+                    "source_type": source_type,
+                    "retrieval_mode": retrieval_mode
+                    or ("hybrid" if source_type in {"grounded", "hybrid"} else "lexical"),
+                },
+            )
+
+        if method == "GET" and path == "/api/retrieval/health":
+            return _json_response(req_id, {"data": _retrieval_health_payload(runtime)})
 
         if method == "POST" and (match := TICKET_ACTION_RE.match(path)):
             ticket_id = match.group("ticket_id")
@@ -763,6 +985,12 @@ def handle_api_request(
                     continue
                 if query.get("provider") and item.get("provider") != query["provider"]:
                     continue
+                if query.get("model") and str(item.get("model") or "") != query["model"]:
+                    continue
+                if query.get("prompt_version") and (
+                    str(item.get("prompt_version") or "") != query["prompt_version"]
+                ):
+                    continue
                 if (
                     query.get("error_only")
                     and str(item.get("error_only")).lower() != str(query["error_only"]).lower()
@@ -799,6 +1027,7 @@ def handle_api_request(
                 )
             trace_summary = _trace_summary(runtime, trace_id, trace_events)
             retrieved_doc_ids: list[str] = []
+            grounding_sources: list[dict[str, Any]] = []
             tool_calls: list[str] = []
             summary_text = ""
             for event in trace_events:
@@ -809,6 +1038,11 @@ def handle_api_request(
                     retrieved_doc_ids = [
                         str(item) for item in payload.get("doc_ids", []) if isinstance(item, str)
                     ]
+                    payload_sources = payload.get("grounding_sources")
+                    if isinstance(payload_sources, list):
+                        grounding_sources = [
+                            dict(item) for item in payload_sources if isinstance(item, dict)
+                        ]
                 if event_type in {"tool_call_end", "tool_call"} and payload.get("tool"):
                     tool_calls.append(str(payload["tool"]))
                 if event_type == "recommended_actions":
@@ -822,8 +1056,20 @@ def handle_api_request(
                     "workflow": trace_summary.get("workflow"),
                     "channel": trace_summary.get("channel"),
                     "provider": trace_summary.get("provider"),
+                    "model": trace_summary.get("model"),
+                    "prompt_key": trace_summary.get("prompt_key"),
+                    "prompt_version": trace_summary.get("prompt_version"),
+                    "request_id": trace_summary.get("request_id"),
+                    "token_usage": trace_summary.get("token_usage"),
+                    "retry_count": trace_summary.get("retry_count"),
+                    "success": trace_summary.get("success"),
+                    "error": trace_summary.get("error"),
+                    "fallback_used": trace_summary.get("fallback_used"),
+                    "degraded": trace_summary.get("degraded"),
+                    "degrade_reason": trace_summary.get("degrade_reason"),
                     "route_decision": trace_summary.get("route_decision"),
                     "retrieved_docs": retrieved_doc_ids,
+                    "grounding_sources": grounding_sources,
                     "tool_calls": tool_calls,
                     "summary": summary_text,
                     "handoff": trace_summary.get("handoff"),
@@ -937,6 +1183,15 @@ def handle_api_request(
         if method == "GET" and path == "/api/channels/health":
             recent = runtime.trace_logger.read_recent(limit=200)
             channels = runtime.gateway.bindings.channel_router.supported_channels
+            reliability = _reliability_snapshot(runtime)
+            signature_rows = reliability.get("signature", {}).get("items", [])
+            replay_rows = reliability.get("replays", {}).get("items", [])
+            retry_rows = reliability.get("retries", {}).get("items", [])
+            signature_by_channel = {
+                str(row.get("channel")): row
+                for row in signature_rows
+                if isinstance(row, dict) and row.get("channel")
+            }
             rows = []
             for channel in channels:
                 channel_events = [
@@ -953,6 +1208,41 @@ def handle_api_request(
                     if "error" in payload_dict:
                         last_error = payload_dict.get("error")
                         retry_state = "retry_pending"
+
+                channel_replays = [
+                    row
+                    for row in replay_rows
+                    if isinstance(row, dict) and str(row.get("channel") or "") == channel
+                ]
+                replay_duplicates = sum(
+                    1 for row in channel_replays if bool(row.get("accepted", True)) is False
+                )
+                channel_retry_failures = [
+                    row
+                    for row in retry_rows
+                    if isinstance(row, dict)
+                    and str(row.get("channel") or "") == channel
+                    and str(row.get("event_type") or "") == "egress_failed"
+                ]
+                retry_observed = sum(
+                    1
+                    for row in channel_retry_failures
+                    if isinstance(row.get("classification"), str)
+                )
+                retry_observability = (
+                    round(retry_observed / len(channel_retry_failures), 4)
+                    if channel_retry_failures
+                    else 1.0
+                )
+                signature_row = signature_by_channel.get(channel, {})
+                signature_checked = int(signature_row.get("checked", 0)) if signature_row else 0
+                signature_rejected = int(signature_row.get("rejected", 0)) if signature_row else 0
+                if signature_rejected > 0:
+                    signature_state = "rejected"
+                elif signature_checked > 0:
+                    signature_state = "verified"
+                else:
+                    signature_state = "skipped"
                 rows.append(
                     {
                         "channel": channel,
@@ -960,9 +1250,32 @@ def handle_api_request(
                         "last_event_at": (last_event or {}).get("timestamp"),
                         "last_error": last_error,
                         "retry_state": retry_state,
+                        "signature_state": signature_state,
+                        "replay_duplicates": replay_duplicates,
+                        "retry_observability": retry_observability,
                     }
                 )
-            return _json_response(req_id, {"items": rows})
+            return _json_response(
+                req_id,
+                {
+                    "items": rows,
+                    "summary": {
+                        "signature": reliability.get("signature", {}).get("totals", {}),
+                        "replays": {
+                            "total": reliability.get("replays", {}).get("total", 0),
+                            "duplicate_count": reliability.get("replays", {}).get(
+                                "duplicate_count", 0
+                            ),
+                        },
+                        "retries": {
+                            "failed_count": reliability.get("retries", {}).get("failed_count", 0),
+                            "observability_rate": reliability.get("retries", {}).get(
+                                "observability_rate", 1.0
+                            ),
+                        },
+                    },
+                },
+            )
 
         if method == "GET" and path == "/api/channels/events":
             recent_events = runtime.trace_logger.read_recent(limit=100)
@@ -997,6 +1310,60 @@ def handle_api_request(
                         {"channel": channel, "mode": "ingress/session/routing"}
                         for channel in channels
                     ],
+                },
+            )
+
+        if method == "GET" and path == "/api/openclaw/retries":
+            reliability = _reliability_snapshot(runtime)
+            retry_items = reliability.get("retries", {}).get("items", [])
+            items = [row for row in retry_items if isinstance(row, dict)]
+            return _json_response(
+                req_id,
+                {
+                    **_paginate(items, query=query),
+                    "observability_rate": reliability.get("retries", {}).get(
+                        "observability_rate", 1.0
+                    ),
+                },
+            )
+
+        if method == "GET" and path == "/api/openclaw/replays":
+            reliability = _reliability_snapshot(runtime)
+            replay_items = reliability.get("replays", {}).get("items", [])
+            items = [row for row in replay_items if isinstance(row, dict)]
+            return _json_response(
+                req_id,
+                {
+                    **_paginate(items, query=query),
+                    "duplicate_count": reliability.get("replays", {}).get("duplicate_count", 0),
+                    "duplicate_ratio": reliability.get("replays", {}).get("duplicate_ratio", 0.0),
+                    "non_duplicate_ratio": reliability.get("replays", {}).get(
+                        "non_duplicate_ratio", 1.0
+                    ),
+                },
+            )
+
+        if method == "GET" and path == "/api/openclaw/sessions":
+            reliability = _reliability_snapshot(runtime)
+            session_items = reliability.get("sessions", {}).get("items", [])
+            items = [row for row in session_items if isinstance(row, dict)]
+            return _json_response(
+                req_id,
+                {
+                    **_paginate(items, query=query),
+                    "bound_to_ticket": reliability.get("sessions", {}).get("bound_to_ticket", 0),
+                },
+            )
+
+        if method == "GET" and path == "/api/channels/signature-status":
+            reliability = _reliability_snapshot(runtime)
+            signature_items = reliability.get("signature", {}).get("items", [])
+            items = [row for row in signature_items if isinstance(row, dict)]
+            return _json_response(
+                req_id,
+                {
+                    **_paginate(items, query=query),
+                    "totals": reliability.get("signature", {}).get("totals", {}),
                 },
             )
 

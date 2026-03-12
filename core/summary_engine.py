@@ -1,13 +1,39 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
+from copy import deepcopy
+from typing import Any, Protocol, cast
+
+from llm.manager import LLMGenerationError
 from storage.models import Ticket, TicketEvent
 
-from .model_adapter import ModelAdapter
+
+class SummaryModelAdapter(Protocol):
+    def generate(
+        self,
+        task: str,
+        variables: dict[str, str],
+        *,
+        preferred_provider: str | None = None,
+    ) -> str: ...
+
+
+class TraceableSummaryModelAdapter(SummaryModelAdapter, Protocol):
+    def generate_with_trace(
+        self,
+        task: str,
+        variables: dict[str, str],
+        *,
+        preferred_provider: str | None = None,
+        prompt_version: str | None = None,
+        system_prompt: str = ...,
+    ) -> tuple[str, dict[str, Any]]: ...
 
 
 class SummaryEngine:
-    def __init__(self, model_adapter: ModelAdapter | None = None) -> None:
+    def __init__(self, model_adapter: SummaryModelAdapter | None = None) -> None:
         self._model_adapter = model_adapter
+        self._last_generation_metadata: dict[str, Any] = {}
 
     def intake_summary(self, ticket: Ticket) -> str:
         fallback = (
@@ -33,10 +59,85 @@ class SummaryEngine:
 
     def _render(self, task: str, fallback: str, **variables: object) -> str:
         if self._model_adapter is None:
+            self._last_generation_metadata = self._fallback_metadata(
+                task=task,
+                reason="llm_disabled",
+            )
             return fallback
 
         model_vars = {key: str(value) for key, value in variables.items()}
         try:
-            return self._model_adapter.generate(task, model_vars)
-        except Exception:
+            if hasattr(self._model_adapter, "generate_with_trace"):
+                traceable_adapter = cast(TraceableSummaryModelAdapter, self._model_adapter)
+                text, metadata = traceable_adapter.generate_with_trace(task, model_vars)
+                self._last_generation_metadata = self._normalize_metadata(task, metadata)
+                return text
+            text = self._model_adapter.generate(task, model_vars)
+            self._last_generation_metadata = self._normalize_metadata(
+                task,
+                {
+                    "provider": "openai_compatible",
+                    "model": None,
+                    "prompt_key": task,
+                    "prompt_version": None,
+                    "latency_ms": None,
+                    "request_id": None,
+                    "token_usage": None,
+                    "retry_count": 0,
+                    "success": True,
+                    "error": None,
+                    "fallback_used": False,
+                },
+            )
+            return text
+        except LLMGenerationError as exc:
+            self._last_generation_metadata = self._normalize_metadata(task, exc.trace_metadata)
             return fallback
+        except Exception as exc:
+            self._last_generation_metadata = self._fallback_metadata(
+                task=task,
+                reason="llm_runtime_error",
+                error=str(exc),
+            )
+            return fallback
+
+    def last_generation_metadata(self) -> dict[str, Any]:
+        return deepcopy(self._last_generation_metadata)
+
+    @staticmethod
+    def _normalize_metadata(task: str, metadata: Mapping[str, Any]) -> dict[str, Any]:
+        payload = dict(metadata)
+        payload.setdefault("provider", "openai_compatible")
+        payload.setdefault("model", None)
+        payload.setdefault("prompt_key", task)
+        payload.setdefault("prompt_version", None)
+        payload.setdefault("latency_ms", None)
+        payload.setdefault("request_id", None)
+        payload.setdefault("token_usage", None)
+        payload.setdefault("retry_count", 0)
+        payload.setdefault("success", False)
+        payload.setdefault("error", None)
+        payload.setdefault("fallback_used", False)
+        payload.setdefault(
+            "degraded",
+            bool(payload.get("fallback_used")) or not bool(payload["success"]),
+        )
+        return payload
+
+    @staticmethod
+    def _fallback_metadata(task: str, reason: str, error: str | None = None) -> dict[str, Any]:
+        return {
+            "provider": "fallback",
+            "model": None,
+            "prompt_key": task,
+            "prompt_version": None,
+            "latency_ms": None,
+            "request_id": None,
+            "token_usage": None,
+            "retry_count": 0,
+            "success": False,
+            "error": error or reason,
+            "fallback_used": True,
+            "degraded": True,
+            "degrade_reason": reason,
+        }

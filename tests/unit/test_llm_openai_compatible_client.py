@@ -75,3 +75,44 @@ def test_openai_compatible_client_stream_complete_parses_sse() -> None:
     )
     assert "".join(tokens) == "已收到"
 
+
+def test_openai_compatible_client_complete_with_metadata() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            status_code=200,
+            headers={"x-request-id": "req-test-123"},
+            json={
+                "id": "chatcmpl-abc",
+                "model": "qwen3.5:9b",
+                "usage": {
+                    "prompt_tokens": 12,
+                    "completion_tokens": 8,
+                    "total_tokens": 20,
+                },
+                "choices": [
+                    {"message": {"role": "assistant", "content": "摘要生成成功"}},
+                ],
+            },
+        )
+
+    client = OpenAICompatibleClient(
+        base_url="http://127.0.0.1:11434/v1",
+        api_key="ollama-local",
+        timeout_seconds=5,
+        transport=httpx.MockTransport(handler),
+    )
+    response = client.complete_with_metadata(
+        LLMRequest(
+            model="qwen3.5:9b",
+            prompt="请总结工单",
+            system_prompt="你是客服助手",
+            temperature=0.2,
+            max_tokens=128,
+        )
+    )
+
+    assert response.text == "摘要生成成功"
+    assert response.request_id == "req-test-123"
+    assert response.model == "qwen3.5:9b"
+    assert response.token_usage is not None
+    assert response.token_usage.total_tokens == 20

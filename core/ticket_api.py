@@ -279,6 +279,19 @@ class TicketAPI:
             payload=payload,
         )
 
+    def merge_ticket_metadata(
+        self,
+        ticket_id: str,
+        metadata_patch: dict[str, Any],
+        *,
+        actor_id: str,
+    ) -> Ticket:
+        return self.update_ticket(
+            ticket_id,
+            {"metadata": metadata_patch},
+            actor_id=actor_id,
+        )
+
     @staticmethod
     def _ensure_not_closed(ticket: Ticket) -> None:
         if ticket.status == "closed":

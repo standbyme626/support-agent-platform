@@ -6,7 +6,7 @@ from typing import Any
 
 import httpx
 
-from .types import LLMRequest
+from .types import LLMRequest, LLMResponse, LLMUsage
 
 
 class OpenAICompatibleClient:
@@ -26,6 +26,9 @@ class OpenAICompatibleClient:
         self._transport = transport
 
     def complete(self, request: LLMRequest) -> str:
+        return self.complete_with_metadata(request).text
+
+    def complete_with_metadata(self, request: LLMRequest) -> LLMResponse:
         payload = _build_payload(request=request, stream=False)
         with httpx.Client(timeout=self._timeout_seconds, transport=self._transport) as client:
             response = client.post(
@@ -34,8 +37,20 @@ class OpenAICompatibleClient:
                 json=payload,
             )
             response.raise_for_status()
-        data = response.json()
-        return _extract_text_from_completion(data)
+            data = response.json()
+            request_id = response.headers.get("x-request-id")
+        text = _extract_text_from_completion(data)
+        model = data.get("model") if isinstance(data.get("model"), str) else request.model
+        usage = _extract_usage(data.get("usage"))
+        if request_id is None and isinstance(data.get("id"), str):
+            request_id = str(data.get("id"))
+        return LLMResponse(
+            text=text,
+            model=model,
+            request_id=request_id,
+            token_usage=usage,
+            raw_payload=data if isinstance(data, dict) else None,
+        )
 
     def stream_complete(self, request: LLMRequest) -> Iterator[str]:
         payload = _build_payload(request=request, stream=True)
@@ -123,3 +138,26 @@ def _extract_text_token(content: object) -> str:
 
 def asdict_error(payload: dict[str, Any]) -> dict[str, Any]:
     return {"keys": sorted(payload.keys())[:20]}
+
+
+def _extract_usage(raw_usage: object) -> LLMUsage | None:
+    if not isinstance(raw_usage, dict):
+        return None
+    return LLMUsage(
+        prompt_tokens=_to_int(raw_usage.get("prompt_tokens")),
+        completion_tokens=_to_int(raw_usage.get("completion_tokens")),
+        total_tokens=_to_int(raw_usage.get("total_tokens")),
+    )
+
+
+def _to_int(value: object) -> int | None:
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value)
+    try:
+        if value is None:
+            return None
+        return int(str(value))
+    except ValueError:
+        return None

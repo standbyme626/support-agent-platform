@@ -79,22 +79,46 @@ export type TicketAssistResponse = {
   request_id?: string;
   summary: string;
   recommended_actions: Array<Record<string, unknown>>;
+  grounding_sources: GroundingSourceItem[];
   risk_flags: string[];
   latest_messages: string[];
   provider: string;
   prompt_version: string;
 };
 
+export type GroundingSourceItem = {
+  source_type?: string;
+  source_id?: string;
+  title?: string;
+  snippet?: string;
+  score?: number;
+  rank?: number;
+  reason?: string;
+  lexical_score?: number;
+  vector_score?: number;
+  retrieval_mode?: string;
+};
+
 export type SimilarCaseItem = {
   doc_id?: string;
+  source_id?: string;
   source_type?: string;
   title?: string;
   score?: number;
+  rank?: number;
+  reason?: string;
+  snippet?: string;
+  retrieval_mode?: string;
 };
 
 export type SimilarCasesResponse = {
   request_id?: string;
   items: SimilarCaseItem[];
+};
+
+export type GroundingSourcesResponse = {
+  request_id?: string;
+  items: GroundingSourceItem[];
 };
 
 export type TicketActionType = "claim" | "reassign" | "escalate" | "resolve" | "close";
@@ -190,6 +214,12 @@ export async function fetchTicketAssist(ticketId: string) {
 
 export async function fetchSimilarCases(ticketId: string) {
   return getJson<SimilarCasesResponse>(`/api/tickets/${encodeURIComponent(ticketId)}/similar-cases`);
+}
+
+export async function fetchGroundingSources(ticketId: string) {
+  return getJson<GroundingSourcesResponse>(
+    `/api/tickets/${encodeURIComponent(ticketId)}/grounding-sources`
+  );
 }
 
 export async function runTicketAction(

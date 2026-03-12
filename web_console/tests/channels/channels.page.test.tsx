@@ -17,6 +17,12 @@ describe("ChannelsPage", () => {
       routes: [],
       channelHealth: [],
       events: [],
+      signatures: [],
+      replays: [],
+      retries: [],
+      sessions: [],
+      replayDuplicateRatio: 0,
+      retryObservabilityRate: 1,
       refetch: vi.fn()
     });
 
@@ -32,6 +38,12 @@ describe("ChannelsPage", () => {
       routes: [],
       channelHealth: [],
       events: [],
+      signatures: [],
+      replays: [],
+      retries: [],
+      sessions: [],
+      replayDuplicateRatio: 0,
+      retryObservabilityRate: 1,
       refetch: vi.fn()
     });
 
@@ -62,9 +74,60 @@ describe("ChannelsPage", () => {
           connected: true,
           last_event_at: "2026-03-11T01:02:03+00:00",
           last_error: null,
-          retry_state: "idle"
+          retry_state: "idle",
+          signature_state: "verified",
+          replay_duplicates: 0,
+          retry_observability: 1
         }
       ],
+      signatures: [
+        {
+          channel: "telegram",
+          checked: 1,
+          valid: 1,
+          rejected: 0,
+          last_checked_at: "2026-03-11T01:02:03+00:00",
+          last_error_code: null
+        }
+      ],
+      replays: [
+        {
+          timestamp: "2026-03-11T01:02:03+00:00",
+          trace_id: "trace-h-001",
+          channel: "telegram",
+          session_id: "session-1",
+          idempotency_key: "telegram:1001",
+          accepted: true,
+          replay_count: 0
+        }
+      ],
+      retries: [
+        {
+          timestamp: "2026-03-11T01:02:03+00:00",
+          trace_id: "trace-h-001",
+          channel: "telegram",
+          session_id: "session-1",
+          event_type: "egress_failed",
+          attempt: 1,
+          classification: "temporary",
+          should_retry: true,
+          error_code: "temporary_send_failure",
+          error_message: "flaky network"
+        }
+      ],
+      sessions: [
+        {
+          session_id: "session-1",
+          thread_id: "thread-1",
+          ticket_id: "TICKET-1",
+          updated_at: "2026-03-11T01:02:03+00:00",
+          channel: "telegram",
+          last_message_id: "telegram:1001",
+          replay_count: 0
+        }
+      ],
+      replayDuplicateRatio: 0,
+      retryObservabilityRate: 1,
       events: [
         {
           timestamp: "2026-03-11T01:02:03+00:00",
@@ -85,6 +148,8 @@ describe("ChannelsPage", () => {
     expect(screen.getByText("openclaw-dev")).toBeInTheDocument();
     expect(screen.getByText("渠道健康")).toBeInTheDocument();
     expect(screen.getByText("Webhook 事件流")).toBeInTheDocument();
+    expect(screen.getAllByText("签名状态").length).toBeGreaterThan(0);
+    expect(screen.getByText("重放与重试")).toBeInTheDocument();
     expect(screen.getByText("ingress_normalized")).toBeInTheDocument();
     expect(screen.getByText("trace-h-001")).toBeInTheDocument();
   });

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from core.retrieval.source_attribution import build_source_payloads
 from core.ticket_api import TicketAPI
 from core.workflow_engine import WorkflowEngine, WorkflowOutcome
 from storage.models import InboundEnvelope
@@ -23,6 +24,7 @@ class SupportIntakeResult:
     queue: str
     priority: str
     trace_events: list[str]
+    llm_trace: dict[str, object]
 
 
 class SupportIntakeWorkflow:
@@ -83,6 +85,7 @@ class SupportIntakeWorkflow:
             queue=outcome.ticket.queue,
             priority=outcome.ticket.priority,
             trace_events=trace_events,
+            llm_trace=outcome.llm_trace,
         )
 
     def _should_push_to_collab(
@@ -103,9 +106,15 @@ class SupportIntakeWorkflow:
             return
 
         ticket_id = outcome.ticket.ticket_id
-        lifecycle_stage = (
-            "awaiting_human" if outcome.handoff.should_handoff else "drafted"
+        grounding_sources = build_source_payloads(
+            outcome.ticket.latest_message,
+            [
+                {"doc": doc, "score": doc.score, "rank": idx, "retrieval_mode": "hybrid"}
+                for idx, doc in enumerate(outcome.retrieved_docs, start=1)
+            ],
+            top_k=5,
         )
+        lifecycle_stage = "awaiting_human" if outcome.handoff.should_handoff else "drafted"
         self._ticket_api.update_ticket(
             ticket_id,
             {
@@ -132,10 +141,13 @@ class SupportIntakeWorkflow:
                     "recommended_action_cards": [
                         item.as_dict() for item in outcome.recommendations
                     ],
+                    "grounding_sources": grounding_sources,
                     "next_steps": [item.action for item in outcome.recommendations],
                     "risk_flags": sorted(
                         {item.risk for item in outcome.recommendations if item.risk}
                     ),
+                    "llm_trace": dict(outcome.llm_trace),
+                    "ai_degraded": bool(outcome.llm_trace.get("degraded")),
                 },
             },
             actor_id="support-intake",
@@ -161,6 +173,7 @@ class SupportIntakeWorkflow:
                 "source_breakdown": sorted({doc.source_type for doc in outcome.retrieved_docs}),
                 "doc_ids": [doc.doc_id for doc in outcome.retrieved_docs],
                 "doc_titles": [doc.title for doc in outcome.retrieved_docs],
+                "grounding_sources": grounding_sources,
             },
         )
         self._ticket_api.add_event(
@@ -171,6 +184,16 @@ class SupportIntakeWorkflow:
             payload={
                 "reply_preview": outcome.reply_text[:200],
                 "should_handoff": outcome.handoff.should_handoff,
+            },
+        )
+        self._ticket_api.add_event(
+            ticket_id,
+            event_type="ticket_summary_generated",
+            actor_type="agent",
+            actor_id="support-intake",
+            payload={
+                "summary_preview": outcome.summary[:200],
+                "llm_trace": dict(outcome.llm_trace),
             },
         )
         self._ticket_api.add_event(

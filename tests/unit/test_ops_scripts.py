@@ -6,6 +6,7 @@ from pytest import MonkeyPatch
 
 from core.trace_logger import JsonTraceLogger
 from scripts.deploy_release import deploy_release
+from scripts.gateway_status import collect_status
 from scripts.healthcheck import run_healthcheck
 from scripts.replay_gateway_event import replay_event
 from scripts.rollback_release import rollback_release
@@ -33,6 +34,7 @@ def test_healthcheck_and_trace_debug_scripts(
         session_id=None,
         limit=10,
     )
+    assert isinstance(events, list)
     assert any(event["event_type"] == "script_test" for event in events)
 
     replay_result = replay_event(
@@ -43,6 +45,12 @@ def test_healthcheck_and_trace_debug_scripts(
         trace_id="trace_ops_replay",
     )
     assert replay_result["status"] == "ok"
+
+    status = collect_status("dev")
+    assert "reliability" in status
+    reliability = status["reliability"]
+    assert isinstance(reliability, dict)
+    assert {"signature", "replays", "retries", "sessions"}.issubset(set(reliability.keys()))
 
 
 def test_release_scripts_deploy_verify_rollback_chain(

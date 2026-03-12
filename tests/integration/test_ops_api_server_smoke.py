@@ -80,8 +80,22 @@ def test_ops_api_server_smoke(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
             assert detail["data"]["ticket_id"] == first_ticket_id
 
             _json(client, "GET", f"{base}/api/tickets/{first_ticket_id}/events")
-            _json(client, "GET", f"{base}/api/tickets/{first_ticket_id}/assist")
+            assist = _json(client, "GET", f"{base}/api/tickets/{first_ticket_id}/assist")
+            assert "provider" in assist
+            assert "prompt_version" in assist
+            assert "degraded" in assist
+            assert "grounding_sources" in assist
             _json(client, "GET", f"{base}/api/tickets/{first_ticket_id}/similar-cases")
+            _json(client, "GET", f"{base}/api/tickets/{first_ticket_id}/grounding-sources")
+            retrieval_search = _json(
+                client,
+                "POST",
+                f"{base}/api/retrieval/search",
+                {"query": "报修 故障", "source_type": "grounded", "top_k": 3},
+            )
+            assert retrieval_search["items"]
+            retrieval_health = _json(client, "GET", f"{base}/api/retrieval/health")
+            assert retrieval_health["data"]["status"] == "ok"
 
             claim = _json(
                 client,
@@ -136,8 +150,12 @@ def test_ops_api_server_smoke(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
 
             _json(client, "GET", f"{base}/api/channels/health")
             _json(client, "GET", f"{base}/api/channels/events")
+            _json(client, "GET", f"{base}/api/channels/signature-status")
             _json(client, "GET", f"{base}/api/openclaw/status")
             _json(client, "GET", f"{base}/api/openclaw/routes")
+            _json(client, "GET", f"{base}/api/openclaw/retries")
+            _json(client, "GET", f"{base}/api/openclaw/replays")
+            _json(client, "GET", f"{base}/api/openclaw/sessions")
             assignees = _json(client, "GET", f"{base}/api/agents/assignees")
             assert "items" in assignees
     finally:

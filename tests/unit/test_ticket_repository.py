@@ -84,3 +84,39 @@ def test_repository_persists_lifecycle_fields(tmp_path: Path) -> None:
     assert updated.handoff_state == "requested"
     assert updated.last_agent_action == "escalate"
     assert updated.risk_level == "high"
+
+
+def test_repository_event_idempotency_key_deduplicates(tmp_path: Path) -> None:
+    sqlite_path = tmp_path / "tickets.db"
+    repo = TicketRepository(sqlite_path)
+    repo.apply_migrations()
+
+    ticket = repo.create_ticket(
+        channel="wecom",
+        session_id="s-evt",
+        thread_id="th-evt",
+        title="重复事件",
+        latest_message="需要处理",
+        intent="repair",
+        priority="P2",
+        queue="support",
+    )
+
+    first = repo.append_event(
+        ticket_id=ticket.ticket_id,
+        event_type="ingress_normalized",
+        actor_type="system",
+        actor_id="test",
+        payload={"idempotency_key": "wecom:evt-001"},
+    )
+    second = repo.append_event(
+        ticket_id=ticket.ticket_id,
+        event_type="ingress_normalized",
+        actor_type="system",
+        actor_id="test",
+        payload={"idempotency_key": "wecom:evt-001"},
+    )
+
+    assert first.event_id == second.event_id
+    events = repo.list_events(ticket.ticket_id)
+    assert len(events) == 1

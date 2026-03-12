@@ -20,6 +20,7 @@ class WorkflowOutcome:
     intent: IntentDecision
     retrieved_docs: list[KBDocument]
     summary: str
+    llm_trace: dict[str, object]
     recommendations: list[RecommendedAction]
     handoff: HandoffDecision
     sla: SlaCheckResult
@@ -126,6 +127,20 @@ class WorkflowEngine:
 
         events = self._ticket_api.list_events(ticket.ticket_id)
         summary = self._summary_engine.case_summary(ticket, events)
+        llm_trace = {
+            key: value
+            for key, value in self._summary_engine.last_generation_metadata().items()
+        }
+        self._log(
+            "summary_generated",
+            {
+                "summary_preview": summary[:200],
+                **llm_trace,
+            },
+            trace_id=trace_id,
+            ticket_id=ticket.ticket_id,
+            session_id=ticket.session_id,
+        )
         sla_result = self._sla_engine.evaluate(ticket, events)
         self._log(
             "sla_evaluated",
@@ -192,6 +207,7 @@ class WorkflowEngine:
             intent=intent,
             retrieved_docs=retrieved_docs,
             summary=summary,
+            llm_trace=llm_trace,
             recommendations=recommendations,
             handoff=handoff_decision,
             sla=sla_result,

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from core.retrieval.source_attribution import build_source_attributions
 from storage.models import KBDocument, Ticket
 
 from .intent_router import IntentDecision
@@ -31,8 +32,7 @@ class RecommendedAction:
             "risk": self.risk,
             "confidence": self.confidence,
             "evidence": [
-                {"doc_id": item.doc_id, "source_type": item.source_type}
-                for item in self.evidence
+                {"doc_id": item.doc_id, "source_type": item.source_type} for item in self.evidence
             ],
         }
 
@@ -48,6 +48,20 @@ class RecommendedActionsEngine:
     ) -> list[RecommendedAction]:
         actions: list[RecommendedAction] = []
         primary_doc = self._pick_primary_doc(retrieved_docs)
+        attributions = build_source_attributions(
+            ticket.latest_message,
+            [
+                {
+                    "doc": doc,
+                    "score": doc.score,
+                    "rank": idx,
+                    "retrieval_mode": "hybrid",
+                }
+                for idx, doc in enumerate(retrieved_docs, start=1)
+            ],
+            top_k=5,
+        )
+        attribution_by_doc_id = {item.source_id: item for item in attributions}
 
         if intent.is_low_confidence:
             actions.append(
@@ -114,10 +128,14 @@ class RecommendedActionsEngine:
             )
 
         if primary_doc:
+            attribution = attribution_by_doc_id.get(primary_doc.doc_id)
+            reason = "检索命中可复用历史处理经验"
+            if attribution and attribution.snippet:
+                reason = f"{reason}：{attribution.snippet}"
             actions.append(
                 RecommendedAction(
                     action=f"参考案例/知识: {primary_doc.title}",
-                    reason="检索命中可复用历史处理经验",
+                    reason=reason,
                     source=f"{primary_doc.source_type}:{primary_doc.doc_id}",
                     risk="知识过期风险",
                     confidence=_bounded_confidence(primary_doc.score),
