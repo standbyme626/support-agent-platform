@@ -163,10 +163,10 @@ flowchart LR
 2. 不把 OpenClaw 变成业务规则引擎。
 3. 不做多租户/RBAC 重构。
 4. 不做分布式多写数据库架构（当前 SQLite）。
-5. 不提供独立员工进度查询 intent API（当前通过工单详情 + 会话回执组合）。
+5. 不提供独立 progress 查询 API；当前通过会话绑定 ticket 与 `progress_query` 意图回复实现。
 
 ## 9. 下一阶段建议（不扩范围）
 
 1. 在不改变 workflow-first 的前提下，把 Operator/Dispatch Copilot 从规则化回答平滑切到真实 LLM。
-2. 补齐独立 progress intent 路由，但保持审批与生命周期规则不下放到模型。
+2. 继续增强 progress query 在跨会话与工单号识别场景下的体验，但保持审批与生命周期规则不下放到模型。
 3. 在现有接口契约稳定后，再推进存储层升级。

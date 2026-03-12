@@ -224,6 +224,10 @@ def _prompt_version_overrides() -> dict[str, str]:
         "wrap_up_summary": "LLM_PROMPT_VERSION_WRAP_UP_SUMMARY",
         "operator_summary": "LLM_PROMPT_VERSION_OPERATOR_SUMMARY",
         "dispatch_summary": "LLM_PROMPT_VERSION_DISPATCH_SUMMARY",
+        "intake_user_reply": "LLM_PROMPT_VERSION_INTAKE_USER_REPLY",
+        "progress_reply": "LLM_PROMPT_VERSION_PROGRESS_REPLY",
+        "handoff_reply": "LLM_PROMPT_VERSION_HANDOFF_REPLY",
+        "faq_reply": "LLM_PROMPT_VERSION_FAQ_REPLY",
     }
     overrides: dict[str, str] = {}
     for task, env_key in mapping.items():

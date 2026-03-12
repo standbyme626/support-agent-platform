@@ -17,6 +17,7 @@ export type TraceListItem = {
   fallback_used: boolean;
   degraded: boolean;
   degrade_reason: string | null;
+  generation_type: string | null;
   route_decision: Record<string, unknown>;
   handoff: boolean;
   handoff_reason: string | null;
@@ -86,6 +87,7 @@ export type TraceDetail = {
   fallback_used: boolean;
   degraded: boolean;
   degrade_reason: string | null;
+  generation_type: string | null;
   route_decision: Record<string, unknown>;
   retrieved_docs: string[];
   grounding_sources: TraceGroundingSource[];
@@ -177,6 +179,7 @@ function normalizeTraceListItem(item: Partial<TraceListItem>, index: number): Tr
     fallback_used: toBoolean(item.fallback_used),
     degraded: toBoolean(item.degraded),
     degrade_reason: toStringOrNull(item.degrade_reason),
+    generation_type: toStringOrNull(item.generation_type),
     route_decision: toRecord(item.route_decision),
     handoff: toBoolean(item.handoff),
     handoff_reason: toStringOrNull(item.handoff_reason),
@@ -233,6 +236,7 @@ function normalizeTraceDetail(item: TraceDetailResponse, traceId: string): Trace
     fallback_used: toBoolean(item.fallback_used),
     degraded: toBoolean(item.degraded),
     degrade_reason: toStringOrNull(item.degrade_reason),
+    generation_type: toStringOrNull(item.generation_type),
     route_decision: toRecord(item.route_decision),
     retrieved_docs: toStringList(item.retrieved_docs),
     grounding_sources: Array.isArray(item.grounding_sources)

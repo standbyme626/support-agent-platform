@@ -27,9 +27,14 @@ class _DummyIntakeWorkflow:
     def __init__(self, result: _DummyIntakeResult) -> None:
         self._result = result
         self.calls: int = 0
+        self.existing_ticket_ids: list[str | None] = []
 
-    def run(self, envelope: Any) -> _DummyIntakeResult:
+    def run(
+        self, envelope: Any, *, existing_ticket_id: str | None = None
+    ) -> _DummyIntakeResult:
+        _ = envelope
         self.calls += 1
+        self.existing_ticket_ids.append(existing_ticket_id)
         return self._result
 
 
@@ -78,6 +83,7 @@ def test_process_wecom_message_group_uses_composed_session_id() -> None:
     assert result.reply_text == "已为你创建工单 TICKET-101"
     assert result.ticket_id == "TICKET-101"
     assert runtime.intake_workflow.calls == 1
+    assert runtime.intake_workflow.existing_ticket_ids[-1] is None
     assert runtime.gateway.calls[0][0] == "wecom"
     assert runtime.gateway.calls[0][1]["session_id"] == "group:group-1:user:user_a"
 
@@ -142,7 +148,7 @@ def test_process_wecom_message_accepts_wecom_native_fields() -> None:
                     "channel": "wecom",
                     "session_id": "dm:user_native",
                     "message_text": "原生字段消息",
-                    "metadata": {"inbox": "wecom.default"},
+                    "metadata": {"inbox": "wecom.default", "ticket_id": "TICKET-202"},
                 },
             }
         ),
@@ -169,6 +175,7 @@ def test_process_wecom_message_accepts_wecom_native_fields() -> None:
     assert result.status == "ok"
     assert result.reply_text == "已处理企业微信原生字段"
     assert runtime.intake_workflow.calls == 1
+    assert runtime.intake_workflow.existing_ticket_ids[-1] == "TICKET-202"
     assert runtime.gateway.calls[0][1]["FromUserName"] == "user_native"
     assert runtime.gateway.calls[0][1]["Content"] == "原生字段消息"
     assert runtime.gateway.calls[0][1]["MsgId"] == "mid-native-1"

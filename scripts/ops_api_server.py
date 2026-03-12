@@ -484,6 +484,7 @@ def _trace_summary(
     fallback_used = False
     degraded = False
     degrade_reason: str | None = None
+    generation_type: str | None = None
     workflow = "support-intake"
     error_only = False
     handoff = False
@@ -531,6 +532,8 @@ def _trace_summary(
             degraded = bool(payload_dict["degraded"])
         if "degrade_reason" in payload_dict and payload_dict.get("degrade_reason"):
             degrade_reason = str(payload_dict["degrade_reason"])
+        if "generation_type" in payload_dict and payload_dict.get("generation_type"):
+            generation_type = str(payload_dict["generation_type"])
         if "workflow" in payload_dict:
             workflow = str(payload_dict["workflow"])
         if event_type.endswith("failed") or "error" in payload_dict:
@@ -554,6 +557,7 @@ def _trace_summary(
         "fallback_used": fallback_used,
         "degraded": degraded,
         "degrade_reason": degrade_reason,
+        "generation_type": generation_type,
         "route_decision": route_decision,
         "handoff": handoff,
         "handoff_reason": handoff_reason,
@@ -1478,6 +1482,7 @@ def handle_api_request(
                     "fallback_used": trace_summary.get("fallback_used"),
                     "degraded": trace_summary.get("degraded"),
                     "degrade_reason": trace_summary.get("degrade_reason"),
+                    "generation_type": trace_summary.get("generation_type"),
                     "route_decision": trace_summary.get("route_decision"),
                     "retrieved_docs": retrieved_doc_ids,
                     "grounding_sources": grounding_sources,

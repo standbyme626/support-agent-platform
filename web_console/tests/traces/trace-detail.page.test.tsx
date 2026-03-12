@@ -53,6 +53,7 @@ describe("TraceDetailPage", () => {
         fallback_used: false,
         degraded: false,
         degrade_reason: null,
+        generation_type: "progress",
         route_decision: { intent: "repair", confidence: 0.93 },
         retrieved_docs: ["doc-001"],
         grounding_sources: [

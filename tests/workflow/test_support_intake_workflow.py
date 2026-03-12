@@ -113,6 +113,32 @@ def test_support_intake_repair_creates_ticket_and_pushes_collab(tmp_path: Path) 
     assert "ticket_draft_generated" in event_types
 
 
+def test_support_intake_progress_query_updates_existing_ticket(tmp_path: Path) -> None:
+    workflow, _ = _build_intake_workflow(tmp_path)
+    first = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-progress",
+            message_text="停车场抬杆故障",
+            metadata={"thread_id": "thread-progress"},
+        )
+    )
+    second = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-progress",
+            message_text="我的工单到哪了，谁在跟进？",
+            metadata={"thread_id": "thread-progress"},
+        ),
+        existing_ticket_id=first.ticket_id,
+    )
+
+    assert second.ticket_id == first.ticket_id
+    assert second.ticket_action == "progress_reply"
+    assert "工单" in second.reply_text
+    assert "负责人" in second.reply_text
+
+
 def test_support_intake_handoff_event_contains_policy_paths(tmp_path: Path) -> None:
     workflow, ticket_api = _build_intake_workflow(tmp_path)
     result = workflow.run(

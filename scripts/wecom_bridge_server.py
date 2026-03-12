@@ -40,7 +40,7 @@ class _GatewayLike(Protocol):
 
 
 class _IntakeLike(Protocol):
-    def run(self, envelope: InboundEnvelope) -> Any: ...
+    def run(self, envelope: InboundEnvelope, *, existing_ticket_id: str | None = None) -> Any: ...
 
 
 class _RuntimeLike(Protocol):
@@ -105,7 +105,8 @@ def process_wecom_message(runtime: _RuntimeLike, payload: dict[str, Any]) -> Bri
         message_text=str(inbound_payload.get("message_text") or text),
         metadata=dict(inbound_payload.get("metadata") or {}),
     )
-    intake = runtime.intake_workflow.run(envelope)
+    existing_ticket_id = str(envelope.metadata.get("ticket_id") or "").strip() or None
+    intake = runtime.intake_workflow.run(envelope, existing_ticket_id=existing_ticket_id)
     return BridgeResult(
         handled=True,
         reply_text=intake.reply_text,

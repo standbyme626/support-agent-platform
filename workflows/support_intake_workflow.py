@@ -27,6 +27,7 @@ class SupportIntakeResult:
     priority: str
     trace_events: list[str]
     llm_trace: dict[str, object]
+    reply_trace: dict[str, object]
 
 
 class SupportIntakeWorkflow:
@@ -88,6 +89,7 @@ class SupportIntakeWorkflow:
             priority=outcome.ticket.priority,
             trace_events=trace_events,
             llm_trace=outcome.llm_trace,
+            reply_trace=outcome.reply_trace,
         )
 
     def _should_push_to_collab(
@@ -161,6 +163,8 @@ class SupportIntakeWorkflow:
                         {item.risk for item in outcome.recommendations if item.risk}
                     ),
                     "llm_trace": dict(outcome.llm_trace),
+                    "reply_trace": dict(outcome.reply_trace),
+                    "reply_generation_type": outcome.reply_generation_type,
                     "ai_degraded": bool(outcome.llm_trace.get("degraded")),
                     HANDOFF_CONTEXT_KEY: handoff_context,
                 },
@@ -199,6 +203,19 @@ class SupportIntakeWorkflow:
             payload={
                 "reply_preview": outcome.reply_text[:200],
                 "should_handoff": outcome.handoff.should_handoff,
+                "reply_trace": dict(outcome.reply_trace),
+                "generation_type": outcome.reply_generation_type,
+            },
+        )
+        self._ticket_api.add_event(
+            ticket_id,
+            event_type="ticket_reply_generated",
+            actor_type="agent",
+            actor_id="support-intake",
+            payload={
+                "generation_type": outcome.reply_generation_type,
+                "reply_trace": dict(outcome.reply_trace),
+                "reply_preview": outcome.reply_text[:200],
             },
         )
         self._ticket_api.add_event(
@@ -266,6 +283,10 @@ class SupportIntakeWorkflow:
                 return "conservative_ticket", trace_events
             trace_events.extend(["faq_hit", "direct_reply"])
             return "faq_reply", trace_events
+
+        if outcome.intent.intent == "progress_query":
+            trace_events.extend(["progress_query", "direct_reply"])
+            return "progress_reply", trace_events
 
         if outcome.ticket.status == "escalated":
             trace_events.extend(["status_escalated", "notify_collab"])

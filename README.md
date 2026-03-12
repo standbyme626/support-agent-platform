@@ -237,7 +237,7 @@ npm run dev
    在 `web_console` 打开 Ticket Detail、Queues、Approvals 完成审批与动作。
 5. 进度查询：
    使用 `GET /api/tickets/{ticket_id}` / `/events` 查看状态演进；
-   员工侧二次追问目前走同会话回执与工单上下文处理（专用“进度问答意图路由”仍在规划外）。
+   员工侧同会话追问已接入 `progress_query` 意图与自然语言回复（LLM优先、规则兜底）。
 
 ## 当前版本能力边界（明确不做）
 
@@ -245,7 +245,7 @@ npm run dev
 2. 不让 OpenClaw 承载 ticket 业务决策。
 3. 不提供多租户/RBAC/复杂组织权限体系。
 4. 不提供分布式多写存储（当前为 SQLite 单实例形态）。
-5. 不承诺“员工进度查询”独立意图 API（当前以工单详情与会话回执组合实现）。
+5. 不承诺跨会话自动关联历史工单；当前进度查询基于会话绑定 `ticket_id` 或显式工单号。
 
 ## 文档索引
 

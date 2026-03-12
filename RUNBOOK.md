@@ -173,7 +173,7 @@ curl -X POST http://127.0.0.1:18082/api/approvals/<approval_id>/approve \
 6. 进度查询：
 
 - 运营侧：通过 `GET /api/tickets/<ticket_id>` 获取实时状态。
-- 员工侧：继续在同会话发送消息，系统会在当前工单上下文下回复处理进展回执（当前无独立 progress API）。
+- 员工侧：继续在同会话发送消息，系统会走 `progress_query` 意图并生成进展回复（LLM优先、规则兜底；当前仍无独立 progress API）。
 
 ## 5. 常见故障排查
 

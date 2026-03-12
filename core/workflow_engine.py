@@ -7,6 +7,7 @@ from storage.models import InboundEnvelope, KBDocument, Ticket
 from .handoff_manager import HandoffDecision, HandoffManager
 from .intent_router import IntentDecision, IntentRouter
 from .recommended_actions_engine import RecommendedAction, RecommendedActionsEngine
+from .reply_generator import ReplyGenerator
 from .sla_engine import SlaCheckResult, SlaEngine
 from .summary_engine import SummaryEngine
 from .ticket_api import TicketAPI
@@ -25,6 +26,8 @@ class WorkflowOutcome:
     handoff: HandoffDecision
     sla: SlaCheckResult
     reply_text: str
+    reply_trace: dict[str, object]
+    reply_generation_type: str
 
 
 class WorkflowEngine:
@@ -41,6 +44,7 @@ class WorkflowEngine:
         sla_engine: SlaEngine,
         recommendation_engine: RecommendedActionsEngine,
         trace_logger: JsonTraceLogger | None = None,
+        reply_generator: ReplyGenerator | None = None,
     ) -> None:
         self._ticket_api = ticket_api
         self._intent_router = intent_router
@@ -50,6 +54,7 @@ class WorkflowEngine:
         self._sla_engine = sla_engine
         self._recommendation_engine = recommendation_engine
         self._trace_logger = trace_logger
+        self._reply_generator = reply_generator or ReplyGenerator()
 
     def process_intake(
         self, envelope: InboundEnvelope, existing_ticket_id: str | None = None
@@ -200,7 +205,35 @@ class WorkflowEngine:
                 decision=handoff_decision,
             )
 
-        reply_text = self._build_reply(intent, retrieved_docs, handoff_decision)
+        fallback_reply = self._build_reply(
+            intent,
+            retrieved_docs,
+            handoff_decision,
+            ticket=ticket,
+            latest_event_types=[event.event_type for event in events[-5:]],
+        )
+        reply_result = self._reply_generator.generate(
+            message_text=envelope.message_text,
+            intent=intent,
+            ticket=ticket,
+            retrieved_docs=retrieved_docs,
+            summary=summary,
+            recommendations=recommendations,
+            handoff=handoff_decision,
+            events=events,
+            fallback_reply=fallback_reply,
+        )
+        self._log(
+            "reply_generated",
+            {
+                **reply_result.metadata,
+                "reply_preview": reply_result.reply_text[:200],
+                "workflow": "support-intake",
+            },
+            trace_id=trace_id,
+            ticket_id=ticket.ticket_id,
+            session_id=ticket.session_id,
+        )
 
         return WorkflowOutcome(
             ticket=ticket,
@@ -211,7 +244,9 @@ class WorkflowEngine:
             recommendations=recommendations,
             handoff=handoff_decision,
             sla=sla_result,
-            reply_text=reply_text,
+            reply_text=reply_result.reply_text,
+            reply_trace={key: value for key, value in reply_result.metadata.items()},
+            reply_generation_type=reply_result.generation_type,
         )
 
     def _log(
@@ -261,9 +296,27 @@ class WorkflowEngine:
         intent: IntentDecision,
         retrieved_docs: list[KBDocument],
         handoff: HandoffDecision,
+        *,
+        ticket: Ticket | None = None,
+        latest_event_types: list[str] | None = None,
     ) -> str:
         if handoff.should_handoff:
+            if ticket is not None:
+                return (
+                    f"已为你转接人工客服并发起人工接管，工单{ticket.ticket_id}当前状态为{ticket.status}。"
+                    "处理人员会尽快联系你，请保持会话畅通。"
+                )
             return "已为你转接人工客服，请稍候。"
+
+        if intent.intent == "progress_query":
+            if ticket is None:
+                return "已收到进度查询，请提供工单号（例如 TCK-00001）或在原会话继续追问。"
+            assignee = ticket.assignee or "当前待认领"
+            recent = ",".join(latest_event_types or []) or "暂无事件"
+            return (
+                f"工单{ticket.ticket_id}当前状态：{ticket.status}，负责人：{assignee}。"
+                f"最近进展：{recent}。我们会继续同步后续处理情况。"
+            )
 
         if intent.intent == "greeting":
             return "你好，我是智慧工单助手。请描述你的问题（如报修、账单、投诉），我来帮你处理。"

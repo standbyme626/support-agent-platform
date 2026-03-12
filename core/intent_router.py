@@ -18,6 +18,7 @@ class IntentRouter:
     _intent_keywords: ClassVar[dict[str, set[str]]] = {
         "greeting": {"你好", "您好", "hello", "hey", "在吗"},
         "faq": {"怎么", "如何", "查询", "帮助", "help", "faq"},
+        "progress_query": {"进度", "到哪", "什么时候", "谁在跟进", "谁跟进", "状态"},
         "repair": {"报修", "故障", "坏了", "维修", "中断"},
         "complaint": {"投诉", "差评", "生气", "不满意", "赔偿"},
         "billing": {"费用", "扣费", "账单", "发票", "退款", "支付"},

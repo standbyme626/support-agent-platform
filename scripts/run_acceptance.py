@@ -11,6 +11,7 @@ from config import load_app_config
 from core.handoff_manager import HandoffManager
 from core.intent_router import IntentRouter
 from core.recommended_actions_engine import RecommendedActionsEngine
+from core.reply_generator import ReplyGenerator
 from core.retriever import Retriever
 from core.sla_engine import SlaEngine
 from core.summary_engine import SummaryEngine
@@ -64,15 +65,17 @@ def build_runtime(environment: str | None) -> AcceptanceRuntime:
         retriever=retriever,
         trace_logger=bindings.trace_logger,
     )
+    model_adapter = build_summary_model_adapter(app_config.llm)
     workflow_engine = WorkflowEngine(
         ticket_api=ticket_api,
         intent_router=IntentRouter(),
         tool_router=tool_router,
-        summary_engine=SummaryEngine(model_adapter=build_summary_model_adapter(app_config.llm)),
+        summary_engine=SummaryEngine(model_adapter=model_adapter),
         handoff_manager=HandoffManager.from_file(policy_path),
         sla_engine=SlaEngine.from_file(policy_path),
         recommendation_engine=RecommendedActionsEngine(),
         trace_logger=bindings.trace_logger,
+        reply_generator=ReplyGenerator(model_adapter=model_adapter),
     )
     intake_workflow = SupportIntakeWorkflow(
         workflow_engine,

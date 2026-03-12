@@ -129,6 +129,7 @@ describe("Upgrade2 minimal front-end flow smoke", () => {
           fallback_used: false,
           degraded: false,
           degrade_reason: null,
+          generation_type: "generic",
           route_decision: { intent: "repair" },
           handoff: false,
           handoff_reason: null,

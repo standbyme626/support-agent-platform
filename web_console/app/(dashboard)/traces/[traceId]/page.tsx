@@ -73,7 +73,10 @@ export default function TraceDetailPage() {
         <div style={{ color: "var(--muted)", marginTop: 4 }}>
           {t("重试次数", "Retry")}={data.retry_count !== null ? data.retry_count : "-"} ·{" "}
           {t("成功", "Success")}={data.success === null ? "-" : data.success ? "true" : "false"} ·{" "}
-          {t("错误", "Error")}={toText(data.error)}
+          {t("错误", "Error")}={toText(data.error)} · fallback={data.fallback_used ? "true" : "false"}
+        </div>
+        <div style={{ color: "var(--muted)", marginTop: 4 }}>
+          {t("回复类型", "Reply Type")}={toText(data.generation_type)}
         </div>
         <div style={{ color: "var(--muted)", marginTop: 4 }}>
           {t("延迟", "Latency")}={data.latency_ms !== null ? `${data.latency_ms}ms` : "-"} ·{" "}
