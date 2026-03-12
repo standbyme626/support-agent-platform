@@ -42,6 +42,34 @@ def test_dashboard_api_summary_and_recent_errors(monkeypatch: MonkeyPatch, tmp_p
         ticket_id=ticket.ticket_id,
         session_id=ticket.session_id,
     )
+    runtime.trace_logger.log(
+        "consulting_ticket_reused",
+        {"ticket_id": ticket.ticket_id, "intent": "faq"},
+        trace_id="trace_dashboard_002",
+        ticket_id=ticket.ticket_id,
+        session_id=ticket.session_id,
+    )
+    runtime.trace_logger.log(
+        "duplicate_candidates_generated",
+        {"ticket_id": ticket.ticket_id, "candidate_count": 1},
+        trace_id="trace_dashboard_003",
+        ticket_id=ticket.ticket_id,
+        session_id=ticket.session_id,
+    )
+    runtime.trace_logger.log(
+        "merge_suggestion_accepted",
+        {"source_ticket_id": ticket.ticket_id, "target_ticket_id": "TCK-TARGET"},
+        trace_id="trace_dashboard_004",
+        ticket_id=ticket.ticket_id,
+        session_id=ticket.session_id,
+    )
+    runtime.trace_logger.log(
+        "merge_suggestion_rejected",
+        {"source_ticket_id": ticket.ticket_id, "target_ticket_id": "TCK-TARGET"},
+        trace_id="trace_dashboard_005",
+        ticket_id=ticket.ticket_id,
+        session_id=ticket.session_id,
+    )
 
     server, thread = _start_server("dev")
     base = f"http://127.0.0.1:{server.server_address[1]}"
@@ -54,6 +82,15 @@ def test_dashboard_api_summary_and_recent_errors(monkeypatch: MonkeyPatch, tmp_p
             assert "request_id" in summary_payload
             assert "data" in summary_payload
             assert "new_tickets_today" in summary_payload["data"]
+            assert "consulting_reuse_count" in summary_payload["data"]
+            assert "duplicate_candidates_count" in summary_payload["data"]
+            assert "merge_accept_count" in summary_payload["data"]
+            assert "merge_reject_count" in summary_payload["data"]
+            assert "merge_accept_rate" in summary_payload["data"]
+            assert summary_payload["data"]["consulting_reuse_count"] >= 1
+            assert summary_payload["data"]["duplicate_candidates_count"] >= 1
+            assert summary_payload["data"]["merge_accept_count"] >= 1
+            assert summary_payload["data"]["merge_reject_count"] >= 1
 
             recent_errors = client.get(f"{base}/api/dashboard/recent-errors")
             assert recent_errors.status_code == 200

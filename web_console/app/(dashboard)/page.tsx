@@ -79,6 +79,8 @@ export default function DashboardPage() {
   const slaState = determineSlaState(summary.data.sla_warning_count, summary.data.sla_breached_count);
   const totalSlaRisk = summary.data.sla_warning_count + summary.data.sla_breached_count;
   const traceErrorCount = recentErrors.data.length;
+  const mergeDecisionCount = summary.data.merge_accept_count + summary.data.merge_reject_count;
+  const mergeAcceptRatePercent = `${(summary.data.merge_accept_rate * 100).toFixed(1)}%`;
   const channelConnected = gateway.channelHealth.filter((row) => row.connected).length;
   const channelTotal = gateway.channelHealth.length;
   const gatewayStateLabel = gateway.status ? gateway.status.gateway : t("未连接", "disconnected");
@@ -140,6 +142,27 @@ export default function DashboardPage() {
           hint={t("高风险动作等待审批", "High-risk actions waiting for approval")}
           href="/tickets?handoff_state=pending_approval"
           state={pendingApprovals.items.length > 0 ? "warning" : "normal"}
+        />
+        <StatCard
+          title={t("咨询复用", "Consulting Reuse")}
+          value={summary.data.consulting_reuse_count}
+          hint={t("FAQ/Greeting 优先复用历史咨询单", "FAQ/Greeting reused existing consulting tickets")}
+          href={buildTicketListUrl({ queue: "faq" })}
+          state={summary.data.consulting_reuse_count > 0 ? "normal" : "warning"}
+        />
+        <StatCard
+          title={t("并单建议", "Merge Suggestions")}
+          value={summary.data.duplicate_candidates_count}
+          hint={t("重复候选识别次数", "Detected duplicate candidate count")}
+          href="/tickets"
+          state={summary.data.duplicate_candidates_count > 0 ? "normal" : "warning"}
+        />
+        <StatCard
+          title={t("并单采纳率", "Merge Accept Rate")}
+          value={mergeAcceptRatePercent}
+          hint={t(`accept=${summary.data.merge_accept_count} reject=${summary.data.merge_reject_count}`, `accept=${summary.data.merge_accept_count} reject=${summary.data.merge_reject_count}`)}
+          href="/tickets"
+          state={mergeDecisionCount > 0 && summary.data.merge_accept_rate < 0.5 ? "warning" : "normal"}
         />
       </div>
 

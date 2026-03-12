@@ -24,7 +24,7 @@ from core.retrieval.source_attribution import build_source_payloads
 from core.retriever import Retriever
 from core.summary_engine import SummaryEngine
 from core.ticket_api import TicketAPI
-from core.trace_logger import JsonTraceLogger
+from core.trace_logger import JsonTraceLogger, new_trace_id
 from llm import build_summary_model_adapter
 from openclaw_adapter.bindings import build_default_bindings
 from openclaw_adapter.gateway import OpenClawGateway
@@ -40,10 +40,14 @@ DEFAULT_ERROR_MESSAGE = "请求处理失败，请稍后重试。"
 TICKET_DETAIL_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)$")
 TICKET_EVENTS_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/events$")
 TICKET_REPLY_EVENTS_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/reply-events$")
+TICKET_DUPLICATES_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/duplicates$")
 TICKET_ASSIST_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/assist$")
 TICKET_SIMILAR_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/similar-cases$")
 TICKET_GROUNDING_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/grounding-sources$")
 TICKET_PENDING_ACTIONS_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/pending-actions$")
+TICKET_MERGE_SUGGESTION_RE = re.compile(
+    r"^/api/tickets/(?P<ticket_id>[^/]+)/merge-suggestion/(?P<decision>accept|reject)$"
+)
 TICKET_SWITCH_ACTIVE_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/switch-active$")
 TICKET_ACTION_RE = re.compile(
     r"^/api/tickets/(?P<ticket_id>[^/]+)/(claim|reassign|escalate|resolve|close)$"
@@ -395,6 +399,99 @@ def _session_reply_events(runtime: OpsApiRuntime, session_id: str) -> list[dict[
     return items
 
 
+def _ticket_trace_id(ticket: Ticket) -> str | None:
+    raw = ticket.metadata.get("trace_id")
+    if raw is None:
+        return None
+    value = str(raw).strip()
+    return value or None
+
+
+def _ticket_duplicate_candidates(runtime: OpsApiRuntime, ticket_id: str) -> list[dict[str, Any]]:
+    ticket = runtime.ticket_api.require_ticket(ticket_id)
+    trace_id = _ticket_trace_id(ticket) or new_trace_id()
+    items = runtime.ticket_api.list_duplicate_candidates(ticket_id, limit=5)
+    payload = {
+        "ticket_id": ticket_id,
+        "candidate_count": len(items),
+        "candidate_ticket_ids": [str(item.get("ticket_id") or "") for item in items if item.get("ticket_id")],
+    }
+    runtime.ticket_api.add_event(
+        ticket_id,
+        event_type="duplicate_candidates_generated",
+        actor_type="agent",
+        actor_id="ops-api",
+        payload=payload,
+    )
+    runtime.trace_logger.log(
+        "duplicate_candidates_generated",
+        payload,
+        trace_id=trace_id,
+        ticket_id=ticket.ticket_id,
+        session_id=ticket.session_id,
+    )
+    return items
+
+
+def _merge_suggestion_decision(
+    runtime: OpsApiRuntime,
+    *,
+    ticket_id: str,
+    decision: str,
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    actor_id = str(payload.get("actor_id") or "").strip()
+    if not actor_id:
+        raise ValueError("actor_id is required")
+    target_ticket_id = str(payload.get("duplicate_ticket_id") or payload.get("target_ticket_id") or "").strip()
+    if not target_ticket_id:
+        raise ValueError("duplicate_ticket_id is required")
+    note = str(payload.get("note") or "").strip() or None
+
+    source_ticket = runtime.ticket_api.require_ticket(ticket_id)
+    trace_id = str(payload.get("trace_id") or _ticket_trace_id(source_ticket) or new_trace_id()).strip()
+    if decision == "accept":
+        updated_ticket = runtime.ticket_api.accept_merge_suggestion(
+            ticket_id,
+            target_ticket_id=target_ticket_id,
+            actor_id=actor_id,
+            trace_id=trace_id,
+            note=note,
+        )
+        event_type = "merge_suggestion_accepted"
+    elif decision == "reject":
+        updated_ticket = runtime.ticket_api.reject_merge_suggestion(
+            ticket_id,
+            target_ticket_id=target_ticket_id,
+            actor_id=actor_id,
+            trace_id=trace_id,
+            note=note,
+        )
+        event_type = "merge_suggestion_rejected"
+    else:
+        raise ValueError(f"unsupported merge decision: {decision}")
+
+    runtime.trace_logger.log(
+        event_type,
+        {
+            "decision": decision,
+            "source_ticket_id": ticket_id,
+            "target_ticket_id": target_ticket_id,
+            "actor_id": actor_id,
+            "note": note,
+        },
+        trace_id=trace_id,
+        ticket_id=ticket_id,
+        session_id=updated_ticket.session_id,
+    )
+    return {
+        "data": _ticket_to_dict(updated_ticket),
+        "decision": decision,
+        "target_ticket_id": target_ticket_id,
+        "trace_id": trace_id,
+    }
+
+
 def _session_payload(runtime: OpsApiRuntime, session_id: str) -> dict[str, Any] | None:
     binding = runtime.gateway.bindings.session_mapper.get(session_id)
     if binding is None:
@@ -665,6 +762,7 @@ def _filter_tickets(runtime: OpsApiRuntime, query: dict[str, str]) -> list[Ticke
 
 def _dashboard_summary(runtime: OpsApiRuntime) -> dict[str, Any]:
     tickets = runtime.repository.list_tickets(limit=2000, offset=0)
+    recent_events = runtime.trace_logger.read_recent(limit=5000)
     today = datetime.now(UTC).date()
 
     new_tickets_today = 0
@@ -689,6 +787,23 @@ def _dashboard_summary(runtime: OpsApiRuntime) -> dict[str, Any]:
         elif state == "breached":
             sla_breached_count += 1
 
+    consulting_reuse_count = sum(
+        1 for event in recent_events if str(event.get("event_type") or "") == "consulting_ticket_reused"
+    )
+    duplicate_candidates_count = sum(
+        1
+        for event in recent_events
+        if str(event.get("event_type") or "") == "duplicate_candidates_generated"
+    )
+    merge_accept_count = sum(
+        1 for event in recent_events if str(event.get("event_type") or "") == "merge_suggestion_accepted"
+    )
+    merge_reject_count = sum(
+        1 for event in recent_events if str(event.get("event_type") or "") == "merge_suggestion_rejected"
+    )
+    merge_decisions = merge_accept_count + merge_reject_count
+    merge_accept_rate = round((merge_accept_count / merge_decisions), 4) if merge_decisions else 0.0
+
     return {
         "new_tickets_today": new_tickets_today,
         "in_progress_count": in_progress_count,
@@ -696,6 +811,11 @@ def _dashboard_summary(runtime: OpsApiRuntime) -> dict[str, Any]:
         "escalated_count": escalated_count,
         "sla_warning_count": sla_warning_count,
         "sla_breached_count": sla_breached_count,
+        "consulting_reuse_count": consulting_reuse_count,
+        "duplicate_candidates_count": duplicate_candidates_count,
+        "merge_accept_count": merge_accept_count,
+        "merge_reject_count": merge_reject_count,
+        "merge_accept_rate": merge_accept_rate,
     }
 
 
@@ -1433,6 +1553,18 @@ def handle_api_request(
                 )
             return _json_response(req_id, {"items": _ticket_reply_events(runtime, ticket_id)})
 
+        if method == "GET" and (match := TICKET_DUPLICATES_RE.match(path)):
+            ticket_id = match.group("ticket_id")
+            ticket = runtime.ticket_api.get_ticket(ticket_id)
+            if ticket is None:
+                return _error(
+                    req_id,
+                    code="ticket_not_found",
+                    message=f"ticket {ticket_id} not found",
+                    status=HTTPStatus.NOT_FOUND,
+                )
+            return _json_response(req_id, {"items": _ticket_duplicate_candidates(runtime, ticket_id)})
+
         if method == "GET" and (match := TICKET_PENDING_ACTIONS_RE.match(path)):
             ticket_id = match.group("ticket_id")
             actions = runtime.approval_runtime.list_ticket_actions(ticket_id)
@@ -1753,6 +1885,17 @@ def handle_api_request(
                     }
                 },
             )
+
+        if method == "POST" and (match := TICKET_MERGE_SUGGESTION_RE.match(path)):
+            ticket_id = match.group("ticket_id")
+            decision = match.group("decision")
+            result = _merge_suggestion_decision(
+                runtime,
+                ticket_id=ticket_id,
+                decision=decision,
+                payload=payload,
+            )
+            return _json_response(req_id, result)
 
         if method == "POST" and (match := TICKET_ACTION_RE.match(path)):
             ticket_id = match.group("ticket_id")

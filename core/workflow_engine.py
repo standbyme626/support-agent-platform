@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
+from datetime import UTC, datetime
+from typing import cast
 
 from storage.models import InboundEnvelope, KBDocument, Ticket
 
+from .disambiguation import DisambiguationResult, NewIssueDetector
 from .handoff_manager import HandoffDecision, HandoffManager
 from .intent_router import IntentDecision, IntentRouter
 from .recommended_actions_engine import RecommendedAction, RecommendedActionsEngine
 from .reply_generator import ReplyGenerator
+from .reply_orchestration import ReplyGenerationType
 from .sla_engine import SlaCheckResult, SlaEngine
 from .summary_engine import SummaryEngine
 from .ticket_api import TicketAPI
@@ -19,6 +24,7 @@ from .trace_logger import JsonTraceLogger, new_trace_id
 class WorkflowOutcome:
     ticket: Ticket
     intent: IntentDecision
+    resolved_existing_ticket_id: str | None
     retrieved_docs: list[KBDocument]
     summary: str
     llm_trace: dict[str, object]
@@ -33,6 +39,10 @@ class WorkflowOutcome:
 class WorkflowEngine:
     """Workflow-first orchestrator for core business rules (G-Q)."""
 
+    _TICKET_ID_PATTERN = re.compile(r"\b(?:TCK-[A-Za-z0-9_-]+|TICKET-[A-Za-z0-9_-]+)\b")
+    _PROGRESS_KEYWORDS = ("进度", "跟进", "到哪", "状态", "处理到哪", "什么时候", "查询工单")
+    _CONSULTING_INTENTS = frozenset({"greeting", "faq"})
+
     def __init__(
         self,
         *,
@@ -45,6 +55,7 @@ class WorkflowEngine:
         recommendation_engine: RecommendedActionsEngine,
         trace_logger: JsonTraceLogger | None = None,
         reply_generator: ReplyGenerator | None = None,
+        new_issue_detector: NewIssueDetector | None = None,
     ) -> None:
         self._ticket_api = ticket_api
         self._intent_router = intent_router
@@ -55,11 +66,23 @@ class WorkflowEngine:
         self._recommendation_engine = recommendation_engine
         self._trace_logger = trace_logger
         self._reply_generator = reply_generator or ReplyGenerator()
+        self._new_issue_detector = new_issue_detector or NewIssueDetector()
 
     def process_intake(
-        self, envelope: InboundEnvelope, existing_ticket_id: str | None = None
+        self,
+        envelope: InboundEnvelope,
+        existing_ticket_id: str | None = None,
+        *,
+        force_new_ticket: bool = False,
     ) -> WorkflowOutcome:
         trace_id = str(envelope.metadata.get("trace_id") or new_trace_id())
+        if force_new_ticket:
+            resolved_existing_ticket_id = None
+        else:
+            resolved_existing_ticket_id = self.resolve_existing_ticket_id(
+                envelope,
+                requested_ticket_id=existing_ticket_id,
+            )
         intent = self._intent_router.route(envelope.message_text)
         self._log(
             "route_decision",
@@ -71,7 +94,7 @@ class WorkflowEngine:
             },
             trace_id=trace_id,
             session_id=envelope.session_id,
-            ticket_id=existing_ticket_id,
+            ticket_id=resolved_existing_ticket_id,
         )
         kb_source = "faq" if intent.intent in {"faq", "greeting"} else "grounded"
         docs_result = self._tool_router.execute(
@@ -86,31 +109,73 @@ class WorkflowEngine:
         )
         retrieved_docs = self._normalize_docs(docs_result.output)
 
-        if existing_ticket_id is None:
-            if intent.intent == "greeting":
-                ticket = self._ticket_api.create_ticket(
-                    channel=envelope.channel,
-                    session_id=envelope.session_id,
-                    thread_id=str(envelope.metadata.get("thread_id") or envelope.session_id),
-                    title="问候咨询",
-                    latest_message=envelope.message_text,
-                    intent=intent.intent,
-                    priority="P4",
-                    queue="faq",
-                    metadata={**envelope.metadata, "trace_id": trace_id},
-                )
-            elif intent.intent == "faq" and not intent.is_low_confidence and retrieved_docs:
-                ticket = self._ticket_api.create_ticket(
-                    channel=envelope.channel,
-                    session_id=envelope.session_id,
-                    thread_id=str(envelope.metadata.get("thread_id") or envelope.session_id),
-                    title="FAQ咨询",
-                    latest_message=envelope.message_text,
-                    intent=intent.intent,
-                    priority="P4",
-                    queue="faq",
-                    metadata={**envelope.metadata, "trace_id": trace_id},
-                )
+        if resolved_existing_ticket_id is None:
+            is_consulting = intent.intent in self._CONSULTING_INTENTS and not intent.is_low_confidence
+            if is_consulting:
+                consulting_ticket = self._find_recent_consulting_ticket(envelope.session_id)
+                if consulting_ticket is None:
+                    ticket = self._ticket_api.create_ticket(
+                        channel=envelope.channel,
+                        session_id=envelope.session_id,
+                        thread_id=str(envelope.metadata.get("thread_id") or envelope.session_id),
+                        title="问候咨询" if intent.intent == "greeting" else "FAQ咨询",
+                        latest_message=envelope.message_text,
+                        intent=intent.intent,
+                        priority="P4",
+                        queue="faq",
+                        metadata={
+                            **envelope.metadata,
+                            "trace_id": trace_id,
+                            "last_intent": intent.intent,
+                            "session_mode": "faq_consulting",
+                        },
+                    )
+                    self._log(
+                        "consulting_ticket_created",
+                        {
+                            "ticket_id": ticket.ticket_id,
+                            "intent": intent.intent,
+                            "consulting_mode": "create",
+                        },
+                        trace_id=trace_id,
+                        ticket_id=ticket.ticket_id,
+                        session_id=ticket.session_id,
+                    )
+                else:
+                    ticket = self._ticket_api.update_ticket(
+                        consulting_ticket.ticket_id,
+                        {
+                            "latest_message": envelope.message_text,
+                            "intent": intent.intent,
+                            "metadata": {
+                                **envelope.metadata,
+                                "trace_id": trace_id,
+                                "last_intent": intent.intent,
+                                "session_mode": "faq_consulting",
+                            },
+                        },
+                        actor_id="workflow-engine",
+                    )
+                    self._ticket_api.bind_session_ticket(
+                        envelope.session_id,
+                        ticket.ticket_id,
+                        metadata={
+                            "trace_id": trace_id,
+                            "last_intent": intent.intent,
+                            "session_mode": "faq_consulting",
+                        },
+                    )
+                    self._log(
+                        "consulting_ticket_reused",
+                        {
+                            "ticket_id": ticket.ticket_id,
+                            "intent": intent.intent,
+                            "consulting_mode": "reuse",
+                        },
+                        trace_id=trace_id,
+                        ticket_id=ticket.ticket_id,
+                        session_id=ticket.session_id,
+                    )
             else:
                 ticket = self._ticket_api.create_ticket(
                     channel=envelope.channel,
@@ -121,13 +186,28 @@ class WorkflowEngine:
                     intent=intent.intent,
                     priority="P2" if intent.intent in {"repair", "billing"} else "P3",
                     queue="support",
-                    metadata={**envelope.metadata, "trace_id": trace_id},
+                    metadata={
+                        **envelope.metadata,
+                        "trace_id": trace_id,
+                        "last_intent": intent.intent,
+                    },
                 )
         else:
             ticket = self._ticket_api.update_ticket(
-                existing_ticket_id,
+                resolved_existing_ticket_id,
                 {"latest_message": envelope.message_text, "intent": intent.intent},
                 actor_id="workflow-engine",
+            )
+            self._ticket_api.bind_session_ticket(
+                envelope.session_id,
+                ticket.ticket_id,
+                metadata={
+                    "trace_id": trace_id,
+                    "last_intent": intent.intent,
+                    "session_mode": "multi_issue"
+                    if envelope.metadata.get("recent_ticket_ids")
+                    else "single_issue",
+                },
             )
 
         events = self._ticket_api.list_events(ticket.ticket_id)
@@ -212,6 +292,12 @@ class WorkflowEngine:
             ticket=ticket,
             latest_event_types=[event.event_type for event in events[-5:]],
         )
+        disambiguation_decision = (
+            str(envelope.metadata.get("disambiguation_decision") or "").strip() or None
+        )
+        disambiguation_reason = (
+            str(envelope.metadata.get("disambiguation_reason") or "").strip() or None
+        )
         reply_result = self._reply_generator.generate(
             message_text=envelope.message_text,
             intent=intent,
@@ -222,6 +308,10 @@ class WorkflowEngine:
             handoff=handoff_decision,
             events=events,
             fallback_reply=fallback_reply,
+            session_mode=self._session_mode_from_metadata(envelope.metadata),
+            disambiguation_decision=disambiguation_decision,
+            disambiguation_reason=disambiguation_reason,
+            forced_generation_type=self._reply_generation_hint_from_metadata(envelope.metadata),
         )
         self._log(
             "reply_generated",
@@ -238,6 +328,7 @@ class WorkflowEngine:
         return WorkflowOutcome(
             ticket=ticket,
             intent=intent,
+            resolved_existing_ticket_id=resolved_existing_ticket_id,
             retrieved_docs=retrieved_docs,
             summary=summary,
             llm_trace=llm_trace,
@@ -248,6 +339,53 @@ class WorkflowEngine:
             reply_trace={key: value for key, value in reply_result.metadata.items()},
             reply_generation_type=reply_result.generation_type,
         )
+
+    def assess_disambiguation(
+        self,
+        envelope: InboundEnvelope,
+        *,
+        requested_ticket_id: str | None,
+    ) -> DisambiguationResult:
+        ticket_candidates = self._ticket_candidates_from_metadata(envelope.metadata)
+        active_ticket_id = self._active_ticket_from_metadata(envelope.metadata)
+        if active_ticket_id is None and ticket_candidates:
+            active_ticket_id = ticket_candidates[0]
+        active_ticket = self._ticket_api.get_ticket(active_ticket_id) if active_ticket_id else None
+        intent = self._intent_router.route(envelope.message_text)
+        return self._new_issue_detector.evaluate(
+            message_text=envelope.message_text,
+            intent=intent,
+            candidate_ticket_ids=ticket_candidates,
+            active_ticket_id=active_ticket_id,
+            requested_ticket_id=requested_ticket_id,
+            session_mode=self._session_mode_from_metadata(envelope.metadata),
+            last_intent=self._last_intent_from_metadata(envelope.metadata),
+            active_ticket=active_ticket,
+        )
+
+    def resolve_existing_ticket_id(
+        self,
+        envelope: InboundEnvelope,
+        *,
+        requested_ticket_id: str | None,
+    ) -> str | None:
+        ticket_candidates = self._ticket_candidates_from_metadata(envelope.metadata)
+        explicit_ticket_id = self._extract_ticket_id_from_text(envelope.message_text)
+        if explicit_ticket_id and explicit_ticket_id in ticket_candidates:
+            return explicit_ticket_id
+
+        normalized_requested = str(requested_ticket_id or "").strip() or None
+        if normalized_requested:
+            return normalized_requested
+
+        if self._is_progress_query_text(envelope.message_text):
+            active_ticket_id = str(envelope.metadata.get("active_ticket_id") or "").strip() or None
+            if active_ticket_id:
+                return active_ticket_id
+
+        if ticket_candidates:
+            return ticket_candidates[0]
+        return None
 
     def _log(
         self,
@@ -332,3 +470,107 @@ class WorkflowEngine:
             evidence = ", ".join(f"{doc.source_type}:{doc.doc_id}" for doc in retrieved_docs[:2])
             return f"已收到，我们正在处理你的工单。参考证据：{evidence}"
         return "已收到，我们正在处理你的工单。"
+
+    @classmethod
+    def _ticket_candidates_from_metadata(cls, metadata: dict[str, object]) -> list[str]:
+        active_ticket_id = str(
+            metadata.get("active_ticket_id") or metadata.get("ticket_id") or ""
+        ).strip()
+        recent_ticket_ids = [
+            str(item).strip()
+            for item in metadata.get("recent_ticket_ids", [])
+            if str(item).strip()
+        ] if isinstance(metadata.get("recent_ticket_ids"), list) else []
+        raw_session_context = metadata.get("session_context")
+        if isinstance(raw_session_context, dict):
+            context_active = str(raw_session_context.get("active_ticket_id") or "").strip()
+            if context_active:
+                active_ticket_id = context_active
+            context_recent = raw_session_context.get("recent_ticket_ids")
+            if isinstance(context_recent, list):
+                recent_ticket_ids.extend(
+                    [str(item).strip() for item in context_recent if str(item).strip()]
+                )
+
+        ticket_ids: list[str] = []
+        seen: set[str] = set()
+        for candidate in [active_ticket_id, *recent_ticket_ids]:
+            ticket_id = str(candidate).strip()
+            if not ticket_id or ticket_id in seen:
+                continue
+            ticket_ids.append(ticket_id)
+            seen.add(ticket_id)
+        return ticket_ids
+
+    @classmethod
+    def _extract_ticket_id_from_text(cls, message_text: str) -> str | None:
+        match = cls._TICKET_ID_PATTERN.search(message_text)
+        if match is None:
+            return None
+        return str(match.group(0)).strip() or None
+
+    @classmethod
+    def _active_ticket_from_metadata(cls, metadata: dict[str, object]) -> str | None:
+        raw_session_context = metadata.get("session_context")
+        if isinstance(raw_session_context, dict):
+            context_active = str(raw_session_context.get("active_ticket_id") or "").strip()
+            if context_active:
+                return context_active
+        active_ticket_id = str(
+            metadata.get("active_ticket_id") or metadata.get("ticket_id") or ""
+        ).strip()
+        return active_ticket_id or None
+
+    @classmethod
+    def _session_mode_from_metadata(cls, metadata: dict[str, object]) -> str | None:
+        raw_session_context = metadata.get("session_context")
+        if isinstance(raw_session_context, dict):
+            context_mode = str(raw_session_context.get("session_mode") or "").strip()
+            if context_mode:
+                return context_mode
+        session_mode = str(metadata.get("session_mode") or "").strip()
+        return session_mode or None
+
+    @classmethod
+    def _last_intent_from_metadata(cls, metadata: dict[str, object]) -> str | None:
+        raw_session_context = metadata.get("session_context")
+        if isinstance(raw_session_context, dict):
+            context_last_intent = str(raw_session_context.get("last_intent") or "").strip()
+            if context_last_intent:
+                return context_last_intent
+        last_intent = str(metadata.get("last_intent") or "").strip()
+        return last_intent or None
+
+    @classmethod
+    def _is_progress_query_text(cls, message_text: str) -> bool:
+        text = message_text.strip()
+        if not text:
+            return False
+        lowered = text.lower()
+        if "progress" in lowered:
+            return True
+        return any(keyword in text for keyword in cls._PROGRESS_KEYWORDS)
+
+    def _find_recent_consulting_ticket(self, session_id: str) -> Ticket | None:
+        candidates = [
+            item
+            for item in self._ticket_api.list_all_tickets(limit=2000)
+            if item.session_id == session_id
+            and item.intent in self._CONSULTING_INTENTS
+            and item.queue == "faq"
+            and item.status != "closed"
+        ]
+        if not candidates:
+            return None
+        min_dt = datetime.min.replace(tzinfo=UTC)
+        candidates.sort(key=lambda item: item.updated_at or min_dt, reverse=True)
+        return candidates[0]
+
+    @classmethod
+    def _reply_generation_hint_from_metadata(
+        cls, metadata: dict[str, object]
+    ) -> ReplyGenerationType | None:
+        raw_hint = str(metadata.get("reply_generation_hint") or "").strip()
+        if raw_hint in {"faq", "progress", "handoff", "generic", "disambiguation", "switch"}:
+            return cast(ReplyGenerationType, raw_hint)
+        return None

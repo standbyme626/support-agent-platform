@@ -18,6 +18,10 @@ def test_intent_router_classifies_and_handles_low_confidence() -> None:
     assert progress.intent == "progress_query"
     assert progress.is_low_confidence is False
 
+    consulting = router.route("请问报修流程指引是什么")
+    assert consulting.intent == "faq"
+    assert consulting.is_low_confidence is False
+
     unknown = router.route("abc xyz 123")
     assert unknown.intent == "other"
     assert unknown.is_low_confidence is True

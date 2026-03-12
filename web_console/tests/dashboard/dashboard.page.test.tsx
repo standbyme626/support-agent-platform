@@ -91,7 +91,12 @@ describe("DashboardPage", () => {
         handoff_pending_count: 2,
         escalated_count: 1,
         sla_warning_count: 3,
-        sla_breached_count: 1
+        sla_breached_count: 1,
+        consulting_reuse_count: 2,
+        duplicate_candidates_count: 4,
+        merge_accept_count: 3,
+        merge_reject_count: 1,
+        merge_accept_rate: 0.75
       },
       refetch: vi.fn()
     });
@@ -186,6 +191,9 @@ describe("DashboardPage", () => {
     expect(screen.getByText("SLA 风险")).toBeInTheDocument();
     expect(screen.getByText("近期 Trace 错误")).toBeInTheDocument();
     expect(screen.getByText("审批待处理")).toBeInTheDocument();
+    expect(screen.getByText("咨询复用")).toBeInTheDocument();
+    expect(screen.getByText("并单建议")).toBeInTheDocument();
+    expect(screen.getByText("并单采纳率")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "打开 SLA 风险" })).toHaveAttribute(
       "href",
       "/tickets?sla_state=breached"

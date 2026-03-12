@@ -201,3 +201,106 @@ def test_approval_reject_and_timeout_paths(monkeypatch: MonkeyPatch, tmp_path: P
         server.shutdown()
         server.server_close()
         thread.join(timeout=3)
+
+
+def test_duplicate_merge_suggestion_flow(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("SUPPORT_AGENT_ENV", "dev")
+    monkeypatch.setenv("SUPPORT_AGENT_SQLITE_PATH", str(tmp_path / "ticket_duplicate_merge_api.db"))
+    monkeypatch.setenv("SUPPORT_AGENT_GATEWAY_LOG_PATH", str(tmp_path / "ticket_duplicate_merge_api.log"))
+    monkeypatch.setenv("LLM_ENABLED", "0")
+
+    runtime = build_runtime("dev")
+    source = runtime.ticket_api.create_ticket(
+        channel="wecom",
+        session_id="sess-dup-001",
+        thread_id="thread-dup-001",
+        title="停车场抬杆故障",
+        latest_message="停车场道闸抬杆失败，车辆无法出场",
+        intent="repair",
+        priority="P2",
+        queue="support",
+    )
+    target = runtime.ticket_api.create_ticket(
+        channel="wecom",
+        session_id="sess-dup-001",
+        thread_id="thread-dup-001",
+        title="停车场抬杆故障再次报修",
+        latest_message="道闸抬杆还是失败，跟上一条是同一个故障",
+        intent="repair",
+        priority="P2",
+        queue="support",
+    )
+
+    reject_source = runtime.ticket_api.create_ticket(
+        channel="wecom",
+        session_id="sess-dup-002",
+        thread_id="thread-dup-002",
+        title="电梯异响故障",
+        latest_message="电梯持续异响，怀疑电机问题",
+        intent="repair",
+        priority="P2",
+        queue="support",
+    )
+    reject_target = runtime.ticket_api.create_ticket(
+        channel="wecom",
+        session_id="sess-dup-002",
+        thread_id="thread-dup-002",
+        title="电梯异响问题复现",
+        latest_message="电梯异响再次出现，和昨天一样",
+        intent="repair",
+        priority="P2",
+        queue="support",
+    )
+
+    server, thread = _start_server("dev")
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        with httpx.Client(timeout=10.0, trust_env=False) as client:
+            duplicates = _json(client, "GET", f"{base}/api/tickets/{source.ticket_id}/duplicates")
+            duplicate_ids = {str(item["ticket_id"]) for item in duplicates["items"]}
+            assert target.ticket_id in duplicate_ids
+
+            accepted = _json(
+                client,
+                "POST",
+                f"{base}/api/tickets/{source.ticket_id}/merge-suggestion/accept",
+                {
+                    "actor_id": "u_ops_03",
+                    "duplicate_ticket_id": target.ticket_id,
+                    "trace_id": "trace_merge_accept_001",
+                    "note": "重复报修，合并处理",
+                },
+            )
+            assert accepted["data"]["status"] == "closed"
+            assert accepted["data"]["metadata"]["merged_into_ticket_id"] == target.ticket_id
+
+            source_events = _json(client, "GET", f"{base}/api/tickets/{source.ticket_id}/events")
+            assert "merge_suggestion_accepted" in {item["event_type"] for item in source_events["items"]}
+            target_events = _json(client, "GET", f"{base}/api/tickets/{target.ticket_id}/events")
+            assert "duplicate_merged_in" in {item["event_type"] for item in target_events["items"]}
+
+            accept_trace = runtime.trace_logger.query_by_trace("trace_merge_accept_001", limit=200)
+            assert any(str(item.get("event_type")) == "merge_suggestion_accepted" for item in accept_trace)
+
+            rejected = _json(
+                client,
+                "POST",
+                f"{base}/api/tickets/{reject_source.ticket_id}/merge-suggestion/reject",
+                {
+                    "actor_id": "u_ops_04",
+                    "duplicate_ticket_id": reject_target.ticket_id,
+                    "trace_id": "trace_merge_reject_001",
+                    "note": "语义接近但并非同单",
+                },
+            )
+            assert rejected["data"]["status"] == "open"
+            assert rejected["data"]["metadata"]["merge_state"] == "rejected"
+
+            reject_events = _json(client, "GET", f"{base}/api/tickets/{reject_source.ticket_id}/events")
+            assert "merge_suggestion_rejected" in {item["event_type"] for item in reject_events["items"]}
+            reject_trace = runtime.trace_logger.query_by_trace("trace_merge_reject_001", limit=200)
+            assert any(str(item.get("event_type")) == "merge_suggestion_rejected" for item in reject_trace)
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)

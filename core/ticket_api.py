@@ -4,6 +4,7 @@ from dataclasses import asdict
 from datetime import UTC, datetime
 from typing import Any, ClassVar
 
+from core.duplicate_merge import DuplicateDetector
 from openclaw_adapter.session_mapper import SessionMapper
 from storage.models import LifecycleStage, Ticket, TicketEvent, TicketPriority, TicketStatus
 from storage.ticket_repository import TicketRepository
@@ -25,10 +26,14 @@ class TicketAPI:
     }
 
     def __init__(
-        self, repository: TicketRepository, session_mapper: SessionMapper | None = None
+        self,
+        repository: TicketRepository,
+        session_mapper: SessionMapper | None = None,
+        duplicate_detector: DuplicateDetector | None = None,
     ) -> None:
         self._repository = repository
         self._session_mapper = session_mapper
+        self._duplicate_detector = duplicate_detector or DuplicateDetector()
 
     def create_ticket(
         self,
@@ -238,6 +243,43 @@ class TicketAPI:
     def get_ticket(self, ticket_id: str) -> Ticket | None:
         return self._repository.get_ticket(ticket_id)
 
+    def bind_session_ticket(
+        self,
+        session_id: str,
+        ticket_id: str,
+        *,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        if self._session_mapper is None:
+            return
+        self._session_mapper.set_ticket_id(session_id, ticket_id, metadata=metadata)
+
+    def get_session_context(self, session_id: str) -> dict[str, Any] | None:
+        if self._session_mapper is None:
+            return None
+        return self._session_mapper.get_session_context(session_id)
+
+    def switch_active_session_ticket(
+        self,
+        session_id: str,
+        ticket_id: str,
+        *,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        if self._session_mapper is None:
+            return
+        self._session_mapper.switch_active_ticket(session_id, ticket_id, metadata=metadata)
+
+    def reset_session_context(
+        self,
+        session_id: str,
+        *,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        if self._session_mapper is None:
+            return
+        self._session_mapper.reset_session_context(session_id, metadata=metadata)
+
     def require_ticket(self, ticket_id: str) -> Ticket:
         ticket = self.get_ticket(ticket_id)
         if ticket is None:
@@ -295,12 +337,141 @@ class TicketAPI:
     def list_all_tickets(self, *, limit: int = 5000) -> list[Ticket]:
         return self._repository.list_tickets(limit=limit, offset=0)
 
+    def list_duplicate_candidates(self, ticket_id: str, *, limit: int = 5) -> list[dict[str, object]]:
+        ticket = self.require_ticket(ticket_id)
+        pool = self._repository.list_tickets(limit=3000, offset=0)
+        candidates = self._duplicate_detector.detect(ticket, pool)
+        return [item.as_dict() for item in candidates[:limit]]
+
+    def accept_merge_suggestion(
+        self,
+        ticket_id: str,
+        *,
+        target_ticket_id: str,
+        actor_id: str,
+        trace_id: str | None = None,
+        note: str | None = None,
+    ) -> Ticket:
+        source = self.require_ticket(ticket_id)
+        target = self.require_ticket(target_ticket_id)
+        if source.ticket_id == target.ticket_id:
+            raise ValueError("target_ticket_id must be different from ticket_id")
+        self._ensure_not_closed(source)
+        self._ensure_not_closed(target)
+
+        source_metadata = dict(source.metadata)
+        merge_record = {
+            "state": "accepted",
+            "source_ticket_id": source.ticket_id,
+            "target_ticket_id": target.ticket_id,
+            "actor_id": actor_id,
+            "trace_id": trace_id,
+            "note": note,
+            "decided_at": datetime.now(UTC).isoformat(),
+        }
+        source_metadata["merged_into_ticket_id"] = target.ticket_id
+        source_metadata["merge_state"] = "accepted"
+        source_metadata["merge_last_record"] = merge_record
+        source_metadata["merge_history"] = self._append_merge_history(source_metadata, merge_record)
+        merged_source = self.close_ticket(
+            source.ticket_id,
+            actor_id=actor_id,
+            resolution_note=f"Merged into {target.ticket_id}",
+            close_reason="duplicate_merge",
+            resolution_code="duplicate_merge",
+            metadata=source_metadata,
+        )
+        self.add_event(
+            source.ticket_id,
+            event_type="merge_suggestion_accepted",
+            actor_type="agent",
+            actor_id=actor_id,
+            payload=merge_record,
+        )
+
+        target_metadata = dict(target.metadata)
+        target_links = target_metadata.get("merged_ticket_ids")
+        merged_ticket_ids = (
+            [str(item) for item in target_links if str(item).strip()]
+            if isinstance(target_links, list)
+            else []
+        )
+        if source.ticket_id not in merged_ticket_ids:
+            merged_ticket_ids.append(source.ticket_id)
+        target_metadata["merged_ticket_ids"] = merged_ticket_ids
+        target_metadata["merge_last_record"] = merge_record
+        target_metadata["merge_history"] = self._append_merge_history(target_metadata, merge_record)
+        self.update_ticket(
+            target.ticket_id,
+            {"metadata": target_metadata},
+            actor_id=actor_id,
+        )
+        self.add_event(
+            target.ticket_id,
+            event_type="duplicate_merged_in",
+            actor_type="agent",
+            actor_id=actor_id,
+            payload=merge_record,
+        )
+        return merged_source
+
+    def reject_merge_suggestion(
+        self,
+        ticket_id: str,
+        *,
+        target_ticket_id: str,
+        actor_id: str,
+        trace_id: str | None = None,
+        note: str | None = None,
+    ) -> Ticket:
+        source = self.require_ticket(ticket_id)
+        if source.ticket_id == target_ticket_id:
+            raise ValueError("target_ticket_id must be different from ticket_id")
+        self._ensure_not_closed(source)
+
+        source_metadata = dict(source.metadata)
+        merge_record = {
+            "state": "rejected",
+            "source_ticket_id": source.ticket_id,
+            "target_ticket_id": target_ticket_id,
+            "actor_id": actor_id,
+            "trace_id": trace_id,
+            "note": note,
+            "decided_at": datetime.now(UTC).isoformat(),
+        }
+        source_metadata["merge_state"] = "rejected"
+        source_metadata["merge_last_record"] = merge_record
+        source_metadata["merge_history"] = self._append_merge_history(source_metadata, merge_record)
+        updated = self.update_ticket(
+            source.ticket_id,
+            {"metadata": source_metadata},
+            actor_id=actor_id,
+        )
+        self.add_event(
+            source.ticket_id,
+            event_type="merge_suggestion_rejected",
+            actor_type="agent",
+            actor_id=actor_id,
+            payload=merge_record,
+        )
+        return updated
+
     def pending_actions(self, ticket_id: str) -> list[dict[str, Any]]:
         ticket = self.require_ticket(ticket_id)
         raw = ticket.metadata.get("pending_actions")
         if not isinstance(raw, list):
             return []
         return [dict(item) for item in raw if isinstance(item, dict)]
+
+    @staticmethod
+    def _append_merge_history(
+        metadata: dict[str, Any],
+        record: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        existing = metadata.get("merge_history")
+        rows = [dict(item) for item in existing if isinstance(item, dict)] if isinstance(existing, list) else []
+        rows.append(record)
+        return rows[-20:]
 
     @staticmethod
     def _ensure_not_closed(ticket: Ticket) -> None:

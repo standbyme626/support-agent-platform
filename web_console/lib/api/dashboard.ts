@@ -7,6 +7,11 @@ export type DashboardSummary = {
   escalated_count: number;
   sla_warning_count: number;
   sla_breached_count: number;
+  consulting_reuse_count: number;
+  duplicate_candidates_count: number;
+  merge_accept_count: number;
+  merge_reject_count: number;
+  merge_accept_rate: number;
 };
 
 export type DashboardSummaryResponse = {
