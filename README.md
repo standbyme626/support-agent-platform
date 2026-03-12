@@ -202,6 +202,34 @@ npm install
 npm run dev
 ```
 
+### 5) 常用重启命令（前端 / 后端 / 网关）
+
+> 说明：本地默认是嵌入式 Gateway，随 `Ops API` 进程一起重启；企业微信桥接服务为 `wecom_bridge_server`。
+
+```bash
+# 在仓库根目录 support-agent-platform 执行
+mkdir -p logs
+
+# 1) 重启后端 Ops API
+pkill -f "python -m scripts.ops_api_server" || true
+nohup python -m scripts.ops_api_server --env dev --host 127.0.0.1 --port 18082 > logs/ops_api_server.log 2>&1 &
+
+# 2) 重启网关桥接（WeCom bridge）
+pkill -f "python -m scripts.wecom_bridge_server" || true
+nohup python -m scripts.wecom_bridge_server --env dev --host 127.0.0.1 --port 18081 > logs/wecom_bridge_server.log 2>&1 &
+
+# 3) 重启前端
+pkill -f "next dev --hostname 0.0.0.0 --port 3000" || true
+(cd web_console && nohup npm run dev -- --hostname 0.0.0.0 --port 3000 > ../logs/web_console_dev.log 2>&1 &)
+
+# 4) 健康检查
+curl http://127.0.0.1:18082/healthz
+curl http://127.0.0.1:18081/healthz
+curl -I http://127.0.0.1:3000
+```
+
+若你使用外部 OpenClaw profile，请按本机 OpenClaw 安装方式重启对应 profile。
+
 ## 主要目录说明
 
 - `core/`：ticket lifecycle、intent/tool/handoff/sla/recommendation、trace、hitl。
