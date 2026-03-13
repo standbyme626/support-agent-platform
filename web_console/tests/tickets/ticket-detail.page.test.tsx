@@ -40,6 +40,17 @@ describe("TicketDetailPage", () => {
       error: null,
       ticket: null,
       assist: null,
+      copilot: null,
+      operatorCopilot: null,
+      dispatchCopilot: null,
+      copilotLoading: false,
+      copilotError: null,
+      investigation: null,
+      investigationLoading: false,
+      investigationError: null,
+      sessionEnd: null,
+      sessionEndLoading: false,
+      sessionEndError: null,
       groundingSources: [],
       similarCases: [],
       events: [],
@@ -47,6 +58,9 @@ describe("TicketDetailPage", () => {
       actionLoading: null,
       actionError: null,
       runAction: vi.fn(),
+      queryCopilot: vi.fn(),
+      runInvestigation: vi.fn(),
+      runSessionEnd: vi.fn(),
       refetch: vi.fn()
     });
 
@@ -66,6 +80,7 @@ describe("TicketDetailPage", () => {
         priority: "P1",
         queue: "support",
         assignee: "u_ops_01",
+        session_id: "sess-001",
         channel: "wecom",
         handoff_state: "none",
         risk_level: "medium",
@@ -89,6 +104,35 @@ describe("TicketDetailPage", () => {
         provider: "openai-compatible",
         prompt_version: "workflow_engine_v1"
       },
+      copilot: null,
+      operatorCopilot: {
+        scope: "operator",
+        query: "今日优先级",
+        answer: "先处理升级与SLA风险单",
+        grounding_sources: [],
+        risk_flags: [],
+        llm_trace: {},
+        generated_at: "2026-03-11T00:00:00+00:00",
+        advice_only: true
+      },
+      dispatchCopilot: {
+        scope: "dispatch",
+        query: "调度建议",
+        answer: "优先向support队列投放资源",
+        grounding_sources: [],
+        risk_flags: [],
+        llm_trace: {},
+        generated_at: "2026-03-11T00:00:00+00:00",
+        advice_only: true
+      },
+      copilotLoading: false,
+      copilotError: null,
+      investigation: null,
+      investigationLoading: false,
+      investigationError: null,
+      sessionEnd: null,
+      sessionEndLoading: false,
+      sessionEndError: null,
       groundingSources: [
         {
           source_id: "case-001",
@@ -115,17 +159,27 @@ describe("TicketDetailPage", () => {
       actionLoading: null,
       actionError: null,
       runAction: vi.fn(),
+      queryCopilot: vi.fn(),
+      runInvestigation: vi.fn(),
+      runSessionEnd: vi.fn(),
       refetch: vi.fn()
     });
 
     render(<TicketDetailPage />);
     expect(screen.getByText("工单详情")).toBeInTheDocument();
     expect(screen.getByText("Elevator issue")).toBeInTheDocument();
-    expect(screen.getByText("动作面板")).toBeInTheDocument();
+    expect(screen.getAllByText("人工动作区").length).toBeGreaterThan(0);
+    expect(screen.getByText("审批恢复区")).toBeInTheDocument();
+    expect(screen.getByText("AI 助手区")).toBeInTheDocument();
+    expect(screen.getByText("主视图区")).toBeInTheDocument();
     expect(screen.getByText("事件时间线")).toBeInTheDocument();
     expect(screen.getByText("推荐动作")).toBeInTheDocument();
     expect(screen.getByText("相似案例")).toBeInTheDocument();
     expect(screen.getByText("定制字段")).toBeInTheDocument();
+    expect(screen.getByText("Operator 建议")).toBeInTheDocument();
+    expect(screen.getByText("Dispatch 建议")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "运行调查" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "结束会话" })).toBeInTheDocument();
   });
 
   it("renders error state", () => {
@@ -134,6 +188,17 @@ describe("TicketDetailPage", () => {
       error: "detail api timeout",
       ticket: null,
       assist: null,
+      copilot: null,
+      operatorCopilot: null,
+      dispatchCopilot: null,
+      copilotLoading: false,
+      copilotError: null,
+      investigation: null,
+      investigationLoading: false,
+      investigationError: null,
+      sessionEnd: null,
+      sessionEndLoading: false,
+      sessionEndError: null,
       groundingSources: [],
       similarCases: [],
       events: [],
@@ -141,6 +206,9 @@ describe("TicketDetailPage", () => {
       actionLoading: null,
       actionError: null,
       runAction: vi.fn(),
+      queryCopilot: vi.fn(),
+      runInvestigation: vi.fn(),
+      runSessionEnd: vi.fn(),
       refetch: vi.fn()
     });
 

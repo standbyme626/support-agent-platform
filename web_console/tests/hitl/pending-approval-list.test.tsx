@@ -58,4 +58,50 @@ describe("PendingApprovalList", () => {
       expect(onApprove).toHaveBeenCalledWith("apr_001", "approved by supervisor");
     });
   });
+
+  it("shows pending/approved/rejected/timeout branches in detail mode", () => {
+    render(
+      <PendingApprovalList
+        showAllStatuses
+        items={[
+          baseItem,
+          {
+            ...baseItem,
+            approval_id: "apr_002",
+            status: "approved",
+            approved_by: "u_supervisor_01",
+            decided_at: "2026-03-11T00:20:00+00:00",
+            decision_note: "approved"
+          },
+          {
+            ...baseItem,
+            approval_id: "apr_003",
+            status: "rejected",
+            rejected_by: "u_supervisor_02",
+            decided_at: "2026-03-11T00:30:00+00:00",
+            decision_note: "reject"
+          },
+          {
+            ...baseItem,
+            approval_id: "apr_004",
+            status: "timeout",
+            decided_at: "2026-03-11T00:40:00+00:00",
+            decision_note: "approval_timeout"
+          }
+        ]}
+        loading={false}
+        actionLoadingId={null}
+        error={null}
+        onRefresh={vi.fn()}
+        onApprove={vi.fn()}
+        onReject={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText("待审批")).toBeInTheDocument();
+    expect(screen.getByText("已批准")).toBeInTheDocument();
+    expect(screen.getByText("已拒绝")).toBeInTheDocument();
+    expect(screen.getByText("已超时")).toBeInTheDocument();
+    expect(screen.getAllByText(/恢复结果/).length).toBeGreaterThan(0);
+  });
 });

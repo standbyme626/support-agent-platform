@@ -337,7 +337,12 @@ class TicketAPI:
     def list_all_tickets(self, *, limit: int = 5000) -> list[Ticket]:
         return self._repository.list_tickets(limit=limit, offset=0)
 
-    def list_duplicate_candidates(self, ticket_id: str, *, limit: int = 5) -> list[dict[str, object]]:
+    def list_duplicate_candidates(
+        self,
+        ticket_id: str,
+        *,
+        limit: int = 5,
+    ) -> list[dict[str, object]]:
         ticket = self.require_ticket(ticket_id)
         pool = self._repository.list_tickets(limit=3000, offset=0)
         candidates = self._duplicate_detector.detect(ticket, pool)
@@ -469,7 +474,11 @@ class TicketAPI:
         record: dict[str, Any],
     ) -> list[dict[str, Any]]:
         existing = metadata.get("merge_history")
-        rows = [dict(item) for item in existing if isinstance(item, dict)] if isinstance(existing, list) else []
+        rows = (
+            [dict(item) for item in existing if isinstance(item, dict)]
+            if isinstance(existing, list)
+            else []
+        )
         rows.append(record)
         return rows[-20:]
 

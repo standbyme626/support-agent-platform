@@ -9,6 +9,9 @@ from typing import Any
 
 from storage.models import SessionBinding
 
+_SESSION_CONTEXT_KEY = "session_context"
+_DEFAULT_RECENT_LIMIT = 5
+
 
 class SessionMapper:
     """Persist session bindings and metadata for stable context recovery."""
@@ -54,6 +57,11 @@ class SessionMapper:
     ) -> SessionBinding:
         binding = self.get_or_create(session_id, metadata=metadata)
         merged_metadata = self._merge_metadata(binding.metadata, metadata)
+        merged_metadata = self._bind_ticket_context(
+            merged_metadata,
+            ticket_id=ticket_id,
+            fallback_active=binding.ticket_id,
+        )
         self._upsert(
             session_id=session_id,
             thread_id=binding.thread_id,
@@ -64,6 +72,105 @@ class SessionMapper:
         if updated is None:
             raise RuntimeError(f"Failed to update session binding for '{session_id}'")
         return updated
+
+    def switch_active_ticket(
+        self,
+        session_id: str,
+        ticket_id: str,
+        *,
+        metadata: dict[str, Any] | None = None,
+    ) -> SessionBinding:
+        return self.set_ticket_id(session_id, ticket_id, metadata=metadata)
+
+    def reset_session_context(
+        self,
+        session_id: str,
+        *,
+        metadata: dict[str, Any] | None = None,
+        keep_recent: bool = True,
+        recent_limit: int = _DEFAULT_RECENT_LIMIT,
+    ) -> SessionBinding:
+        binding = self.get_or_create(session_id, metadata=metadata)
+        merged_metadata = self._merge_metadata(binding.metadata, metadata)
+        context = self._normalize_session_context(
+            merged_metadata.get(_SESSION_CONTEXT_KEY),
+            fallback_ticket_id=binding.ticket_id,
+        )
+        recent_ticket_ids = [
+            str(item) for item in context["recent_ticket_ids"] if str(item).strip()
+        ]
+        active_ticket_id = str(context["active_ticket_id"] or "").strip() or None
+        if keep_recent and active_ticket_id:
+            recent_ticket_ids.insert(0, active_ticket_id)
+        context["active_ticket_id"] = None
+        context["recent_ticket_ids"] = self._dedupe_ticket_ids(
+            recent_ticket_ids,
+            limit=recent_limit,
+        )
+        context["session_mode"] = "awaiting_new_issue"
+        context["updated_at"] = datetime.now(UTC).isoformat()
+        merged_metadata[_SESSION_CONTEXT_KEY] = context
+        self._upsert(
+            session_id=session_id,
+            thread_id=binding.thread_id,
+            ticket_id=None,
+            metadata=merged_metadata,
+        )
+        updated = self.get(session_id)
+        if updated is None:
+            raise RuntimeError(f"Failed to reset session context for '{session_id}'")
+        return updated
+
+    def begin_new_issue(
+        self,
+        session_id: str,
+        *,
+        metadata: dict[str, Any] | None = None,
+    ) -> SessionBinding:
+        return self.reset_session_context(session_id, metadata=metadata, keep_recent=True)
+
+    def get_session_context(self, session_id: str) -> dict[str, Any]:
+        binding = self.get(session_id)
+        if binding is None:
+            return self._normalize_session_context(None)
+        return self._normalize_session_context(
+            binding.metadata.get(_SESSION_CONTEXT_KEY),
+            fallback_ticket_id=binding.ticket_id,
+        )
+
+    def list_session_ticket_ids(
+        self,
+        session_id: str,
+        *,
+        include_active: bool = True,
+        include_recent: bool = True,
+        limit: int = _DEFAULT_RECENT_LIMIT + 1,
+    ) -> list[str]:
+        binding = self.get(session_id)
+        if binding is None:
+            return []
+        context = self._normalize_session_context(
+            binding.metadata.get(_SESSION_CONTEXT_KEY),
+            fallback_ticket_id=binding.ticket_id,
+        )
+        ticket_ids: list[str] = []
+        if include_active:
+            active_ticket_id = str(context.get("active_ticket_id") or "").strip()
+            if active_ticket_id:
+                ticket_ids.append(active_ticket_id)
+        if include_recent:
+            ticket_ids.extend(
+                [
+                    str(item).strip()
+                    for item in context.get("recent_ticket_ids", [])
+                    if str(item).strip()
+                ]
+            )
+        if binding.ticket_id:
+            fallback_ticket_id = str(binding.ticket_id).strip()
+            if fallback_ticket_id:
+                ticket_ids.append(fallback_ticket_id)
+        return self._dedupe_ticket_ids(ticket_ids, limit=limit)
 
     def get(self, session_id: str) -> SessionBinding | None:
         with self._connect() as conn:
@@ -246,5 +353,114 @@ class SessionMapper:
     ) -> dict[str, Any]:
         merged = dict(original or {})
         if incoming:
-            merged.update(incoming)
+            for key, value in incoming.items():
+                if key != _SESSION_CONTEXT_KEY:
+                    merged[key] = value
+                    continue
+                if not isinstance(value, dict):
+                    merged[key] = value
+                    continue
+                previous = merged.get(_SESSION_CONTEXT_KEY)
+                if isinstance(previous, dict):
+                    nested = dict(previous)
+                    nested.update(value)
+                    merged[_SESSION_CONTEXT_KEY] = nested
+                else:
+                    merged[_SESSION_CONTEXT_KEY] = dict(value)
         return merged
+
+    @classmethod
+    def _bind_ticket_context(
+        cls,
+        metadata: dict[str, Any],
+        *,
+        ticket_id: str,
+        fallback_active: str | None,
+    ) -> dict[str, Any]:
+        normalized_ticket_id = str(ticket_id).strip()
+        if not normalized_ticket_id:
+            return dict(metadata)
+        context = cls._normalize_session_context(
+            metadata.get(_SESSION_CONTEXT_KEY),
+            fallback_ticket_id=fallback_active,
+        )
+        active_ticket_id = str(context.get("active_ticket_id") or "").strip() or None
+        recent_ticket_ids = [
+            str(item).strip()
+            for item in context.get("recent_ticket_ids", [])
+            if str(item).strip()
+        ]
+        if active_ticket_id and active_ticket_id != normalized_ticket_id:
+            recent_ticket_ids.insert(0, active_ticket_id)
+        recent_ticket_ids = cls._dedupe_ticket_ids(
+            [item for item in recent_ticket_ids if item != normalized_ticket_id],
+            limit=_DEFAULT_RECENT_LIMIT,
+        )
+        context["active_ticket_id"] = normalized_ticket_id
+        context["recent_ticket_ids"] = recent_ticket_ids
+
+        incoming_mode = str(metadata.get("session_mode") or "").strip()
+        if incoming_mode:
+            context["session_mode"] = incoming_mode
+        elif recent_ticket_ids:
+            context["session_mode"] = "multi_issue"
+        else:
+            context["session_mode"] = "single_issue"
+
+        incoming_intent = str(metadata.get("last_intent") or "").strip()
+        if incoming_intent:
+            context["last_intent"] = incoming_intent
+
+        context["updated_at"] = datetime.now(UTC).isoformat()
+        updated = dict(metadata)
+        updated[_SESSION_CONTEXT_KEY] = context
+        return updated
+
+    @classmethod
+    def _normalize_session_context(
+        cls,
+        raw_context: Any,
+        *,
+        fallback_ticket_id: str | None = None,
+    ) -> dict[str, Any]:
+        raw = raw_context if isinstance(raw_context, dict) else {}
+        active_ticket_id = str(raw.get("active_ticket_id") or "").strip() or None
+        if not active_ticket_id and fallback_ticket_id:
+            normalized_fallback = str(fallback_ticket_id).strip()
+            active_ticket_id = normalized_fallback or None
+        recent_ticket_ids = cls._dedupe_ticket_ids(
+            [
+                str(item).strip()
+                for item in raw.get("recent_ticket_ids", [])
+                if str(item).strip()
+            ],
+            limit=_DEFAULT_RECENT_LIMIT,
+        )
+        if active_ticket_id:
+            recent_ticket_ids = [item for item in recent_ticket_ids if item != active_ticket_id]
+        session_mode = str(raw.get("session_mode") or "").strip()
+        if not session_mode:
+            session_mode = "multi_issue" if recent_ticket_ids else "single_issue"
+        last_intent = str(raw.get("last_intent") or "").strip() or None
+        updated_at = str(raw.get("updated_at") or "").strip() or None
+        return {
+            "active_ticket_id": active_ticket_id,
+            "recent_ticket_ids": recent_ticket_ids,
+            "session_mode": session_mode,
+            "last_intent": last_intent,
+            "updated_at": updated_at,
+        }
+
+    @staticmethod
+    def _dedupe_ticket_ids(ticket_ids: list[str], *, limit: int) -> list[str]:
+        deduped: list[str] = []
+        seen: set[str] = set()
+        for raw_ticket_id in ticket_ids:
+            ticket_id = str(raw_ticket_id).strip()
+            if not ticket_id or ticket_id in seen:
+                continue
+            deduped.append(ticket_id)
+            seen.add(ticket_id)
+            if len(deduped) >= limit:
+                break
+        return deduped

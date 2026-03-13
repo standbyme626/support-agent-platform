@@ -16,7 +16,18 @@ class IntentRouter:
     """Rule-based intent router with threshold and low-confidence fallback."""
 
     _intent_keywords: ClassVar[dict[str, set[str]]] = {
-        "greeting": {"你好", "您好", "hello", "hey", "hi", "在吗", "早上好", "下午好", "晚上好"},
+        "greeting": {
+            "你好",
+            "您好",
+            "hello",
+            "hey",
+            "hi",
+            "在吗",
+            "早上好",
+            "下午好",
+            "晚上好",
+            "你是谁",
+        },
         "faq": {
             "怎么",
             "如何",
@@ -32,6 +43,9 @@ class IntentRouter:
             "说明",
             "怎么办",
             "能做什么",
+            "可以做什么",
+            "你可以做什么",
+            "你能做什么",
         },
         "progress_query": {"进度", "到哪", "什么时候", "谁在跟进", "谁跟进", "状态"},
         "repair": {"报修", "故障", "坏了", "维修", "中断"},

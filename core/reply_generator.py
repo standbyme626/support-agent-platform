@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from typing import Any, ClassVar, Protocol
 
@@ -179,13 +180,61 @@ class ReplyGenerator:
         cleaned = raw_text.strip()
         if cleaned.startswith("```"):
             cleaned = ReplyGenerator._strip_code_fence(cleaned)
-        payload = json.loads(cleaned)
+        try:
+            payload = json.loads(cleaned)
+        except json.JSONDecodeError as exc:
+            repaired_reply_text = ReplyGenerator._extract_reply_text_from_malformed_json(cleaned)
+            if repaired_reply_text is None:
+                raise ValueError(str(exc)) from exc
+            return {"reply_text": repaired_reply_text}
         if not isinstance(payload, dict):
             raise ValueError("reply schema must be a JSON object")
         reply_text = payload.get("reply_text")
         if not isinstance(reply_text, str) or not reply_text.strip():
             raise ValueError("reply schema missing non-empty reply_text")
         return {"reply_text": reply_text.strip()}
+
+    @staticmethod
+    def _extract_reply_text_from_malformed_json(raw_text: str) -> str | None:
+        match = re.search(
+            r'"reply_text"\s*:\s*"(?P<value>(?:\\.|[^"\\])*)"',
+            raw_text,
+            flags=re.DOTALL,
+        )
+        value: str | None = None
+        if match is not None:
+            value = match.group("value").strip()
+        else:
+            for marker in ('"reply_text"', "'reply_text'"):
+                start = raw_text.find(marker)
+                if start == -1:
+                    continue
+                tail = raw_text[start + len(marker) :]
+                colon = tail.find(":")
+                if colon == -1:
+                    continue
+                candidate = tail[colon + 1 :].strip()
+                if candidate.startswith(('"', "'")):
+                    quote = candidate[0]
+                    candidate = candidate[1:]
+                    if quote in candidate:
+                        candidate = candidate.split(quote, 1)[0]
+                candidate = candidate.strip()
+                while candidate.endswith(("}", ",", "`")):
+                    candidate = candidate[:-1].rstrip()
+                if candidate:
+                    value = candidate
+                    break
+        if value is None:
+            return None
+        if not value:
+            return None
+        return (
+            value.replace("\\n", "\n")
+            .replace("\\t", "\t")
+            .replace('\\"', '"')
+            .strip()
+        )
 
     @staticmethod
     def _strip_code_fence(text: str) -> str:
@@ -255,6 +304,8 @@ class ReplyGenerator:
     @staticmethod
     def _infer_degrade_reason(error: str) -> str:
         lowered = error.lower()
+        if "missing variables for template render" in lowered or "template render" in lowered:
+            return "template_render_error"
         if "timeout" in lowered:
             return "llm_timeout"
         if "schema" in lowered or "json" in lowered:

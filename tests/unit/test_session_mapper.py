@@ -57,3 +57,38 @@ def test_session_mapper_records_replay_events(tmp_path: Path) -> None:
     replay_events = mapper.list_replay_events(limit=10)
     assert len(replay_events) == 1
     assert replay_events[0]["idempotency_key"] == "telegram:1001"
+
+
+def test_session_mapper_tracks_active_and_recent_tickets(tmp_path: Path) -> None:
+    sqlite_path = tmp_path / "session.db"
+    mapper = SessionMapper(sqlite_path)
+
+    mapper.set_ticket_id("session-4", "TCK-1001", metadata={"last_intent": "repair"})
+    mapper.set_ticket_id("session-4", "TCK-1002", metadata={"last_intent": "billing"})
+
+    context = mapper.get_session_context("session-4")
+    assert context["active_ticket_id"] == "TCK-1002"
+    assert context["recent_ticket_ids"] == ["TCK-1001"]
+    assert context["session_mode"] == "multi_issue"
+    assert context["last_intent"] == "billing"
+
+    ticket_ids = mapper.list_session_ticket_ids("session-4")
+    assert ticket_ids[:2] == ["TCK-1002", "TCK-1001"]
+
+
+def test_session_mapper_reset_session_context_preserves_recent(tmp_path: Path) -> None:
+    sqlite_path = tmp_path / "session.db"
+    mapper = SessionMapper(sqlite_path)
+
+    mapper.set_ticket_id("session-5", "TCK-2001")
+    mapper.set_ticket_id("session-5", "TCK-2002")
+    mapper.reset_session_context("session-5", keep_recent=True)
+
+    context = mapper.get_session_context("session-5")
+    binding = mapper.get("session-5")
+
+    assert binding is not None
+    assert binding.ticket_id is None
+    assert context["active_ticket_id"] is None
+    assert context["session_mode"] == "awaiting_new_issue"
+    assert context["recent_ticket_ids"][:2] == ["TCK-2002", "TCK-2001"]

@@ -7,8 +7,8 @@ expected_schema: application/json
 请针对 FAQ 场景输出面向员工用户的回复。
 
 要求：
-1. 仅输出 JSON，schema: {"reply_text":"string"}。
-2. 回复要简洁，必须引用 grounding_sources 中最相关的信息点。
+1. 仅输出 JSON，schema: {{"reply_text":"string"}}。
+2. 回复要简洁，必须引用 grounding_sources 中最相关的信息点，并且必须出现“参考”字样。
 3. 若资料不足，明确告知下一步补充信息。
 4. 语气使用 {tone}。
 

@@ -206,7 +206,10 @@ def test_approval_reject_and_timeout_paths(monkeypatch: MonkeyPatch, tmp_path: P
 def test_duplicate_merge_suggestion_flow(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv("SUPPORT_AGENT_ENV", "dev")
     monkeypatch.setenv("SUPPORT_AGENT_SQLITE_PATH", str(tmp_path / "ticket_duplicate_merge_api.db"))
-    monkeypatch.setenv("SUPPORT_AGENT_GATEWAY_LOG_PATH", str(tmp_path / "ticket_duplicate_merge_api.log"))
+    monkeypatch.setenv(
+        "SUPPORT_AGENT_GATEWAY_LOG_PATH",
+        str(tmp_path / "ticket_duplicate_merge_api.log"),
+    )
     monkeypatch.setenv("LLM_ENABLED", "0")
 
     runtime = build_runtime("dev")
@@ -275,12 +278,17 @@ def test_duplicate_merge_suggestion_flow(monkeypatch: MonkeyPatch, tmp_path: Pat
             assert accepted["data"]["metadata"]["merged_into_ticket_id"] == target.ticket_id
 
             source_events = _json(client, "GET", f"{base}/api/tickets/{source.ticket_id}/events")
-            assert "merge_suggestion_accepted" in {item["event_type"] for item in source_events["items"]}
+            assert "merge_suggestion_accepted" in {
+                item["event_type"] for item in source_events["items"]
+            }
             target_events = _json(client, "GET", f"{base}/api/tickets/{target.ticket_id}/events")
             assert "duplicate_merged_in" in {item["event_type"] for item in target_events["items"]}
 
             accept_trace = runtime.trace_logger.query_by_trace("trace_merge_accept_001", limit=200)
-            assert any(str(item.get("event_type")) == "merge_suggestion_accepted" for item in accept_trace)
+            assert any(
+                str(item.get("event_type")) == "merge_suggestion_accepted"
+                for item in accept_trace
+            )
 
             rejected = _json(
                 client,
@@ -296,10 +304,277 @@ def test_duplicate_merge_suggestion_flow(monkeypatch: MonkeyPatch, tmp_path: Pat
             assert rejected["data"]["status"] == "open"
             assert rejected["data"]["metadata"]["merge_state"] == "rejected"
 
-            reject_events = _json(client, "GET", f"{base}/api/tickets/{reject_source.ticket_id}/events")
-            assert "merge_suggestion_rejected" in {item["event_type"] for item in reject_events["items"]}
+            reject_events = _json(
+                client,
+                "GET",
+                f"{base}/api/tickets/{reject_source.ticket_id}/events",
+            )
+            assert "merge_suggestion_rejected" in {
+                item["event_type"] for item in reject_events["items"]
+            }
             reject_trace = runtime.trace_logger.query_by_trace("trace_merge_reject_001", limit=200)
-            assert any(str(item.get("event_type")) == "merge_suggestion_rejected" for item in reject_trace)
+            assert any(
+                str(item.get("event_type")) == "merge_suggestion_rejected"
+                for item in reject_trace
+            )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)
+
+
+def test_v2_actions_and_v1_close_control_and_v2_intake_investigate(
+    monkeypatch: MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("SUPPORT_AGENT_ENV", "dev")
+    monkeypatch.setenv("SUPPORT_AGENT_SQLITE_PATH", str(tmp_path / "ticket_actions_v2_api.db"))
+    monkeypatch.setenv("LLM_ENABLED", "0")
+
+    runtime = build_runtime("dev")
+    v2_customer = runtime.ticket_api.create_ticket(
+        channel="wecom",
+        session_id="sess-v2-actions-001",
+        thread_id="thread-v2-actions-001",
+        title="门禁设备故障",
+        latest_message="刷卡无反应",
+        intent="repair",
+        priority="P2",
+        queue="support",
+    )
+    v2_operator = runtime.ticket_api.create_ticket(
+        channel="wecom",
+        session_id="sess-v2-actions-002",
+        thread_id="thread-v2-actions-002",
+        title="停车场道闸异常",
+        latest_message="道闸无法关闭",
+        intent="repair",
+        priority="P2",
+        queue="support",
+    )
+    v1_close = runtime.ticket_api.create_ticket(
+        channel="wecom",
+        session_id="sess-v1-close-003",
+        thread_id="thread-v1-close-003",
+        title="电梯异响",
+        latest_message="电梯持续异响",
+        intent="repair",
+        priority="P2",
+        queue="support",
+    )
+    v2_investigate = runtime.ticket_api.create_ticket(
+        channel="wecom",
+        session_id="sess-v2-investigate-004",
+        thread_id="thread-v2-investigate-004",
+        title="空调不制冷",
+        latest_message="中央空调不制冷且风量很小",
+        intent="repair",
+        priority="P2",
+        queue="support",
+    )
+
+    server, thread = _start_server("dev")
+    base = f"http://127.0.0.1:{server.server_address[1]}"
+    try:
+        with httpx.Client(timeout=10.0, trust_env=False) as client:
+            resolved = _json(
+                client,
+                "POST",
+                f"{base}/api/v2/tickets/{v2_customer.ticket_id}/resolve",
+                {
+                    "actor_id": "u_ops_11",
+                    "resolution_note": "远程重启后已恢复",
+                    "resolution_code": "remote_reboot",
+                    "trace_id": "trace_v2_resolve_001",
+                },
+            )
+            assert resolved["data"]["status"] == "resolved"
+            assert resolved["data"]["event_type"] == "ticket_resolved"
+            assert resolved["data"]["resolved_action"] == "resolve"
+            assert resolved["data"]["trace_id"] == "trace_v2_resolve_001"
+
+            customer_confirmed = _json(
+                client,
+                "POST",
+                f"{base}/api/v2/tickets/{v2_customer.ticket_id}/customer-confirm",
+                {
+                    "actor_id": "u_ops_11",
+                    "note": "客户确认恢复",
+                    "trace_id": "trace_v2_customer_confirm_001",
+                },
+            )
+            assert customer_confirmed["data"]["status"] == "closed"
+            assert customer_confirmed["data"]["event_type"] == "ticket_customer_confirmed"
+            assert customer_confirmed["data"]["resolved_action"] == "customer-confirm"
+            assert customer_confirmed["data"]["trace_id"] == "trace_v2_customer_confirm_001"
+
+            operator_closed = _json(
+                client,
+                "POST",
+                f"{base}/api/v2/tickets/{v2_operator.ticket_id}/operator-close",
+                {
+                    "actor_id": "u_ops_12",
+                    "reason": "operator_forced_close",
+                    "note": "人工确认现场恢复，先行闭环",
+                    "trace_id": "trace_v2_operator_close_001",
+                },
+            )
+            assert operator_closed["data"]["status"] == "closed"
+            assert operator_closed["data"]["event_type"] == "ticket_operator_closed"
+            assert operator_closed["data"]["resolved_action"] == "operator-close"
+            assert operator_closed["data"]["trace_id"] == "trace_v2_operator_close_001"
+
+            _json(
+                client,
+                "POST",
+                f"{base}/api/tickets/{v1_close.ticket_id}/resolve",
+                {
+                    "actor_id": "u_ops_13",
+                    "resolution_note": "已给出恢复方案",
+                    "trace_id": "trace_v1_resolve_001",
+                },
+            )
+            ambiguous = client.post(
+                f"{base}/api/tickets/{v1_close.ticket_id}/close",
+                json={
+                    "actor_id": "u_ops_13",
+                    "resolution_note": "关闭工单",
+                    "trace_id": "trace_v1_close_ambiguous_001",
+                },
+            )
+            assert ambiguous.status_code == 400
+            ambiguous_payload = ambiguous.json()
+            assert ambiguous_payload["code"] == "invalid_payload"
+            assert "ambiguous close action" in ambiguous_payload["message"]
+
+            controlled_close = _json(
+                client,
+                "POST",
+                f"{base}/api/tickets/{v1_close.ticket_id}/close",
+                {
+                    "actor_id": "u_ops_13",
+                    "action": "customer_confirm",
+                    "resolution_note": "客户确认关闭",
+                    "trace_id": "trace_v1_close_controlled_001",
+                },
+            )
+            assert controlled_close["data"]["status"] == "closed"
+            assert controlled_close["data"]["resolved_action"] == "customer_confirm"
+            assert controlled_close["data"]["trace_id"] == "trace_v1_close_controlled_001"
+
+            investigate_trace_id = "trace_v2_investigate_001"
+            investigated = _json(
+                client,
+                "POST",
+                f"{base}/api/v2/tickets/{v2_investigate.ticket_id}/investigate",
+                {
+                    "actor_id": "u_ops_14",
+                    "question": "请给出根因分析建议与下一步动作",
+                    "trace_id": investigate_trace_id,
+                },
+            )
+            assert investigated["data"]["advice_only"] is True
+            assert investigated["data"]["investigation"]["safety"]["advice_only"] is True
+            assert investigated["data"]["trace"]["trace_id"] == investigate_trace_id
+
+            intake_trace_id = "trace_v2_intake_run_001"
+            intake_result = _json(
+                client,
+                "POST",
+                f"{base}/api/v2/intake/run",
+                {
+                    "session_id": v2_investigate.session_id,
+                    "text": "空调异常，用户要求尽快处理",
+                    "channel": "wecom",
+                    "trace_id": intake_trace_id,
+                    "metadata": {
+                        "ticket_id": v2_investigate.ticket_id,
+                        "actor_id": "u_ops_14",
+                        "force_investigation": True,
+                    },
+                },
+            )
+            assert intake_result["data"]["trace"]["trace_id"] == intake_trace_id
+            assert intake_result["data"]["advice_only"] is True
+            assert intake_result["data"]["high_risk_action_executed"] is False
+            assert isinstance(intake_result["data"]["result"]["trace"]["steps"], list)
+            assert intake_result["data"]["result"]["trace"]["steps"]
+
+            intake_new_trace_id = "trace_v2_intake_new_command_001"
+            intake_new_result = _json(
+                client,
+                "POST",
+                f"{base}/api/v2/intake/run",
+                {
+                    "session_id": v2_investigate.session_id,
+                    "text": "/new 继续当前问题",
+                    "channel": "wecom",
+                    "trace_id": intake_new_trace_id,
+                    "metadata": {
+                        "ticket_id": v2_investigate.ticket_id,
+                        "actor_id": "u_ops_14",
+                    },
+                },
+            )
+            assert intake_new_result["data"]["trace"]["trace_id"] == intake_new_trace_id
+            assert intake_new_result["data"]["advice_only"] is True
+            assert intake_new_result["data"]["high_risk_action_executed"] is False
+            assert (
+                intake_new_result["data"]["result"]["session_action"]["action"] == "new_issue"
+            )
+            assert (
+                intake_new_result["data"]["result"]["session_action"]["result"]["session"][
+                    "session_mode"
+                ]
+                == "awaiting_new_issue"
+            )
+
+            intake_end_trace_id = "trace_v2_intake_end_phrase_001"
+            intake_end_result = _json(
+                client,
+                "POST",
+                f"{base}/api/v2/intake/run",
+                {
+                    "session_id": v2_investigate.session_id,
+                    "text": "这轮先到这里，结束当前对话",
+                    "channel": "wecom",
+                    "trace_id": intake_end_trace_id,
+                    "metadata": {
+                        "ticket_id": v2_investigate.ticket_id,
+                        "actor_id": "u_ops_14",
+                    },
+                },
+            )
+            assert intake_end_result["data"]["trace"]["trace_id"] == intake_end_trace_id
+            assert intake_end_result["data"]["advice_only"] is True
+            assert intake_end_result["data"]["high_risk_action_executed"] is False
+            assert (
+                intake_end_result["data"]["result"]["session_action"]["action"] == "session_end"
+            )
+            assert (
+                intake_end_result["data"]["result"]["session_action"]["result"]["event_type"]
+                == "session_ended"
+            )
+
+            session_end = _json(
+                client,
+                "POST",
+                f"{base}/api/v2/sessions/{v2_investigate.session_id}/end",
+                {
+                    "actor_id": "u_ops_14",
+                    "reason": "manual_end",
+                    "trace_id": "trace_v2_session_end_001",
+                },
+            )
+            assert session_end["data"]["event_type"] == "session_ended"
+            assert session_end["data"]["trace_id"] == "trace_v2_session_end_001"
+            assert session_end["data"]["session"]["active_ticket_id"] is None
+
+            investigate_trace = runtime.trace_logger.query_by_trace(investigate_trace_id, limit=100)
+            assert any(
+                str(item.get("event_type")) == "ticket_investigation_v2" for item in investigate_trace
+            )
+            intake_trace = runtime.trace_logger.query_by_trace(intake_trace_id, limit=100)
+            assert any(str(item.get("event_type")) == "intake_run_v2" for item in intake_trace)
     finally:
         server.shutdown()
         server.server_close()

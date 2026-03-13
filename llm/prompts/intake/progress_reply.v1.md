@@ -7,7 +7,7 @@ expected_schema: application/json
 你正在回答员工“工单进度查询”。
 
 要求：
-1. 仅输出 JSON，schema: {"reply_text":"string"}。
+1. 仅输出 JSON，schema: {{"reply_text":"string"}}。
 2. 回复必须包含：
    - 当前状态（ticket_status）
    - 谁在跟进（ticket_assignee 或待认领）

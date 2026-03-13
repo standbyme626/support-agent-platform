@@ -61,6 +61,17 @@ function buildEventSummary(event: TicketEventItem, emptyText: string) {
   return emptyText;
 }
 
+function extractContextMessage(event: TicketEventItem) {
+  const payload = event.payload ?? {};
+  const candidates = ["message_text", "latest_message", "note", "resolution_note", "reason"];
+  for (const key of candidates) {
+    if (payload[key] !== undefined && payload[key] !== null && payload[key] !== "") {
+      return `${key}=${toInlineValue(payload[key])}`;
+    }
+  }
+  return null;
+}
+
 export function TicketTimeline({ events }: { events: TicketEventItem[] }) {
   const { t, language } = useI18n();
   const normalizedEvents = useMemo(
@@ -87,6 +98,7 @@ export function TicketTimeline({ events }: { events: TicketEventItem[] }) {
         {normalizedEvents.map((event) => {
           const isObservabilityEvent = OBSERVABILITY_EVENTS.has(event.event_type);
           const summary = buildEventSummary(event, t("无载荷摘要。", "No payload summary."));
+          const contextMessage = extractContextMessage(event);
           return (
             <li
               key={event.event_id}
@@ -120,8 +132,12 @@ export function TicketTimeline({ events }: { events: TicketEventItem[] }) {
                 </div>
                 <small>
                   actor={event.actor_id} · source={event.source ?? "ticket"} ·{" "}
+                  trace={event.trace_id ?? "-"} ·{" "}
                   {formatTimestamp(event.created_at, language === "en" ? "en-US" : "zh-CN")}
                 </small>
+                {contextMessage ? (
+                  <div style={{ marginTop: 4, color: "var(--muted)", fontSize: 12 }}>{contextMessage}</div>
+                ) : null}
               </button>
             </li>
           );

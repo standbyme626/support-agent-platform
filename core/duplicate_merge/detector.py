@@ -66,7 +66,11 @@ class DuplicateDetector:
     def _score(cls, left: Ticket, right: Ticket) -> tuple[float, list[str]]:
         left_text = cls._text_blob(left)
         right_text = cls._text_blob(right)
-        ratio = SequenceMatcher(None, left_text, right_text).ratio() if left_text and right_text else 0.0
+        ratio = (
+            SequenceMatcher(None, left_text, right_text).ratio()
+            if left_text and right_text
+            else 0.0
+        )
         jaccard = cls._token_jaccard(left_text, right_text)
         score = max(ratio, jaccard)
         signals: list[str] = []

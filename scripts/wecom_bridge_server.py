@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import time
@@ -53,15 +54,55 @@ class _RuntimeLike(Protocol):
 
 def process_wecom_message(runtime: _RuntimeLike, payload: dict[str, Any]) -> BridgeResult:
     text = _pick_text(payload)
-    sender_id = _pick_string(payload, "sender_id", "FromUserName")
-    chat_id = _pick_string(payload, "chatid", "ChatId") or sender_id
-    chat_type = (_pick_string(payload, "chattype", "ChatType") or "single").lower()
-    msg_id = _pick_string(payload, "msgid", "MsgId")
+    sender_id = _pick_string(
+        payload,
+        "sender_id",
+        "from_userid",
+        "from_user_id",
+        "fromUserId",
+        "FromUserName",
+        "from.userid",
+        "from.id",
+        "from.user_id",
+        "sender.userid",
+        "sender.user_id",
+        "sender.id",
+        "userid",
+        "user_id",
+        "UserID",
+    )
+    chat_id = _pick_string(
+        payload,
+        "chatid",
+        "chat_id",
+        "chatId",
+        "conversationid",
+        "ChatId",
+        "conversation_id",
+        "conversation.id",
+        "chat_info.id",
+        "chat.id",
+    ) or sender_id
+    chat_type = (
+        _pick_string(payload, "chattype", "ChatType", "chat_type", "conversation_type")
+        or "single"
+    ).lower()
+    raw_msg_id = _pick_string(
+        payload,
+        "msgid",
+        "MsgId",
+        "message_id",
+        "message.msgid",
+        "message.msg_id",
+        "msg.msgid",
+        "msg.msg_id",
+    )
     req_id = (
         _pick_string(payload, "req_id", "ReqId", "trace_id")
-        or msg_id
-        or f"trace-{int(time.time())}"
+        or raw_msg_id
+        or f"trace-{time.time_ns()}"
     )
+    msg_id = raw_msg_id or _build_fallback_msg_id(payload=payload, req_id=req_id)
 
     if not text:
         return BridgeResult(handled=True, reply_text="", status="ignored_empty")
@@ -124,7 +165,7 @@ def _compose_session_id(*, sender_id: str, chat_id: str, chat_type: str) -> str:
 
 def _pick_string(payload: dict[str, Any], *keys: str) -> str:
     for key in keys:
-        value = payload.get(key)
+        value = _pick_nested(payload, key)
         if value is None:
             continue
         text = str(value).strip()
@@ -134,8 +175,17 @@ def _pick_string(payload: dict[str, Any], *keys: str) -> str:
 
 
 def _pick_text(payload: dict[str, Any]) -> str:
-    for key in ("text", "Content"):
-        value = payload.get(key)
+    for key in (
+        "text",
+        "Content",
+        "content",
+        "text.content",
+        "message.text",
+        "message.content",
+        "msg.text",
+        "msg.content",
+    ):
+        value = _pick_nested(payload, key)
         if isinstance(value, str):
             text = value.strip()
             if text:
@@ -147,6 +197,24 @@ def _pick_text(payload: dict[str, Any]) -> str:
                 if text:
                     return text
     return ""
+
+
+def _pick_nested(payload: dict[str, Any], key: str) -> Any:
+    if "." not in key:
+        return payload.get(key)
+    current: Any = payload
+    for part in key.split("."):
+        if not isinstance(current, dict):
+            return None
+        current = current.get(part)
+    return current
+
+
+def _build_fallback_msg_id(*, payload: dict[str, Any], req_id: str) -> str:
+    canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str)
+    digest = hashlib.sha1(canonical.encode("utf-8")).hexdigest()[:16]
+    req_part = req_id.strip() or "trace"
+    return f"bridge:{req_part}:{digest}"
 
 
 def _build_handler(*, runtime: _RuntimeLike, path: str) -> type[BaseHTTPRequestHandler]:

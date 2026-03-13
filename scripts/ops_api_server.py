@@ -13,8 +13,19 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
+from app.agents.deep.ticket_investigation_agent import (
+    TicketInvestigationAgent,
+    build_ticket_investigation_agent,
+    run_ticket_investigation,
+)
+from app.application.intake_service import IntakeService
+from app.application.session_service import SessionContextStoreProtocol, SessionService
+from app.domain.conversation.conversation_state import ConversationState
+from app.domain.ticket.ticket_api import TicketAPI as TicketAPIV2
+from app.domain.ticket.ticket_workflow_state import TicketWorkflowState
+from app.graph_runtime.intake_graph import build_intake_graph
 from config import AppConfig, load_app_config
-from core.disambiguation import NewIssueDetector
+from core.disambiguation import NewIssueDetector, detect_session_control
 from core.hitl.approval_policy import ApprovalPolicy
 from core.hitl.approval_runtime import ApprovalRuntime
 from core.hitl.handoff_context import build_approval_context
@@ -23,11 +34,12 @@ from core.recommended_actions_engine import RecommendedActionsEngine
 from core.retrieval.source_attribution import build_source_payloads
 from core.retriever import Retriever
 from core.summary_engine import SummaryEngine
-from core.ticket_api import TicketAPI
+from core.ticket_api import TicketAPI as LegacyTicketAPI
 from core.trace_logger import JsonTraceLogger, new_trace_id
 from llm import build_summary_model_adapter
 from openclaw_adapter.bindings import build_default_bindings
 from openclaw_adapter.gateway import OpenClawGateway
+from openclaw_adapter.session_mapper import SessionMapper
 from scripts.gateway_status import collect_status, summarize_reliability
 from storage.models import KBDocument, Ticket
 from storage.ticket_repository import TicketRepository
@@ -52,6 +64,10 @@ TICKET_SWITCH_ACTIVE_RE = re.compile(r"^/api/tickets/(?P<ticket_id>[^/]+)/switch
 TICKET_ACTION_RE = re.compile(
     r"^/api/tickets/(?P<ticket_id>[^/]+)/(claim|reassign|escalate|resolve|close)$"
 )
+TICKET_ACTION_V2_RE = re.compile(
+    r"^/api/v2/tickets/(?P<ticket_id>[^/]+)/(resolve|customer-confirm|operator-close)$"
+)
+TICKET_INVESTIGATE_V2_RE = re.compile(r"^/api/v2/tickets/(?P<ticket_id>[^/]+)/investigate$")
 APPROVAL_ACTION_RE = re.compile(r"^/api/approvals/(?P<approval_id>[^/]+)/(approve|reject)$")
 COPILOT_TICKET_QUERY_RE = re.compile(r"^/api/copilot/ticket/(?P<ticket_id>[^/]+)/query$")
 TRACE_DETAIL_RE = re.compile(r"^/api/traces/(?P<trace_id>[^/]+)$")
@@ -61,20 +77,25 @@ SESSION_TICKETS_RE = re.compile(r"^/api/sessions/(?P<session_id>[^/]+)/tickets$"
 SESSION_REPLY_EVENTS_RE = re.compile(r"^/api/sessions/(?P<session_id>[^/]+)/reply-events$")
 SESSION_RESET_RE = re.compile(r"^/api/sessions/(?P<session_id>[^/]+)/reset$")
 SESSION_NEW_ISSUE_RE = re.compile(r"^/api/sessions/(?P<session_id>[^/]+)/new-issue$")
+SESSION_END_V2_RE = re.compile(r"^/api/v2/sessions/(?P<session_id>[^/]+)/end$")
 COPILOT_DISAMBIGUATE_PATH = "/api/copilot/disambiguate"
+INTAKE_GRAPH_RUN_V2_PATH = "/api/v2/intake/run"
 
 
 @dataclass(frozen=True)
 class OpsApiRuntime:
     app_config: AppConfig
     gateway: OpenClawGateway
-    ticket_api: TicketAPI
+    ticket_api: LegacyTicketAPI
+    ticket_api_v2: TicketAPIV2
     repository: TicketRepository
     trace_logger: JsonTraceLogger
     retriever: Retriever
     summary_engine: SummaryEngine
     recommendation_engine: RecommendedActionsEngine
     approval_runtime: ApprovalRuntime
+    intake_graph_runner: Any
+    investigation_agent: TicketInvestigationAgent
     kb_store_path: Path
 
 
@@ -82,6 +103,116 @@ class OpsApiRuntime:
 class ApiResponse:
     status: HTTPStatus
     payload: dict[str, Any]
+
+
+class _SessionMapperConversationStore(SessionContextStoreProtocol):
+    """Persist ConversationState onto SessionMapper metadata."""
+
+    def __init__(self, session_mapper: SessionMapper) -> None:
+        self._session_mapper = session_mapper
+
+    def get(self, session_id: str) -> ConversationState | None:
+        binding = self._session_mapper.get(session_id)
+        if binding is None:
+            return None
+
+        context = self._session_mapper.get_session_context(session_id)
+        mode = _conversation_mode_from_session_context(str(context.get("session_mode") or ""))
+        return ConversationState(
+            session_id=session_id,
+            active_ticket_id=str(context.get("active_ticket_id") or "").strip() or None,
+            recent_ticket_ids=[
+                str(item).strip()
+                for item in context.get("recent_ticket_ids", [])
+                if str(item).strip()
+            ],
+            conversation_mode=mode,
+            awaiting_customer_confirmation=bool(
+                binding.metadata.get("awaiting_customer_confirmation", False)
+            ),
+            last_user_intent=str(context.get("last_intent") or "").strip() or None,
+        )
+
+    def save(self, state: ConversationState) -> None:
+        metadata = {
+            "awaiting_customer_confirmation": state.awaiting_customer_confirmation,
+            "last_intent": state.last_user_intent,
+            "session_context": {
+                "active_ticket_id": state.active_ticket_id,
+                "recent_ticket_ids": [
+                    str(item).strip() for item in state.recent_ticket_ids if str(item).strip()
+                ][:5],
+                "session_mode": _session_mode_from_conversation_mode(state.conversation_mode),
+                "last_intent": state.last_user_intent,
+                "updated_at": datetime.now(UTC).isoformat(),
+            },
+        }
+
+        if state.active_ticket_id:
+            self._session_mapper.set_ticket_id(
+                state.session_id,
+                state.active_ticket_id,
+                metadata=metadata,
+            )
+            return
+
+        self._session_mapper.reset_session_context(
+            state.session_id,
+            metadata=metadata,
+            keep_recent=False,
+        )
+        self._session_mapper.get_or_create(state.session_id, metadata=metadata)
+
+
+class _TicketWorkflowRepositoryAdapter:
+    """Bridge storage repository to app.domain.ticket.TicketAPI protocol."""
+
+    def __init__(self, repository: TicketRepository) -> None:
+        self._repository = repository
+
+    def get_workflow_state(self, ticket_id: str) -> TicketWorkflowState:
+        ticket = self._repository.get_ticket(ticket_id)
+        if ticket is None:
+            raise KeyError(f"Ticket not found: {ticket_id}")
+        approval_state = "pending_approval" if ticket.handoff_state == "pending_approval" else "none"
+        return TicketWorkflowState(
+            ticket_id=ticket.ticket_id,
+            status=ticket.status,
+            handoff_state=ticket.handoff_state,
+            lifecycle_stage=ticket.lifecycle_stage,
+            approval_state=approval_state,
+        )
+
+    def update_ticket_fields(self, ticket_id: str, fields: dict[str, Any]) -> None:
+        self._repository.update_ticket(ticket_id, dict(fields))
+
+    def append_event(self, ticket_id: str, event_type: str, payload: dict[str, Any]) -> None:
+        actor_id = str(payload.get("actor_id") or "app-ticket-api")
+        actor_type = str(payload.get("actor_type") or "agent")
+        self._repository.append_event(
+            ticket_id=ticket_id,
+            event_type=event_type,
+            actor_type=actor_type,
+            actor_id=actor_id,
+            payload=payload,
+        )
+
+
+def _conversation_mode_from_session_context(raw_mode: str) -> str:
+    mode = raw_mode.strip().lower()
+    if mode in {"faq"}:
+        return "faq"
+    if mode in {"single_issue", "multi_issue", "support"}:
+        return "support"
+    return "idle"
+
+
+def _session_mode_from_conversation_mode(mode: str) -> str:
+    if mode == "faq":
+        return "single_issue"
+    if mode == "support":
+        return "multi_issue"
+    return "awaiting_new_issue"
 
 
 def _seed_root() -> Path:
@@ -101,7 +232,11 @@ def build_runtime(environment: str | None) -> OpsApiRuntime:
     repository = TicketRepository(sqlite_path)
     repository.apply_migrations()
 
-    ticket_api = TicketAPI(repository, session_mapper=bindings.session_mapper)
+    ticket_api = LegacyTicketAPI(repository, session_mapper=bindings.session_mapper)
+    ticket_repo_v2 = _TicketWorkflowRepositoryAdapter(repository)
+    session_store_v2 = _SessionMapperConversationStore(bindings.session_mapper)
+    session_service_v2 = SessionService(session_store_v2)
+    ticket_api_v2 = TicketAPIV2(ticket_repo=ticket_repo_v2, session_service=session_service_v2)
     retriever = Retriever(_seed_root())
     summary_engine = SummaryEngine(model_adapter=build_summary_model_adapter(app_config.llm))
     recommendation_engine = RecommendedActionsEngine()
@@ -115,16 +250,42 @@ def build_runtime(environment: str | None) -> OpsApiRuntime:
     if not kb_store_path.exists():
         _write_kb_docs(kb_store_path, _seed_kb_docs())
 
+    investigation_agent = build_ticket_investigation_agent(
+        read_ticket_tool=lambda ticket_id: _ticket_to_dict(ticket_api.require_ticket(str(ticket_id))),
+        read_ticket_events_tool=lambda ticket_id: [
+            _event_to_dict(item) for item in ticket_api.list_events(str(ticket_id))
+        ],
+        search_kb_tool=lambda query: search_kb(
+            retriever=retriever,
+            source_type="grounded",
+            query=str(query),
+            top_k=3,
+            retrieval_mode=None,
+        ),
+        search_similar_cases_tool=lambda ticket_id: _extract_similar_cases(
+            ticket_api.require_ticket(str(ticket_id)),
+            retriever,
+        ),
+        get_grounding_sources_tool=lambda ticket_id: _extract_grounding_sources(
+            ticket_api.require_ticket(str(ticket_id)),
+            retriever,
+        ),
+    )
+    intake_graph_runner = build_intake_graph(IntakeService(), investigation_agent)
+
     return OpsApiRuntime(
         app_config=app_config,
         gateway=gateway,
         ticket_api=ticket_api,
+        ticket_api_v2=ticket_api_v2,
         repository=repository,
         trace_logger=bindings.trace_logger,
         retriever=retriever,
         summary_engine=summary_engine,
         recommendation_engine=recommendation_engine,
         approval_runtime=approval_runtime,
+        intake_graph_runner=intake_graph_runner,
+        investigation_agent=investigation_agent,
         kb_store_path=kb_store_path,
     )
 
@@ -414,7 +575,11 @@ def _ticket_duplicate_candidates(runtime: OpsApiRuntime, ticket_id: str) -> list
     payload = {
         "ticket_id": ticket_id,
         "candidate_count": len(items),
-        "candidate_ticket_ids": [str(item.get("ticket_id") or "") for item in items if item.get("ticket_id")],
+        "candidate_ticket_ids": [
+            str(item.get("ticket_id") or "")
+            for item in items
+            if item.get("ticket_id")
+        ],
     }
     runtime.ticket_api.add_event(
         ticket_id,
@@ -443,13 +608,17 @@ def _merge_suggestion_decision(
     actor_id = str(payload.get("actor_id") or "").strip()
     if not actor_id:
         raise ValueError("actor_id is required")
-    target_ticket_id = str(payload.get("duplicate_ticket_id") or payload.get("target_ticket_id") or "").strip()
+    target_ticket_id = str(
+        payload.get("duplicate_ticket_id") or payload.get("target_ticket_id") or ""
+    ).strip()
     if not target_ticket_id:
         raise ValueError("duplicate_ticket_id is required")
     note = str(payload.get("note") or "").strip() or None
 
     source_ticket = runtime.ticket_api.require_ticket(ticket_id)
-    trace_id = str(payload.get("trace_id") or _ticket_trace_id(source_ticket) or new_trace_id()).strip()
+    trace_id = str(
+        payload.get("trace_id") or _ticket_trace_id(source_ticket) or new_trace_id()
+    ).strip()
     if decision == "accept":
         updated_ticket = runtime.ticket_api.accept_merge_suggestion(
             ticket_id,
@@ -601,6 +770,8 @@ def _copilot_disambiguate_payload(
     *,
     session_id: str,
     message_text: str,
+    actor_id: str = "ops-api",
+    trace_id: str | None = None,
 ) -> dict[str, Any]:
     binding = runtime.gateway.bindings.session_mapper.get(session_id)
     if binding is None:
@@ -629,7 +800,29 @@ def _copilot_disambiguate_payload(
         last_intent=str(session_context.get("last_intent") or "").strip() or None,
         active_ticket=active_ticket,
     )
-    if decision.decision == "awaiting_disambiguation" and decision.active_ticket_id:
+
+    session_action_result: dict[str, Any] | None = None
+    if decision.session_action == "session_end":
+        session_action_result = _run_session_end_v2(
+            runtime,
+            session_id=session_id,
+            payload={
+                "actor_id": actor_id,
+                "reason": "user_requested_end",
+                "trace_id": trace_id or new_trace_id(),
+            },
+        )
+    elif decision.session_action == "new_issue":
+        session_action_result = _run_session_new_issue(
+            runtime,
+            session_id=session_id,
+            payload={
+                "actor_id": actor_id,
+                "reason": "user_requested_new_issue",
+                "trace_id": trace_id or new_trace_id(),
+            },
+        )
+    elif decision.decision == "awaiting_disambiguation" and decision.active_ticket_id:
         runtime.ticket_api.switch_active_session_ticket(
             session_id,
             decision.active_ticket_id,
@@ -655,12 +848,14 @@ def _copilot_disambiguate_payload(
                 "updated_at": ticket.updated_at.isoformat() if ticket.updated_at else None,
             }
         )
+    resolved_active_ticket_id = str(updated_session.get("active_ticket_id") or "").strip() or None
     return {
         "session_id": session_id,
         "message_text": message_text,
         "decision": decision.decision,
         "confidence": decision.confidence,
         "reason": decision.reason,
+        "session_action": decision.session_action,
         "intent": {
             "intent": decision.intent.intent,
             "confidence": decision.intent.confidence,
@@ -668,13 +863,14 @@ def _copilot_disambiguate_payload(
             "reason": decision.intent.reason,
         },
         "suggested_ticket_id": decision.suggested_ticket_id,
-        "active_ticket_id": decision.active_ticket_id,
+        "active_ticket_id": resolved_active_ticket_id,
         "candidate_tickets": candidate_tickets,
         "options": _disambiguation_options(
             session_id=session_id,
-            active_ticket_id=decision.active_ticket_id,
+            active_ticket_id=resolved_active_ticket_id,
             candidate_ticket_ids=list(decision.candidate_ticket_ids),
         ),
+        "session_action_result": session_action_result,
         "session": updated_session,
     }
 
@@ -788,7 +984,9 @@ def _dashboard_summary(runtime: OpsApiRuntime) -> dict[str, Any]:
             sla_breached_count += 1
 
     consulting_reuse_count = sum(
-        1 for event in recent_events if str(event.get("event_type") or "") == "consulting_ticket_reused"
+        1
+        for event in recent_events
+        if str(event.get("event_type") or "") == "consulting_ticket_reused"
     )
     duplicate_candidates_count = sum(
         1
@@ -796,10 +994,14 @@ def _dashboard_summary(runtime: OpsApiRuntime) -> dict[str, Any]:
         if str(event.get("event_type") or "") == "duplicate_candidates_generated"
     )
     merge_accept_count = sum(
-        1 for event in recent_events if str(event.get("event_type") or "") == "merge_suggestion_accepted"
+        1
+        for event in recent_events
+        if str(event.get("event_type") or "") == "merge_suggestion_accepted"
     )
     merge_reject_count = sum(
-        1 for event in recent_events if str(event.get("event_type") or "") == "merge_suggestion_rejected"
+        1
+        for event in recent_events
+        if str(event.get("event_type") or "") == "merge_suggestion_rejected"
     )
     merge_decisions = merge_accept_count + merge_reject_count
     merge_accept_rate = round((merge_accept_count / merge_decisions), 4) if merge_decisions else 0.0
@@ -1355,25 +1557,49 @@ def _resolve_action(
         note = str(body.get("note") or "升级处理")
         ticket = runtime.ticket_api.escalate_ticket(ticket_id, actor_id=actor_id, reason=note)
     elif action == "resolve":
-        resolution_note = str(body.get("resolution_note") or "已处理")
-        resolution_code = str(body.get("resolution_code") or "") or None
-        ticket = runtime.ticket_api.resolve_ticket(
-            ticket_id,
+        action_result = _execute_v2_ticket_action(
+            runtime,
+            ticket_id=ticket_id,
+            action="resolve",
             actor_id=actor_id,
-            resolution_note=resolution_note,
-            resolution_code=resolution_code,
+            payload=body,
         )
+        ticket = runtime.ticket_api.require_ticket(ticket_id)
+        payload = _ticket_to_dict(ticket)
+        payload["approval_required"] = False
+        payload["event_type"] = action_result["event_type"]
+        payload["resolved_action"] = action_result["resolved_action"]
+        payload["trace_id"] = action_result["trace_id"]
+        return payload
+    elif action in {"customer-confirm", "operator-close"}:
+        action_result = _execute_v2_ticket_action(
+            runtime,
+            ticket_id=ticket_id,
+            action=action,
+            actor_id=actor_id,
+            payload=body,
+        )
+        ticket = runtime.ticket_api.require_ticket(ticket_id)
+        payload = _ticket_to_dict(ticket)
+        payload["approval_required"] = False
+        payload["event_type"] = action_result["event_type"]
+        payload["resolved_action"] = action_result["resolved_action"]
+        payload["trace_id"] = action_result["trace_id"]
+        return payload
     elif action == "close":
-        resolution_note = str(body.get("resolution_note") or body.get("close_reason") or "已关闭")
-        ticket = runtime.ticket_api.close_ticket(
-            ticket_id,
+        action_result = _execute_close_compat_action(
+            runtime,
+            ticket_id=ticket_id,
             actor_id=actor_id,
-            resolution_note=resolution_note,
-            close_reason=str(body.get("close_reason") or "agent_close"),
-            resolution_code=(
-                str(body.get("resolution_code")) if body.get("resolution_code") else None
-            ),
+            payload=body,
         )
+        ticket = runtime.ticket_api.require_ticket(ticket_id)
+        payload = _ticket_to_dict(ticket)
+        payload["approval_required"] = False
+        payload["event_type"] = action_result["event_type"]
+        payload["resolved_action"] = action_result["resolved_action"]
+        payload["trace_id"] = action_result["trace_id"]
+        return payload
     else:
         raise ValueError(f"unsupported action: {action}")
 
@@ -1419,28 +1645,464 @@ def _execute_action_without_approval(
         note = str(payload.get("note") or "升级处理")
         return runtime.ticket_api.escalate_ticket(ticket_id, actor_id=actor_id, reason=note)
     if action == "resolve":
-        resolution_note = str(payload.get("resolution_note") or "已处理")
-        resolution_code = str(payload.get("resolution_code") or "") or None
-        return runtime.ticket_api.resolve_ticket(
-            ticket_id,
+        _execute_v2_ticket_action(
+            runtime,
+            ticket_id=ticket_id,
+            action="resolve",
             actor_id=actor_id,
-            resolution_note=resolution_note,
-            resolution_code=resolution_code,
+            payload=payload,
         )
+        return runtime.ticket_api.require_ticket(ticket_id)
+    if action in {"customer-confirm", "operator-close"}:
+        _execute_v2_ticket_action(
+            runtime,
+            ticket_id=ticket_id,
+            action=action,
+            actor_id=actor_id,
+            payload=payload,
+        )
+        return runtime.ticket_api.require_ticket(ticket_id)
     if action == "close":
-        resolution_note = str(
-            payload.get("resolution_note") or payload.get("close_reason") or "已关闭"
+        _execute_close_compat_action(
+            runtime,
+            ticket_id=ticket_id,
+            actor_id=actor_id,
+            payload=payload,
         )
-        return runtime.ticket_api.close_ticket(
+        return runtime.ticket_api.require_ticket(ticket_id)
+    raise ValueError(f"unsupported action: {action}")
+
+
+def _execute_v2_ticket_action(
+    runtime: OpsApiRuntime,
+    *,
+    ticket_id: str,
+    action: str,
+    actor_id: str,
+    payload: dict[str, Any],
+) -> dict[str, str]:
+    session_id = str(payload.get("session_id") or runtime.ticket_api.require_ticket(ticket_id).session_id).strip()
+    trace_id = str(payload.get("trace_id") or new_trace_id()).strip()
+
+    if action == "resolve":
+        result = runtime.ticket_api_v2.resolve(
             ticket_id,
             actor_id=actor_id,
-            resolution_note=resolution_note,
-            close_reason=str(payload.get("close_reason") or "agent_close"),
-            resolution_code=(
-                str(payload.get("resolution_code")) if payload.get("resolution_code") else None
-            ),
+            resolution_note=str(payload.get("resolution_note") or "已处理"),
+            resolution_code=str(payload.get("resolution_code") or "") or None,
+            session_id=session_id or None,
         )
-    raise ValueError(f"unsupported action: {action}")
+    elif action == "customer-confirm":
+        result = runtime.ticket_api_v2.customer_confirm(
+            ticket_id,
+            actor_id=actor_id,
+            note=str(payload.get("note") or payload.get("resolution_note") or "customer_confirm"),
+            session_id=session_id or None,
+        )
+    elif action == "operator-close":
+        close_reason = str(payload.get("close_reason") or payload.get("reason") or "operator_forced_close")
+        result = runtime.ticket_api_v2.operator_close(
+            ticket_id,
+            actor_id=actor_id,
+            reason=close_reason,
+            note=str(payload.get("note") or payload.get("resolution_note") or "operator_close"),
+            session_id=session_id or None,
+        )
+    else:
+        raise ValueError(f"unsupported v2 action: {action}")
+
+    runtime.trace_logger.log(
+        "ticket_action_v2",
+        {
+            "ticket_id": ticket_id,
+            "action": action,
+            "event_type": result.event_type,
+            "actor_id": actor_id,
+        },
+        trace_id=trace_id,
+        ticket_id=ticket_id,
+        session_id=session_id or None,
+    )
+    return {"event_type": result.event_type, "resolved_action": action, "trace_id": trace_id}
+
+
+def _execute_close_compat_action(
+    runtime: OpsApiRuntime,
+    *,
+    ticket_id: str,
+    actor_id: str,
+    payload: dict[str, Any],
+) -> dict[str, str]:
+    ticket = runtime.ticket_api.require_ticket(ticket_id)
+    requested_action = str(payload.get("action") or "").strip().replace("-", "_").lower() or None
+    close_reason = str(payload.get("close_reason") or "").strip().lower()
+    resolved_action = requested_action or _resolve_close_action_by_reason(close_reason)
+    session_id = str(payload.get("session_id") or ticket.session_id).strip() or None
+    trace_id = str(payload.get("trace_id") or _ticket_trace_id(ticket) or new_trace_id()).strip()
+    if resolved_action not in {"customer_confirm", "operator_close"}:
+        raise ValueError(
+            "ambiguous close action; provide action=customer_confirm|operator_close or deterministic close_reason"
+        )
+
+    if resolved_action == "customer_confirm":
+        runtime.ticket_api_v2.customer_confirm(
+            ticket_id,
+            actor_id=actor_id,
+            note=str(payload.get("resolution_note") or payload.get("note") or "客户确认关闭"),
+            session_id=session_id,
+        )
+    else:
+        runtime.ticket_api_v2.operator_close(
+            ticket_id,
+            actor_id=actor_id,
+            reason=str(payload.get("close_reason") or payload.get("reason") or "operator_forced_close"),
+            note=str(payload.get("resolution_note") or payload.get("note") or "处理人关闭"),
+            session_id=session_id,
+        )
+
+    runtime.ticket_api.add_event(
+        ticket_id,
+        event_type="ticket_closed",
+        actor_type="agent",
+        actor_id=actor_id,
+        payload={
+            "compat_action": resolved_action,
+            "requested_action": "close",
+            "close_reason": str(payload.get("close_reason") or ""),
+            "resolution_note": str(payload.get("resolution_note") or ""),
+            "compatibility_mode": "v1_close_forwarded_to_v2",
+        },
+    )
+    runtime.trace_logger.log(
+        "ticket_action_v1_close_compat",
+        {
+            "ticket_id": ticket_id,
+            "action": "close",
+            "resolved_action": resolved_action,
+            "actor_id": actor_id,
+            "close_reason": str(payload.get("close_reason") or ""),
+            "compatibility_mode": "v1_close_forwarded_to_v2",
+        },
+        trace_id=trace_id,
+        ticket_id=ticket_id,
+        session_id=session_id,
+    )
+    return {
+        "event_type": "ticket_closed",
+        "resolved_action": resolved_action,
+        "trace_id": trace_id,
+    }
+
+
+def _resolve_close_action_by_reason(close_reason: str) -> str | None:
+    normalized = close_reason.strip().lower()
+    if normalized == "customer_confirmed":
+        return "customer_confirm"
+    if normalized in {"operator_forced_close", "agent_close", "manual_close"}:
+        return "operator_close"
+    return None
+
+
+def _run_session_new_issue(
+    runtime: OpsApiRuntime,
+    *,
+    session_id: str,
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    if runtime.gateway.bindings.session_mapper.get(session_id) is None:
+        raise KeyError(f"session {session_id} not found")
+    actor_id = str(payload.get("actor_id") or "").strip()
+    if not actor_id:
+        raise ValueError("actor_id is required")
+    reason = str(payload.get("reason") or "new_issue_requested").strip() or "new_issue_requested"
+    trace_id = str(payload.get("trace_id") or new_trace_id()).strip()
+    runtime.gateway.bindings.session_mapper.begin_new_issue(
+        session_id,
+        metadata={
+            "session_mode": "awaiting_new_issue",
+            "last_intent": "new_issue_requested",
+            "updated_by": actor_id,
+            "new_issue_reason": reason,
+        },
+    )
+    runtime.trace_logger.log(
+        "session_new_issue",
+        {
+            "session_id": session_id,
+            "actor_id": actor_id,
+            "reason": reason,
+            "event_type": "session_new_issue",
+        },
+        trace_id=trace_id,
+        session_id=session_id,
+    )
+    return {
+        "session_id": session_id,
+        "actor_id": actor_id,
+        "reason": reason,
+        "event_type": "session_new_issue",
+        "message": "Session switched to new issue mode.",
+        "trace_id": trace_id,
+        "session": _session_payload(runtime, session_id),
+    }
+
+
+def _run_session_end_v2(
+    runtime: OpsApiRuntime,
+    *,
+    session_id: str,
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    if runtime.gateway.bindings.session_mapper.get(session_id) is None:
+        raise KeyError(f"session {session_id} not found")
+    actor_id = str(payload.get("actor_id") or "").strip()
+    if not actor_id:
+        raise ValueError("actor_id is required")
+    reason = str(payload.get("reason") or "manual_end").strip() or "manual_end"
+    trace_id = str(payload.get("trace_id") or new_trace_id()).strip()
+    action_result = runtime.ticket_api_v2.end_session(
+        session_id,
+        actor_id=actor_id,
+        reason=reason,
+    )
+    runtime.trace_logger.log(
+        "session_end_v2",
+        {
+            "session_id": session_id,
+            "actor_id": actor_id,
+            "reason": reason,
+            "event_type": action_result.event_type,
+        },
+        trace_id=trace_id,
+        session_id=session_id,
+    )
+    return {
+        **asdict(action_result),
+        "trace_id": trace_id,
+        "session": _session_payload(runtime, session_id),
+    }
+
+
+def _run_intake_graph_v2(
+    runtime: OpsApiRuntime,
+    *,
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    metadata_payload = payload.get("metadata")
+    metadata = dict(metadata_payload) if isinstance(metadata_payload, dict) else {}
+    session_id = str(payload.get("session_id") or metadata.get("session_id") or "").strip()
+    if not session_id:
+        raise ValueError("session_id is required")
+    text = str(payload.get("text") or payload.get("message_text") or payload.get("query") or "").strip()
+    if not text:
+        raise ValueError("text is required")
+    actor_id = str(payload.get("actor_id") or metadata.get("actor_id") or "ops-api").strip() or "ops-api"
+    metadata.setdefault("actor_id", actor_id)
+    if payload.get("ticket_id"):
+        metadata.setdefault("ticket_id", str(payload.get("ticket_id")))
+
+    previous_payload = payload.get("previous")
+    previous = previous_payload if isinstance(previous_payload, dict) else None
+    trace_id = str(payload.get("trace_id") or new_trace_id()).strip()
+    session_control = detect_session_control(text)
+    if session_control is not None and session_control.action in {"session_end", "new_issue"}:
+        if session_control.action == "session_end":
+            action_result = _run_session_end_v2(
+                runtime,
+                session_id=session_id,
+                payload={
+                    "actor_id": actor_id,
+                    "reason": "user_requested_end",
+                    "trace_id": trace_id,
+                },
+            )
+        else:
+            action_result = _run_session_new_issue(
+                runtime,
+                session_id=session_id,
+                payload={
+                    "actor_id": actor_id,
+                    "reason": "user_requested_new_issue",
+                    "trace_id": trace_id,
+                },
+            )
+        control_result = {
+            "session_id": session_id,
+            "user_id": str(payload.get("user_id") or ""),
+            "channel": str(payload.get("channel") or "ops-api"),
+            "intent": "session_control",
+            "decision": {
+                "route": session_control.action,
+                "high_risk_action_executed": False,
+            },
+            "intake_result": {
+                "status": "skipped",
+                "reason": f"session_control_{session_control.action}",
+            },
+            "investigation": None,
+            "session_action": {
+                "action": session_control.action,
+                "reason": session_control.reason,
+                "source": session_control.source,
+                "priority": session_control.priority,
+                "result": action_result,
+            },
+            "trace": {
+                "graph": "intake_graph_v1",
+                "previous_checkpoint": previous,
+                "steps": [
+                    {
+                        "step": "input_received",
+                        "details": {"session_id": session_id},
+                        "at": datetime.now(UTC).isoformat(),
+                    },
+                    {
+                        "step": "session_control_routed",
+                        "details": {
+                            "action": session_control.action,
+                            "reason": session_control.reason,
+                            "source": session_control.source,
+                        },
+                        "at": datetime.now(UTC).isoformat(),
+                    },
+                ],
+            },
+        }
+        runtime.trace_logger.log(
+            "intake_run_v2",
+            {
+                "session_id": session_id,
+                "intent": control_result.get("intent"),
+                "route": control_result["decision"]["route"],
+                "advice_only": True,
+                "high_risk_action_executed": False,
+                "session_action": session_control.action,
+                "session_action_reason": session_control.reason,
+            },
+            trace_id=trace_id,
+            ticket_id=str(metadata.get("ticket_id") or "").strip() or None,
+            session_id=session_id,
+        )
+        return {
+            "result": control_result,
+            "advice_only": True,
+            "high_risk_action_executed": False,
+            "trace": {
+                "trace_id": trace_id,
+                "graph": "intake_graph_v1",
+            },
+        }
+
+    result = runtime.intake_graph_runner(
+        {
+            "session_id": session_id,
+            "user_id": str(payload.get("user_id") or ""),
+            "text": text,
+            "channel": str(payload.get("channel") or "ops-api"),
+            "metadata": metadata,
+        },
+        previous=previous,
+    )
+    if not isinstance(result, dict):
+        raise ValueError("intake graph returned invalid result")
+
+    decision_payload = result.get("decision")
+    decision = decision_payload if isinstance(decision_payload, dict) else {}
+    investigation_payload = result.get("investigation")
+    investigation = investigation_payload if isinstance(investigation_payload, dict) else {}
+    safety_payload = investigation.get("safety")
+    safety = safety_payload if isinstance(safety_payload, dict) else {}
+    advice_only = bool(safety.get("advice_only", True))
+    high_risk_action_executed = bool(decision.get("high_risk_action_executed", False))
+    runtime.trace_logger.log(
+        "intake_run_v2",
+        {
+            "session_id": session_id,
+            "intent": result.get("intent"),
+            "route": decision.get("route"),
+            "advice_only": advice_only,
+            "high_risk_action_executed": high_risk_action_executed,
+        },
+        trace_id=trace_id,
+        ticket_id=str(metadata.get("ticket_id") or "").strip() or None,
+        session_id=session_id,
+    )
+    trace_payload = result.get("trace")
+    trace_details = trace_payload if isinstance(trace_payload, dict) else {}
+    return {
+        "result": result,
+        "advice_only": advice_only,
+        "high_risk_action_executed": high_risk_action_executed,
+        "trace": {
+            "trace_id": trace_id,
+            "graph": str(trace_details.get("graph") or "intake_graph_v1"),
+        },
+    }
+
+
+def _run_ticket_investigation_v2(
+    runtime: OpsApiRuntime,
+    *,
+    ticket_id: str,
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    ticket = runtime.ticket_api.require_ticket(ticket_id)
+    actor_id = str(payload.get("actor_id") or "ops-api").strip() or "ops-api"
+    question = str(
+        payload.get("question")
+        or payload.get("query")
+        or ticket.latest_message
+        or "Please investigate this ticket."
+    ).strip()
+    if not question:
+        raise ValueError("question is required")
+    trace_id = str(payload.get("trace_id") or _ticket_trace_id(ticket) or new_trace_id()).strip()
+    investigation = run_ticket_investigation(
+        runtime.investigation_agent,
+        ticket_id=ticket_id,
+        actor=actor_id,
+        question=question,
+    )
+    safety_payload = investigation.get("safety")
+    safety = safety_payload if isinstance(safety_payload, dict) else {}
+    advice_only = bool(safety.get("advice_only", False))
+    if not advice_only:
+        safety = {
+            **safety,
+            "advice_only": True,
+            "high_risk_actions_executed": [],
+            "requires_hitl_for_terminal_actions": True,
+        }
+        investigation["safety"] = safety
+        advice_only = True
+    high_risk_actions_payload = safety.get("high_risk_actions_executed")
+    high_risk_actions = high_risk_actions_payload if isinstance(high_risk_actions_payload, list) else []
+    runtime.trace_logger.log(
+        "ticket_investigation_v2",
+        {
+            "ticket_id": ticket_id,
+            "actor_id": actor_id,
+            "question": question,
+            "advice_only": advice_only,
+            "high_risk_actions_executed": list(high_risk_actions),
+        },
+        trace_id=trace_id,
+        ticket_id=ticket_id,
+        session_id=ticket.session_id,
+    )
+    trace_payload = investigation.get("trace")
+    trace_details = trace_payload if isinstance(trace_payload, dict) else {}
+    return {
+        "ticket_id": ticket_id,
+        "session_id": ticket.session_id,
+        "question": question,
+        "investigation": investigation,
+        "advice_only": advice_only,
+        "trace": {
+            "trace_id": trace_id,
+            "agent": str(trace_details.get("agent") or "ticket_investigation_agent_v1"),
+        },
+    }
 
 
 def _pending_action_to_dict(item: Any) -> dict[str, Any]:
@@ -1563,7 +2225,10 @@ def handle_api_request(
                     message=f"ticket {ticket_id} not found",
                     status=HTTPStatus.NOT_FOUND,
                 )
-            return _json_response(req_id, {"items": _ticket_duplicate_candidates(runtime, ticket_id)})
+            return _json_response(
+                req_id,
+                {"items": _ticket_duplicate_candidates(runtime, ticket_id)},
+            )
 
         if method == "GET" and (match := TICKET_PENDING_ACTIONS_RE.match(path)):
             ticket_id = match.group("ticket_id")
@@ -1657,6 +2322,8 @@ def handle_api_request(
         if method == "POST" and path == COPILOT_DISAMBIGUATE_PATH:
             session_id = str(payload.get("session_id") or "").strip()
             message_text = str(payload.get("message_text") or payload.get("query") or "").strip()
+            actor_id = str(payload.get("actor_id") or "ops-api").strip() or "ops-api"
+            trace_id = str(payload.get("trace_id") or "").strip() or None
             if not session_id:
                 return _error(
                     req_id,
@@ -1683,6 +2350,8 @@ def handle_api_request(
                     runtime,
                     session_id=session_id,
                     message_text=message_text,
+                    actor_id=actor_id,
+                    trace_id=trace_id,
                 )
             except KeyError:
                 return _error(
@@ -1815,24 +2484,26 @@ def handle_api_request(
 
         if method == "POST" and (match := SESSION_NEW_ISSUE_RE.match(path)):
             session_id = match.group("session_id")
-            if runtime.gateway.bindings.session_mapper.get(session_id) is None:
+            try:
+                action_result = _run_session_new_issue(
+                    runtime,
+                    session_id=session_id,
+                    payload={
+                        "actor_id": str(payload.get("actor_id") or "ops-api").strip() or "ops-api",
+                        "reason": str(payload.get("reason") or "new_issue_requested").strip()
+                        or "new_issue_requested",
+                        "trace_id": str(payload.get("trace_id") or new_trace_id()).strip(),
+                    },
+                )
+            except KeyError:
                 return _error(
                     req_id,
                     code="session_not_found",
                     message=f"session {session_id} not found",
                     status=HTTPStatus.NOT_FOUND,
                 )
-            actor_id = str(payload.get("actor_id") or "ops-api").strip()
-            runtime.gateway.bindings.session_mapper.begin_new_issue(
-                session_id,
-                metadata={
-                    "session_mode": "awaiting_new_issue",
-                    "last_intent": "new_issue_requested",
-                    "updated_by": actor_id,
-                },
-            )
-            data = _session_payload(runtime, session_id)
-            if data is None:
+            data = action_result.get("session")
+            if not isinstance(data, dict):
                 return _error(
                     req_id,
                     code="session_not_found",
@@ -1896,6 +2567,30 @@ def handle_api_request(
                 payload=payload,
             )
             return _json_response(req_id, result)
+
+        if method == "POST" and (match := TICKET_ACTION_V2_RE.match(path)):
+            ticket_id = match.group("ticket_id")
+            action = path.rsplit("/", 1)[-1]
+            updated = _resolve_action(runtime, ticket_id=ticket_id, action=action, body=payload)
+            return _json_response(req_id, {"data": updated})
+
+        if method == "POST" and (match := TICKET_INVESTIGATE_V2_RE.match(path)):
+            ticket_id = match.group("ticket_id")
+            data = _run_ticket_investigation_v2(
+                runtime,
+                ticket_id=ticket_id,
+                payload=payload,
+            )
+            return _json_response(req_id, {"data": data})
+
+        if method == "POST" and path == INTAKE_GRAPH_RUN_V2_PATH:
+            data = _run_intake_graph_v2(runtime, payload=payload)
+            return _json_response(req_id, {"data": data})
+
+        if method == "POST" and (match := SESSION_END_V2_RE.match(path)):
+            session_id = match.group("session_id")
+            data = _run_session_end_v2(runtime, session_id=session_id, payload=payload)
+            return _json_response(req_id, {"data": data})
 
         if method == "POST" and (match := TICKET_ACTION_RE.match(path)):
             ticket_id = match.group("ticket_id")

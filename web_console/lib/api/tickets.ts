@@ -2,6 +2,7 @@ import { getJson } from "@/lib/api/client";
 
 export type TicketItem = {
   ticket_id: string;
+  session_id?: string | null;
   title: string;
   latest_message: string;
   status: string;
@@ -121,7 +122,14 @@ export type GroundingSourcesResponse = {
   items: GroundingSourceItem[];
 };
 
-export type TicketActionType = "claim" | "reassign" | "escalate" | "resolve" | "close";
+export type TicketActionType =
+  | "claim"
+  | "reassign"
+  | "escalate"
+  | "resolve"
+  | "customer_confirm"
+  | "operator_close"
+  | "close_compat";
 
 export type TicketActionPayload = {
   actor_id: string;
@@ -169,6 +177,68 @@ export type TicketPendingActionsResponse = {
 export type ApprovalDecisionPayload = {
   actor_id: string;
   note?: string;
+};
+
+export type TicketCopilotQueryData = {
+  scope: string;
+  query: string;
+  ticket_id?: string;
+  answer: string;
+  summary?: string;
+  grounding_sources: GroundingSourceItem[];
+  risk_flags: string[];
+  llm_trace: Record<string, unknown>;
+  generated_at: string | null;
+  advice_only: boolean;
+  dashboard_summary?: Record<string, unknown>;
+  dispatch_priority?: Array<Record<string, unknown>>;
+};
+
+export type TicketCopilotQueryResponse = {
+  request_id?: string;
+  data: TicketCopilotQueryData;
+};
+
+export type TicketInvestigationPayload = {
+  actor_id: string;
+  question?: string;
+  query?: string;
+  trace_id?: string;
+};
+
+export type TicketInvestigationData = {
+  ticket_id: string;
+  session_id: string | null;
+  question: string;
+  investigation: Record<string, unknown>;
+  advice_only: boolean;
+  trace: Record<string, unknown>;
+};
+
+export type TicketInvestigationResponse = {
+  request_id?: string;
+  data: TicketInvestigationData;
+};
+
+export type SessionEndPayload = {
+  actor_id: string;
+  reason?: string;
+  trace_id?: string;
+};
+
+export type SessionEndData = {
+  session_id: string;
+  event_type: string;
+  trace_id: string;
+  actor_id?: string;
+  reason?: string;
+  message?: string;
+  session: Record<string, unknown> | null;
+};
+
+export type SessionEndResponse = {
+  request_id?: string;
+  data: SessionEndData;
 };
 
 function normalizePendingApproval(item: unknown): PendingApprovalItem {
@@ -289,7 +359,20 @@ export async function runTicketAction(
   action: TicketActionType,
   payload: TicketActionPayload
 ) {
-  return getJson<TicketDetailResponse>(`/api/tickets/${encodeURIComponent(ticketId)}/${action}`, {
+  const encodedId = encodeURIComponent(ticketId);
+  let path: string;
+  if (action === "resolve") {
+    path = `/api/v2/tickets/${encodedId}/resolve`;
+  } else if (action === "customer_confirm") {
+    path = `/api/v2/tickets/${encodedId}/customer-confirm`;
+  } else if (action === "operator_close") {
+    path = `/api/v2/tickets/${encodedId}/operator-close`;
+  } else if (action === "close_compat") {
+    path = `/api/tickets/${encodedId}/close`;
+  } else {
+    path = `/api/tickets/${encodedId}/${action}`;
+  }
+  return getJson<TicketDetailResponse>(path, {
     method: "POST",
     body: JSON.stringify(payload),
     headers: {
@@ -342,4 +425,119 @@ export async function decideApproval(
       }
     }
   );
+}
+
+export async function queryTicketCopilot(ticketId: string, query: string) {
+  const response = await getJson<TicketCopilotQueryResponse>(
+    `/api/copilot/ticket/${encodeURIComponent(ticketId)}/query`,
+    {
+      method: "POST",
+      body: JSON.stringify({ query }),
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      }
+    }
+  );
+  return {
+    ...response,
+    data: {
+      ...response.data,
+      generated_at: response.data.generated_at ?? null,
+      advice_only: true
+    }
+  };
+}
+
+export async function queryOperatorCopilot(query: string) {
+  const response = await getJson<TicketCopilotQueryResponse>("/api/copilot/operator/query", {
+    method: "POST",
+    body: JSON.stringify({ query }),
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json"
+    }
+  });
+  return {
+    ...response,
+    data: {
+      ...response.data,
+      generated_at: response.data.generated_at ?? null,
+      advice_only: true
+    }
+  };
+}
+
+export async function queryDispatchCopilot(query: string) {
+  const response = await getJson<TicketCopilotQueryResponse>("/api/copilot/dispatch/query", {
+    method: "POST",
+    body: JSON.stringify({ query }),
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json"
+    }
+  });
+  return {
+    ...response,
+    data: {
+      ...response.data,
+      generated_at: response.data.generated_at ?? null,
+      advice_only: true
+    }
+  };
+}
+
+export async function investigateTicket(ticketId: string, payload: TicketInvestigationPayload) {
+  return getJson<TicketInvestigationResponse>(
+    `/api/v2/tickets/${encodeURIComponent(ticketId)}/investigate`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      }
+    }
+  );
+}
+
+export async function endSession(sessionId: string, payload: SessionEndPayload) {
+  return getJson<SessionEndResponse>(`/api/v2/sessions/${encodeURIComponent(sessionId)}/end`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json"
+    }
+  });
+}
+
+export function getTicketSessionId(ticket: TicketItem | null | undefined) {
+  if (!ticket) {
+    return null;
+  }
+  if (typeof ticket.session_id === "string" && ticket.session_id.trim()) {
+    return ticket.session_id.trim();
+  }
+  if (typeof ticket.metadata?.session_id === "string" && ticket.metadata.session_id.trim()) {
+    return ticket.metadata.session_id.trim();
+  }
+  const fromLatestSession = ticket.metadata?.latest_session_id;
+  if (typeof fromLatestSession === "string" && fromLatestSession.trim()) {
+    return fromLatestSession.trim();
+  }
+  return null;
+}
+
+export function isAdviceOnlyResponse(
+  value: { advice_only?: unknown } | null | undefined,
+  fallback: boolean = true
+) {
+  if (!value) {
+    return fallback;
+  }
+  if (typeof value.advice_only === "boolean") {
+    return value.advice_only;
+  }
+  return fallback;
 }

@@ -110,7 +110,9 @@ class WorkflowEngine:
         retrieved_docs = self._normalize_docs(docs_result.output)
 
         if resolved_existing_ticket_id is None:
-            is_consulting = intent.intent in self._CONSULTING_INTENTS and not intent.is_low_confidence
+            is_consulting = (
+                intent.intent in self._CONSULTING_INTENTS and not intent.is_low_confidence
+            )
             if is_consulting:
                 consulting_ticket = self._find_recent_consulting_ticket(envelope.session_id)
                 if consulting_ticket is None:
@@ -476,11 +478,16 @@ class WorkflowEngine:
         active_ticket_id = str(
             metadata.get("active_ticket_id") or metadata.get("ticket_id") or ""
         ).strip()
-        recent_ticket_ids = [
-            str(item).strip()
-            for item in metadata.get("recent_ticket_ids", [])
-            if str(item).strip()
-        ] if isinstance(metadata.get("recent_ticket_ids"), list) else []
+        raw_recent_ticket_ids = metadata.get("recent_ticket_ids")
+        recent_ticket_ids = (
+            [
+                str(item).strip()
+                for item in raw_recent_ticket_ids
+                if str(item).strip()
+            ]
+            if isinstance(raw_recent_ticket_ids, list)
+            else []
+        )
         raw_session_context = metadata.get("session_context")
         if isinstance(raw_session_context, dict):
             context_active = str(raw_session_context.get("active_ticket_id") or "").strip()

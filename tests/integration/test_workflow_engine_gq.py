@@ -9,8 +9,8 @@ from core.retriever import Retriever
 from core.sla_engine import SlaEngine
 from core.summary_engine import SummaryEngine
 from core.ticket_api import TicketAPI
-from core.trace_logger import JsonTraceLogger
 from core.tool_router import ToolRouter
+from core.trace_logger import JsonTraceLogger
 from core.workflow_engine import WorkflowEngine
 from storage.models import InboundEnvelope
 from storage.ticket_repository import TicketRepository

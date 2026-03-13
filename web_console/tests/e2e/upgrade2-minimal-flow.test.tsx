@@ -87,6 +87,9 @@ describe("Upgrade2 minimal front-end flow smoke", () => {
         provider: "openai-compatible",
         prompt_version: "workflow_engine_v1"
       },
+      copilot: null,
+      copilotLoading: false,
+      copilotError: null,
       groundingSources: [],
       similarCases: [],
       events: [],
@@ -94,6 +97,7 @@ describe("Upgrade2 minimal front-end flow smoke", () => {
       actionLoading: null,
       actionError: null,
       runAction,
+      queryCopilot: vi.fn(),
       refetch: vi.fn()
     });
 

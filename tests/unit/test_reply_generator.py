@@ -134,6 +134,36 @@ class _ProviderFailAdapter:
         )
 
 
+class _TemplateRenderFailAdapter:
+    def generate_with_trace(
+        self,
+        task: str,
+        variables: dict[str, str],
+        *,
+        preferred_provider: str | None = None,
+        prompt_version: str | None = None,
+        system_prompt: str = "你是客服助手",
+    ) -> tuple[str, dict[str, object]]:
+        _ = task
+        _ = variables
+        _ = preferred_provider
+        _ = prompt_version
+        _ = system_prompt
+        raise LLMGenerationError(
+            "template render failed",
+            trace_metadata={
+                "provider": "openai_compatible",
+                "model": "qwen3.5:9b",
+                "prompt_key": "intake_user_reply",
+                "prompt_version": "v1",
+                "success": False,
+                "error": 'Missing variables for template render: [\'"reply_text"\']',
+                "fallback_used": True,
+                "degraded": True,
+            },
+        )
+
+
 class _TimeoutAdapter:
     def generate_with_trace(
         self,
@@ -169,6 +199,35 @@ class _InvalidSchemaAdapter:
         _ = system_prompt
         return (
             "这是不符合schema的回复",
+            {
+                "provider": "openai_compatible",
+                "model": "qwen3.5:9b",
+                "prompt_key": "intake_user_reply",
+                "prompt_version": "v1",
+                "success": True,
+                "fallback_used": False,
+                "degraded": False,
+            },
+        )
+
+
+class _MalformedJsonReplyAdapter:
+    def generate_with_trace(
+        self,
+        task: str,
+        variables: dict[str, str],
+        *,
+        preferred_provider: str | None = None,
+        prompt_version: str | None = None,
+        system_prompt: str = "你是客服助手",
+    ) -> tuple[str, dict[str, object]]:
+        _ = task
+        _ = variables
+        _ = preferred_provider
+        _ = prompt_version
+        _ = system_prompt
+        return (
+            '{\n  "reply_text":"第一行回复\n第二行回复\n}\n',
             {
                 "provider": "openai_compatible",
                 "model": "qwen3.5:9b",
@@ -333,6 +392,25 @@ def test_reply_generator_fallback_when_provider_failed() -> None:
     assert result.metadata["degrade_reason"] == "llm_provider_error"
 
 
+def test_reply_generator_fallback_when_template_render_failed() -> None:
+    generator = ReplyGenerator(model_adapter=_TemplateRenderFailAdapter())
+    result = generator.generate(
+        message_text="停车场抬杆故障",
+        intent=_intent("repair"),
+        ticket=_ticket(),
+        retrieved_docs=_docs(),
+        summary="报修摘要",
+        recommendations=_recommendations(),
+        handoff=_handoff(False),
+        events=_events(),
+        fallback_reply="fallback",
+    )
+
+    assert result.reply_text == "fallback"
+    assert result.metadata["fallback_used"] is True
+    assert result.metadata["degrade_reason"] == "template_render_error"
+
+
 def test_reply_generator_fallback_when_timeout() -> None:
     generator = ReplyGenerator(model_adapter=_TimeoutAdapter())
     result = generator.generate(
@@ -369,6 +447,25 @@ def test_reply_generator_fallback_when_schema_parse_failed() -> None:
     assert result.reply_text == "fallback"
     assert result.metadata["fallback_used"] is True
     assert result.metadata["degrade_reason"] == "schema_parse_error"
+
+
+def test_reply_generator_recovers_reply_text_from_malformed_json() -> None:
+    generator = ReplyGenerator(model_adapter=_MalformedJsonReplyAdapter())
+    result = generator.generate(
+        message_text="停车场抬杆故障",
+        intent=_intent("repair"),
+        ticket=_ticket(),
+        retrieved_docs=_docs(),
+        summary="报修摘要",
+        recommendations=_recommendations(),
+        handoff=_handoff(False),
+        events=_events(),
+        fallback_reply="fallback",
+    )
+
+    assert result.reply_text == "第一行回复\n第二行回复"
+    assert result.metadata["fallback_used"] is False
+    assert result.metadata["degraded"] is False
 
 
 def test_reply_generator_disambiguation_fallback_keeps_contract() -> None:

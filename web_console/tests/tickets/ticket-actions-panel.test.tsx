@@ -72,4 +72,109 @@ describe("TicketActionsPanel", () => {
     expect(screen.queryByText("动作 claim 已执行。")).not.toBeInTheDocument();
     expect(screen.getByText(/action failed/i)).toBeInTheDocument();
   });
+
+  it("uses v2 customer_confirm as a primary action", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const onAction = vi
+      .fn<(...args: [TicketActionType, TicketActionPayload]) => Promise<void>>()
+      .mockResolvedValue(undefined);
+
+    render(
+      <TicketActionsPanel
+        ticket={baseTicket}
+        assignees={["u_ops_01", "u_ops_02"]}
+        loadingAction={null}
+        actionError={null}
+        onAction={onAction}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "客户确认" }));
+
+    await waitFor(() => {
+      expect(onAction).toHaveBeenCalledWith(
+        "customer_confirm",
+        expect.objectContaining({ actor_id: "u_ops_01" })
+      );
+    });
+  });
+
+  it("uses v2 operator_close as a primary action", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const onAction = vi
+      .fn<(...args: [TicketActionType, TicketActionPayload]) => Promise<void>>()
+      .mockResolvedValue(undefined);
+
+    render(
+      <TicketActionsPanel
+        ticket={baseTicket}
+        assignees={["u_ops_01", "u_ops_02"]}
+        loadingAction={null}
+        actionError={null}
+        onAction={onAction}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "运营关闭" }));
+
+    await waitFor(() => {
+      expect(onAction).toHaveBeenCalledWith(
+        "operator_close",
+        expect.objectContaining({ actor_id: "u_ops_01" })
+      );
+    });
+  });
+
+  it("enables v1 close only in compatibility mode", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const onAction = vi
+      .fn<(...args: [TicketActionType, TicketActionPayload]) => Promise<void>>()
+      .mockResolvedValue(undefined);
+
+    render(
+      <TicketActionsPanel
+        ticket={baseTicket}
+        assignees={["u_ops_01", "u_ops_02"]}
+        loadingAction={null}
+        actionError={null}
+        onAction={onAction}
+      />
+    );
+
+    expect(screen.queryByRole("button", { name: "兼容关闭（v1 /close）" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("checkbox", { name: "兼容模式（v1 /close）" }));
+    fireEvent.click(screen.getByRole("button", { name: "兼容关闭（v1 /close）" }));
+
+    await waitFor(() => {
+      expect(onAction).toHaveBeenCalledWith(
+        "close_compat",
+        expect.objectContaining({ actor_id: "u_ops_01" })
+      );
+    });
+  });
+
+  it("imports ai suggestion into manual form without auto execution", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const onAction = vi
+      .fn<(...args: [TicketActionType, TicketActionPayload]) => Promise<void>>()
+      .mockResolvedValue(undefined);
+
+    render(
+      <TicketActionsPanel
+        ticket={baseTicket}
+        assignees={["u_ops_01", "u_ops_02"]}
+        loadingAction={null}
+        actionError={null}
+        onAction={onAction}
+        aiDraft={{
+          suggested_action: "Dispatch onsite",
+          note: "Dispatch onsite\nVisit within 2h",
+          source: "assist.recommended_actions"
+        }}
+      />
+    );
+
+    expect(screen.getByLabelText("备注 / 处理说明")).toHaveValue("Dispatch onsite\nVisit within 2h");
+    expect(onAction).not.toHaveBeenCalled();
+  });
 });

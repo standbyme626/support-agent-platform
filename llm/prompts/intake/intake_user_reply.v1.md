@@ -8,7 +8,7 @@ expected_schema: application/json
 
 要求：
 1. 输出 JSON 对象，且仅输出 JSON，不要附加解释文本。
-2. JSON schema: {"reply_text":"string"}
+2. JSON schema: {{"reply_text":"string"}}
 3. 回复语气使用 {tone}，不夸张、不承诺无法保证的时间。
 4. 必须结合 intent、ticket 状态、summary、grounding、recommendations、latest_events。
 5. 若信息不足，给出明确下一步（例如补充工单号/截图/时间）。

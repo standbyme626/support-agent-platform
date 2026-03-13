@@ -156,7 +156,9 @@ class LLMModelAdapter:
             }
             raise LLMGenerationError("All providers failed", trace_metadata=trace_metadata) from exc
         metadata = result.to_trace_metadata()
-        metadata["degraded"] = bool(metadata.get("fallback_used")) or not bool(metadata.get("success"))
+        metadata["degraded"] = bool(metadata.get("fallback_used")) or not bool(
+            metadata.get("success")
+        )
         return result.text, metadata
 
     @staticmethod
@@ -228,6 +230,8 @@ def _prompt_version_overrides() -> dict[str, str]:
         "progress_reply": "LLM_PROMPT_VERSION_PROGRESS_REPLY",
         "handoff_reply": "LLM_PROMPT_VERSION_HANDOFF_REPLY",
         "faq_reply": "LLM_PROMPT_VERSION_FAQ_REPLY",
+        "disambiguation_reply": "LLM_PROMPT_VERSION_DISAMBIGUATION_REPLY",
+        "switch_reply": "LLM_PROMPT_VERSION_SWITCH_REPLY",
     }
     overrides: dict[str, str] = {}
     for task, env_key in mapping.items():

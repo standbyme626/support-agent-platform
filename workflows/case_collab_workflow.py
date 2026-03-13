@@ -70,6 +70,10 @@ class CaseCollabWorkflow:
         self, *, ticket_id: str, actor_id: str, command_line: str
     ) -> CaseCollabAction:
         command, args = self._parse_command(command_line)
+        command = self._normalize_command(command)
+        close_compat_mode = command == "close"
+        if close_compat_mode:
+            command = "customer-confirm"
 
         if command == "claim":
             updated = self._ticket_api.assign_ticket(
@@ -201,37 +205,87 @@ class CaseCollabWorkflow:
             )
             return CaseCollabAction("escalate", updated, f"{ticket_id} escalated: {reason}")
 
-        if command == "close":
+        if command in {"customer-confirm", "operator-close"}:
             resolution_note = " ".join(args).strip()
             if not resolution_note:
-                raise ValueError("/close requires resolution note")
+                raise ValueError(f"/{command} requires resolution note")
             final_action_trail = [
                 item.event_type for item in self._ticket_api.list_events(ticket_id)[-8:]
             ]
+            close_reason = (
+                "customer_confirmed" if command == "customer-confirm" else "operator_forced_close"
+            )
+            resolution_code = (
+                "COLLAB_CUSTOMER_CONFIRMED"
+                if command == "customer-confirm"
+                else "COLLAB_OPERATOR_CLOSED"
+            )
             updated = self._ticket_api.close_ticket(
                 ticket_id,
                 actor_id=actor_id,
                 resolution_note=resolution_note,
-                close_reason="customer_confirmed",
-                resolution_code="COLLAB_CLOSED",
+                close_reason=close_reason,
+                resolution_code=resolution_code,
                 handoff_state="completed",
                 metadata={
                     **self._ticket_api.require_ticket(ticket_id).metadata,
                     "final_action_trail": final_action_trail,
+                    "resolved_action": ("close_compat" if close_compat_mode else command),
+                },
+            )
+            event_type = (
+                "collab_close"
+                if close_compat_mode
+                else ("collab_customer_confirm" if command == "customer-confirm" else "collab_operator_close")
+            )
+            event_payload = {
+                "resolution_note": resolution_note,
+                "command": command_line,
+                "final_action_trail": final_action_trail,
+                "resolved_action": command,
+            }
+            if close_compat_mode:
+                event_payload["compatibility_mode"] = "slash_close_alias_customer_confirm"
+            self._ticket_api.add_event(
+                ticket_id,
+                event_type=event_type,
+                actor_type="agent",
+                actor_id=actor_id,
+                payload=event_payload,
+            )
+            action_name = "close_compat" if close_compat_mode else command
+            return CaseCollabAction(action_name, updated, f"{ticket_id} closed")
+
+        if command == "end-session":
+            reason = " ".join(args).strip() or "manual_end_session"
+            ticket = self._ticket_api.require_ticket(ticket_id)
+            self._ticket_api.reset_session_context(
+                ticket.session_id,
+                metadata={
+                    "session_mode": "awaiting_new_issue",
+                    "last_intent": "session_end_requested",
+                    "updated_by": actor_id,
+                    "session_control_action": "session_end",
+                    "session_control_reason": reason,
                 },
             )
             self._ticket_api.add_event(
                 ticket_id,
-                event_type="collab_close",
+                event_type="collab_session_end_requested",
                 actor_type="agent",
                 actor_id=actor_id,
                 payload={
-                    "resolution_note": resolution_note,
+                    "session_id": ticket.session_id,
+                    "reason": reason,
                     "command": command_line,
-                    "final_action_trail": final_action_trail,
                 },
             )
-            return CaseCollabAction("close", updated, f"{ticket_id} closed")
+            refreshed = self._ticket_api.require_ticket(ticket_id)
+            return CaseCollabAction(
+                "end-session",
+                refreshed,
+                f"{ticket.session_id} session ended by {actor_id}",
+            )
 
         if command == "resolve":
             resolution_note = " ".join(args).strip()
@@ -354,7 +408,8 @@ class CaseCollabWorkflow:
             f"risk={payload['risk_flags']} | similar={payload['similar_cases']} | "
             f"next={payload['recommended_steps']} | "
             f"commands: /claim /reassign <user> /escalate <reason> /resolve <note> "
-            f"/close <note> /state <state>"
+            f"/customer-confirm <note> /operator-close <note> /end-session [reason] "
+            f"/close <note>(compat) /state <state>"
         )
 
     @staticmethod
@@ -368,3 +423,7 @@ class CaseCollabWorkflow:
             raise ValueError("Empty command")
 
         return parts[0].lower(), parts[1:]
+
+    @staticmethod
+    def _normalize_command(command: str) -> str:
+        return command.strip().lower().replace("_", "-")

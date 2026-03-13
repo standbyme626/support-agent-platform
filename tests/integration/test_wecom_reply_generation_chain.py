@@ -71,6 +71,7 @@ class _ReplyAdapter:
 class _Runtime:
     gateway: OpenClawGateway
     intake_workflow: SupportIntakeWorkflow
+    ticket_api: TicketAPI
 
 
 def test_wecom_bridge_reply_generation_prefers_llm_and_records_trace(tmp_path: Path) -> None:
@@ -114,7 +115,7 @@ def test_wecom_bridge_reply_generation_prefers_llm_and_records_trace(tmp_path: P
         case_collab_workflow=CaseCollabWorkflow(ticket_api),
         ticket_api=ticket_api,
     )
-    runtime = _Runtime(gateway=gateway, intake_workflow=intake_workflow)
+    runtime = _Runtime(gateway=gateway, intake_workflow=intake_workflow, ticket_api=ticket_api)
 
     first = process_wecom_message(
         runtime,
@@ -154,3 +155,107 @@ def test_wecom_bridge_reply_generation_prefers_llm_and_records_trace(tmp_path: P
     assert payload["fallback_used"] is False
     assert payload["generation_type"] == "progress"
     assert isinstance(payload.get("grounding_sources"), list)
+
+
+def test_wecom_multi_ticket_e2e_supports_clarification_and_switch_back(tmp_path: Path) -> None:
+    sqlite_path = tmp_path / "tickets.db"
+    trace_log_path = tmp_path / "gateway.log"
+    bindings = GatewayBindings(
+        channel_router=ChannelRouter({"wecom": WeComAdapter()}),
+        session_mapper=SessionMapper(sqlite_path),
+        trace_logger=JsonTraceLogger(trace_log_path),
+    )
+    gateway = OpenClawGateway(bindings)
+
+    repo = TicketRepository(sqlite_path)
+    repo.apply_migrations()
+    ticket_api = TicketAPI(repo, session_mapper=bindings.session_mapper)
+    retriever = Retriever(Path(__file__).resolve().parents[2] / "seed_data")
+    tool_router = ToolRouter(
+        ticket_api=ticket_api,
+        retriever=retriever,
+        trace_logger=bindings.trace_logger,
+    )
+    policy_path = (
+        Path(__file__).resolve().parents[2]
+        / "seed_data"
+        / "sla_rules"
+        / "default_sla_rules.json"
+    )
+    workflow_engine = WorkflowEngine(
+        ticket_api=ticket_api,
+        intent_router=IntentRouter(),
+        tool_router=tool_router,
+        summary_engine=SummaryEngine(),
+        handoff_manager=HandoffManager.from_file(policy_path),
+        sla_engine=SlaEngine.from_file(policy_path),
+        recommendation_engine=RecommendedActionsEngine(),
+        trace_logger=bindings.trace_logger,
+        reply_generator=ReplyGenerator(model_adapter=_ReplyAdapter()),
+    )
+    intake_workflow = SupportIntakeWorkflow(
+        workflow_engine,
+        case_collab_workflow=CaseCollabWorkflow(ticket_api),
+        ticket_api=ticket_api,
+    )
+    runtime = _Runtime(gateway=gateway, intake_workflow=intake_workflow, ticket_api=ticket_api)
+
+    first = process_wecom_message(
+        runtime,
+        {
+            "ReqId": "trace-wecom-multi-1",
+            "FromUserName": "u-wecom-2",
+            "Content": "停车场抬杆故障",
+            "MsgId": "msg-wecom-multi-1",
+        },
+    )
+    assert first.status == "ok"
+    assert first.ticket_id is not None
+
+    session_id = "dm:u-wecom-2"
+    runtime.gateway.bindings.session_mapper.begin_new_issue(session_id)
+    second = process_wecom_message(
+        runtime,
+        {
+            "ReqId": "trace-wecom-multi-2",
+            "FromUserName": "u-wecom-2",
+            "Content": "电梯突然异响，也要报修",
+            "MsgId": "msg-wecom-multi-2",
+        },
+    )
+    assert second.status == "ok"
+    assert second.ticket_id is not None
+    assert second.ticket_id != first.ticket_id
+
+    ambiguous = process_wecom_message(
+        runtime,
+        {
+            "ReqId": "trace-wecom-multi-3",
+            "FromUserName": "u-wecom-2",
+            "Content": "帮我看看",
+            "MsgId": "msg-wecom-multi-3",
+        },
+    )
+    assert ambiguous.status == "ok"
+    assert ambiguous.ticket_action == "clarification_required"
+    assert ambiguous.ticket_id == second.ticket_id
+    assert "确认你在跟进哪一个问题" in ambiguous.reply_text
+    assert len(runtime.ticket_api.list_all_tickets(limit=100)) == 2
+
+    runtime.ticket_api.switch_active_session_ticket(
+        session_id,
+        first.ticket_id,
+        metadata={"session_mode": "multi_issue"},
+    )
+    switched_progress = process_wecom_message(
+        runtime,
+        {
+            "ReqId": "trace-wecom-multi-4",
+            "FromUserName": "u-wecom-2",
+            "Content": "这个问题现在进度到哪了？",
+            "MsgId": "msg-wecom-multi-4",
+        },
+    )
+    assert switched_progress.status == "ok"
+    assert switched_progress.ticket_action == "progress_reply"
+    assert switched_progress.ticket_id == first.ticket_id

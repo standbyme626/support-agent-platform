@@ -22,6 +22,14 @@ def test_intent_router_classifies_and_handles_low_confidence() -> None:
     assert consulting.intent == "faq"
     assert consulting.is_low_confidence is False
 
+    greeting_identity = router.route("你是谁")
+    assert greeting_identity.intent == "greeting"
+    assert greeting_identity.is_low_confidence is False
+
+    faq_capability = router.route("你可以做什么")
+    assert faq_capability.intent == "faq"
+    assert faq_capability.is_low_confidence is False
+
     unknown = router.route("abc xyz 123")
     assert unknown.intent == "other"
     assert unknown.is_low_confidence is True

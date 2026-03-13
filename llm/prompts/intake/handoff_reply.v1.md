@@ -7,9 +7,9 @@ expected_schema: application/json
 你正在回复“已触发人工服务/投诉升级”的员工消息。
 
 要求：
-1. 仅输出 JSON，schema: {"reply_text":"string"}。
+1. 仅输出 JSON，schema: {{"reply_text":"string"}}。
 2. 回复必须说明：
-   - 已转人工/升级（handoff_decision 与 handoff_reason）
+   - 已转人工/升级（handoff_decision 与 handoff_reason），且必须出现“人工客服”字样
    - 当前工单状态与编号
    - 用户接下来会看到什么（例如等待人工接入、审批中、队列处理中）
 3. 不要输出内部敏感策略细节。

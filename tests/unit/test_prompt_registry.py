@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from string import Formatter
 
 import pytest
 
@@ -54,3 +55,20 @@ def test_prompt_registry_raises_on_unknown_prompt() -> None:
     with pytest.raises(KeyError) as exc:
         registry.resolve("missing_prompt")
     assert "missing_prompt" in str(exc.value)
+
+
+def test_intake_prompts_do_not_treat_json_keys_as_template_variables() -> None:
+    prompts_root = Path(__file__).resolve().parents[2] / "llm" / "prompts" / "intake"
+    invalid_fields: list[tuple[str, str]] = []
+    for path in sorted(prompts_root.glob("*.md")):
+        content = path.read_text(encoding="utf-8")
+        body = content.split("\n---\n", 1)[1] if content.startswith("---\n") else content
+        fields = {
+            field_name
+            for _, field_name, _, _ in Formatter().parse(body)
+            if field_name is not None
+        }
+        for field in fields:
+            if '"' in field or "'" in field:
+                invalid_fields.append((path.name, field))
+    assert invalid_fields == []

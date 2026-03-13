@@ -4,6 +4,7 @@ from dataclasses import replace
 from typing import Any
 
 from channel_adapters.base import ChannelAdapterError
+from core.disambiguation import detect_session_control
 from core.trace_logger import new_trace_id
 from storage.models import InboundEnvelope
 
@@ -79,15 +80,47 @@ class InboundHandler:
         if refreshed_binding is not None:
             binding = refreshed_binding
 
+        raw_session_context = binding.metadata.get("session_context")
+        session_context = dict(raw_session_context) if isinstance(raw_session_context, dict) else {}
+        active_ticket_id = (
+            str(session_context.get("active_ticket_id") or binding.ticket_id or "").strip() or None
+        )
+        recent_ticket_ids = [
+            str(item).strip()
+            for item in session_context.get("recent_ticket_ids", [])
+            if str(item).strip()
+        ]
+        if active_ticket_id:
+            recent_ticket_ids = [item for item in recent_ticket_ids if item != active_ticket_id]
+        normalized_session_context = {
+            **session_context,
+            "active_ticket_id": active_ticket_id,
+            "recent_ticket_ids": recent_ticket_ids,
+        }
+        session_control = detect_session_control(inbound.message_text)
+        if session_control is not None:
+            normalized_session_context["session_control_action"] = session_control.action
+            normalized_session_context["session_control_reason"] = session_control.reason
+            normalized_session_context["session_control_source"] = session_control.source
+            normalized_session_context["session_control_priority"] = session_control.priority
+
         passthrough_metadata = {
             **inbound.metadata,
             "trace_id": trace_id,
             "inbox": inbox,
             "thread_id": binding.thread_id,
-            "ticket_id": binding.ticket_id,
+            "ticket_id": active_ticket_id,
             "idempotency_key": idempotency_key,
             "replay_count": int(binding.metadata.get("replay_count", 0)),
+            "active_ticket_id": active_ticket_id,
+            "recent_ticket_ids": recent_ticket_ids,
+            "session_context": normalized_session_context,
         }
+        if session_control is not None:
+            passthrough_metadata["session_control_action"] = session_control.action
+            passthrough_metadata["session_control_reason"] = session_control.reason
+            passthrough_metadata["session_control_source"] = session_control.source
+            passthrough_metadata["session_control_priority"] = session_control.priority
         enriched_inbound = replace(inbound, metadata=passthrough_metadata)
 
         self._bindings.trace_logger.log(
