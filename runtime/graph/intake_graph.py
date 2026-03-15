@@ -134,6 +134,12 @@ class SupportIntakeGraphRunner:
                 envelope=envelope,
                 disambiguation=disambiguation,
             )
+        if result is None:
+            result = self._workflow._build_view_ticket_detail_result(
+                envelope=envelope,
+                disambiguation=disambiguation,
+                existing_ticket_id=state.get("existing_ticket_id"),
+            )
         next_state = _copy_state(state)
         next_state["runtime_path"] = _append_path(state, "session_control_detect")
         next_state["result"] = result

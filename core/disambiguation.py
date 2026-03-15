@@ -23,6 +23,7 @@ SessionControlAction = Literal[
     "view_history",
     "reopen_ticket",
     "list_tickets",
+    "view_ticket_detail",
 ]
 SessionControlSource = Literal["explicit_command", "chinese_rule"]
 
@@ -120,6 +121,15 @@ _LIST_TICKETS_PHRASES = (
     "已完结工单列表",
     "我的工单",
     "查看工单",
+)
+_VIEW_TICKET_PHRASES = (
+    "查看详情",
+    "查看工单详情",
+    "工单详情",
+    "查看这个工单",
+    "这个工单怎么样",
+    "工单现在怎样",
+    "这个工单进度",
 )
 
 
@@ -285,6 +295,14 @@ def detect_session_control(message_text: str) -> SessionControlMatch | None:
             source="chinese_rule",
             priority=2,
             reason="chinese_list_tickets_phrase",
+            confidence=0.90,
+        )
+    if any(phrase in text for phrase in _VIEW_TICKET_PHRASES):
+        return SessionControlMatch(
+            action="view_ticket_detail",
+            source="chinese_rule",
+            priority=2,
+            reason="chinese_view_ticket_phrase",
             confidence=0.90,
         )
     return None
@@ -463,6 +481,18 @@ class NewIssueDetector:
                     candidate_ticket_ids=normalized_candidates,
                     active_ticket_id=normalized_active,
                     session_action="list_tickets",
+                )
+
+            if session_control.action == "view_ticket_detail":
+                return self._build_result(
+                    decision="continue_current",
+                    confidence=session_control.confidence,
+                    reason=session_control.reason,
+                    intent=intent,
+                    suggested_ticket_id=normalized_active,
+                    candidate_ticket_ids=normalized_candidates,
+                    active_ticket_id=normalized_active,
+                    session_action="view_ticket_detail",
                 )
 
         if normalized_requested:

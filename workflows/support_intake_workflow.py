@@ -368,6 +368,13 @@ class SupportIntakeWorkflow:
         )
         if session_list_result is not None:
             return session_list_result
+        session_detail_result = self._build_view_ticket_detail_result(
+            envelope=envelope_with_disambiguation,
+            disambiguation=disambiguation,
+            existing_ticket_id=existing_ticket_id,
+        )
+        if session_detail_result is not None:
+            return session_detail_result
         collab_command_result = self._build_collab_command_result(
             envelope=envelope_with_disambiguation,
             disambiguation=disambiguation,
@@ -719,6 +726,62 @@ class SupportIntakeWorkflow:
             queue="",
             priority="",
             trace_events=["list_tickets"],
+            llm_trace=None,
+            reply_trace=reply_trace,
+        )
+
+    def _build_view_ticket_detail_result(
+        self,
+        *,
+        envelope: InboundEnvelope,
+        disambiguation: DisambiguationResult,
+        existing_ticket_id: str | None,
+    ) -> SupportIntakeResult | None:
+        if disambiguation.session_action != "view_ticket_detail":
+            return None
+        if self._ticket_api is None:
+            return None
+
+        ticket_id = disambiguation.active_ticket_id or existing_ticket_id
+        if not ticket_id:
+            reply_text = "当前没有关联的工单，请提供工单号查看详情。"
+        else:
+            try:
+                ticket = self._ticket_api.require_ticket(ticket_id)
+                detail_text = (
+                    f"工单号：{ticket.ticket_id}\\n"
+                    f"标题：{ticket.title}\\n"
+                    f"状态：{ticket.status}\\n"
+                    f"优先级：{ticket.priority}\\n"
+                    f"处理人：{ticket.assignee or '待认领'}\\n"
+                    f"创建时间：{ticket.created_at}"
+                )
+                reply_text = f"工单详情：\\n{detail_text}"
+            except Exception:
+                reply_text = f"未找到工单 {ticket_id}，请检查工单号是否正确。"
+
+        reply_trace = {
+            "provider": "fallback",
+            "prompt_key": "view_ticket_detail_reply",
+            "generation_type": "session_control",
+            "fallback_used": True,
+            "session_action": "view_ticket_detail",
+            "reason": disambiguation.reason,
+        }
+
+        return SupportIntakeResult(
+            ticket_id=ticket_id,
+            reply_text=reply_text,
+            handoff=False,
+            collab_push=None,
+            outcome=None,
+            ticket_action="view_ticket_detail",
+            summary=None,
+            recommended_actions=[],
+            handoff_required=False,
+            queue="",
+            priority="",
+            trace_events=["view_ticket_detail"],
             llm_trace=None,
             reply_trace=reply_trace,
         )
