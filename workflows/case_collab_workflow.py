@@ -267,6 +267,20 @@ class CaseCollabWorkflow:
                 actor_id=actor_id,
                 payload=event_payload,
             )
+
+            dm_session_id = f"dm:{updated.customer_id}"
+            try:
+                self._ticket_api.reset_session_context(
+                    dm_session_id,
+                    metadata={
+                        "session_mode": "awaiting_new_issue",
+                        "last_intent": f"ticket_{command}_completed",
+                        "updated_by": actor_id,
+                    },
+                )
+            except Exception:
+                pass
+
             action_name = "close_compat" if close_compat_mode else command
             return CaseCollabAction(action_name, updated, f"{ticket_id} closed")
 
@@ -323,6 +337,20 @@ class CaseCollabWorkflow:
                 actor_id=actor_id,
                 payload={"resolution_note": resolution_note, "command": command_line},
             )
+
+            dm_session_id = f"dm:{updated.customer_id}"
+            try:
+                self._ticket_api.reset_session_context(
+                    dm_session_id,
+                    metadata={
+                        "session_mode": "awaiting_new_issue",
+                        "last_intent": "ticket_resolved",
+                        "updated_by": actor_id,
+                    },
+                )
+            except Exception:
+                pass
+
             return CaseCollabAction("resolve", updated, f"{ticket_id} resolved")
 
         if command == "state":

@@ -83,6 +83,8 @@ class SupportIntakeWorkflow:
             "我来接手",
             "我来处理",
             "由我处理",
+            "接单",
+            "接单处理",
         ),
         "resolve": (
             "处理完成",
@@ -93,6 +95,10 @@ class SupportIntakeWorkflow:
             "处理好了",
             "修复完成",
             "已修复",
+            "搞定了",
+            "完成了",
+            "解决了",
+            "已经好了",
         ),
         "operator-close": (
             "强制关闭",
@@ -100,6 +106,8 @@ class SupportIntakeWorkflow:
             "操作关闭",
             "我来关闭",
             "由我关闭",
+            "强制结单",
+            "人工结单",
         ),
         "customer-confirm": (
             "确认解决",
@@ -108,22 +116,31 @@ class SupportIntakeWorkflow:
             "确认修好",
             "确认处理好",
             "已确认",
+            "确认",
+            "好的",
+            "可以了",
         ),
         "reopen": (
             "重新打开",
             "重开工单",
             "重新开启",
             "再开一下",
+            "开启工单",
+            "打开工单",
         ),
         "merge": (
             "合并工单",
             "合并到这个",
             "并入",
+            "合并",
+            "工单合并",
         ),
         "link": (
             "关联工单",
             "关联到",
             "关联",
+            "工单关联",
+            "关联这个",
         ),
         "list": (
             "查看工单列表",
@@ -144,6 +161,8 @@ class SupportIntakeWorkflow:
             "待处理工单列表",
             "处理中工单列表",
             "已完结工单列表",
+            "我的工单",
+            "查看工单",
         ),
         "priority": (
             "紧急",
@@ -158,6 +177,9 @@ class SupportIntakeWorkflow:
             "优先级",
             "调高优先级",
             "调低优先级",
+            "提升优先级",
+            "降低优先级",
+            "设置优先",
         ),
         "priority_p1": (
             "紧急",
@@ -167,6 +189,8 @@ class SupportIntakeWorkflow:
             "马上处理",
             "重要紧急",
             "急",
+            "很急",
+            "非常急",
         ),
         "priority_p2": (
             "加急",
@@ -175,6 +199,7 @@ class SupportIntakeWorkflow:
             "紧急处理",
             "尽快处理",
             "重要",
+            "比较急",
         ),
         "status": (
             "工单状态",
@@ -184,6 +209,9 @@ class SupportIntakeWorkflow:
             "查看状态",
             "查看进度",
             "状态查询",
+            "工单进度",
+            "处理进度",
+            "现在怎样了",
         ),
         "needs-info": (
             "需要更多信息",
@@ -193,12 +221,18 @@ class SupportIntakeWorkflow:
             "需要信息",
             "请补充",
             "补充信息",
+            "请提供",
+            "需要提供",
+            "请告诉",
         ),
         "escalate": (
             "升级",
             "上报",
             "升级处理",
             "转上级",
+            "上报处理",
+            "转主管",
+            "转经理",
         ),
         "assign": (
             "转给",
@@ -206,6 +240,8 @@ class SupportIntakeWorkflow:
             "指派给",
             "分配",
             "转交",
+            "派给",
+            "安排给",
         ),
         "merge": (
             "合并工单",
@@ -1374,7 +1410,62 @@ class SupportIntakeWorkflow:
         normalized = str(text or "").strip()
         if not normalized:
             return None
+
         lowered = normalized.lower()
+
+        negative_patterns = (
+            "不要",
+            "不用",
+            "别",
+            "不需要",
+            "不想",
+            "能不能",
+            "可以",
+            "能帮我",
+            "能否",
+            "可不可以",
+            "能不能够",
+            "吗",
+            "嘛",
+            "呢",
+            "?",
+            "？",
+        )
+        question_patterns = (
+            "能不能",
+            "是否可以",
+            "能否",
+            "是不是",
+            "有没有",
+            "会不会",
+            "可不可以",
+            "能否",
+            "请问",
+            "问一下",
+            "想知道",
+        )
+        request_help_patterns = (
+            "帮我",
+            "帮我一下",
+            "请帮我",
+            "麻烦",
+            "能不能帮我",
+            "能否帮我",
+            "可以帮我",
+            "帮我处理",
+            "帮我看看",
+        )
+
+        if any(neg in lowered for neg in negative_patterns):
+            return None
+        if any(q in lowered for q in question_patterns):
+            return None
+        if any(p in lowered for p in request_help_patterns):
+            return None
+
+        if len(normalized) < 4:
+            return None
+
         ticket_match = cls._TICKET_ID_SEARCH_RE.search(normalized)
         ticket_id = ticket_match.group(0).upper() if ticket_match is not None else None
         for command, keywords in cls._COLLAB_NATURAL_KEYWORDS.items():
