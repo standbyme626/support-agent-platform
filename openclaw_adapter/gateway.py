@@ -31,11 +31,13 @@ class OpenClawGateway:
         try:
             inbound = self._inbound_handler.handle(channel, payload)
             trace_id = str(inbound.metadata.get("trace_id", ""))
+            ack_metadata = dict(inbound.metadata)
+            ack_metadata["skip_delivery"] = True
             outbound = OutboundEnvelope(
                 channel=inbound.channel,
                 session_id=inbound.session_id,
                 body=f"[gateway-ack] {inbound.message_text}",
-                metadata=inbound.metadata,
+                metadata=ack_metadata,
             )
             rendered_outbound = self._outbound_sender.send(outbound)
             return {
@@ -79,6 +81,23 @@ class OpenClawGateway:
             ticket_id=ticket_id,
             session_id=session_id,
         )
+
+    def send_outbound(
+        self,
+        *,
+        channel: str,
+        session_id: str,
+        body: str,
+        metadata: dict[str, Any] | None = None,
+        retries: int = 2,
+    ) -> dict[str, object]:
+        outbound = OutboundEnvelope(
+            channel=channel,
+            session_id=session_id,
+            body=body,
+            metadata=dict(metadata or {}),
+        )
+        return self._outbound_sender.send(outbound, retries=retries)
 
     @staticmethod
     def _map_error_status(code: str) -> str:

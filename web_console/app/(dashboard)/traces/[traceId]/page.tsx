@@ -15,6 +15,22 @@ function toText(value: string | null | undefined) {
   return value && value.length > 0 ? value : "-";
 }
 
+function toRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+function firstText(...values: unknown[]): string | null {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) {
+      return value;
+    }
+    if (typeof value === "number" || typeof value === "boolean") {
+      return String(value);
+    }
+  }
+  return null;
+}
+
 export default function TraceDetailPage() {
   const { t } = useI18n();
   const params = useParams<{ traceId: string }>();
@@ -47,6 +63,56 @@ export default function TraceDetailPage() {
       />
     );
   }
+
+  const graphNodes = Array.from(
+    new Set(
+      data.events
+        .map((event) => {
+          const payload = toRecord(event.payload);
+          return firstText(
+            payload.node,
+            payload.node_id,
+            payload.current_node,
+            payload.agent,
+            event.event_type.includes("route") ? "route_decision" : null
+          );
+        })
+        .filter((value): value is string => Boolean(value))
+    )
+  );
+  const graphEdges = Array.from(
+    new Set(
+      data.events
+        .map((event) => {
+          const payload = toRecord(event.payload);
+          const direct = firstText(payload.edge, payload.transition, payload.path);
+          if (direct) {
+            return direct;
+          }
+          const from = firstText(payload.from_node, payload.from_state, payload.from);
+          const to = firstText(payload.to_node, payload.to_state, payload.to);
+          return from && to ? `${from} -> ${to}` : null;
+        })
+        .filter((value): value is string => Boolean(value))
+    )
+  );
+  const agentOutputs = data.events
+    .map((event) => {
+      const payload = toRecord(event.payload);
+      const text = firstText(payload.answer, payload.summary, payload.message, payload.result, payload.reason);
+      if (text) {
+        return `${event.event_type}: ${text}`;
+      }
+      const actions = Array.isArray(payload.actions) ? payload.actions : [];
+      if (actions.length > 0) {
+        return `${event.event_type}: actions=${JSON.stringify(actions.slice(0, 2))}`;
+      }
+      return null;
+    })
+    .filter((value): value is string => Boolean(value))
+    .slice(0, 8);
+  const routeDecisionPreview =
+    Object.keys(data.route_decision).length > 0 ? JSON.stringify(data.route_decision) : t("无路由决策载荷", "No route decision payload");
 
   return (
     <section className="ops-page-stack">
@@ -127,6 +193,45 @@ export default function TraceDetailPage() {
           </div>
         </article>
       </div>
+
+      <article className="card" style={{ marginTop: 12 }}>
+        <h3>{t("Graph Execution Drilldown", "Graph Execution Drilldown")}</h3>
+        <p className="hint" style={{ marginTop: 8 }}>
+          {t(
+            "下钻展示 node / edge / tool calls / agent outputs，用于排查 runtime 执行路径。",
+            "Drill down into node / edge / tool calls / agent outputs for runtime execution debugging."
+          )}
+        </p>
+        <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
+          <div>
+            <strong>{t("node", "node")}</strong>
+            <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 4 }}>
+              {graphNodes.length > 0 ? graphNodes.join(" | ") : t("暂无 node 线索", "No node evidence")}
+            </div>
+          </div>
+          <div>
+            <strong>{t("edge", "edge")}</strong>
+            <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 4 }}>
+              {graphEdges.length > 0 ? graphEdges.join(" | ") : t("暂无 edge 线索", "No edge evidence")}
+            </div>
+          </div>
+          <div>
+            <strong>{t("tool calls", "tool calls")}</strong>
+            <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 4 }}>
+              {data.tool_calls.length > 0 ? data.tool_calls.join(" | ") : t("暂无工具调用", "No tool calls")}
+            </div>
+          </div>
+          <div>
+            <strong>{t("agent outputs", "agent outputs")}</strong>
+            <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 4 }}>
+              {agentOutputs.length > 0 ? agentOutputs.join(" || ") : t("暂无 agent outputs", "No agent outputs")}
+            </div>
+          </div>
+          <div style={{ color: "var(--muted)", fontSize: 13 }}>
+            route_decision={routeDecisionPreview}
+          </div>
+        </div>
+      </article>
 
       <div style={{ marginTop: 12 }}>
         <TraceTimeline events={data.events} />

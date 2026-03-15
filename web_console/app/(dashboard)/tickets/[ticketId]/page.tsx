@@ -37,6 +37,38 @@ function toBriefJson(value: unknown) {
   }
 }
 
+function toRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function toBooleanFlag(value: unknown): boolean {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "number") {
+    return value > 0;
+  }
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return ["1", "true", "yes", "pending"].includes(normalized);
+  }
+  return false;
+}
+
+function firstNonEmptyString(...values: unknown[]): string | null {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) {
+      return value;
+    }
+    if (typeof value === "number" || typeof value === "boolean") {
+      return String(value);
+    }
+  }
+  return null;
+}
+
 function recommendationLabel(action: Record<string, unknown>) {
   return String(action.title ?? action.action ?? "recommendation");
 }
@@ -114,6 +146,7 @@ export default function TicketDetailPage() {
 
   const lastHandoffEvent = [...events].reverse().find((item) => item.event_type.includes("handoff"));
   const sessionId = getTicketSessionId(ticket);
+  const assigneeForAction = ticket.assignee ?? undefined;
   const metadataEntries = Object.entries(ticket.metadata ?? {})
     .filter(([, value]) => value !== null && value !== undefined && value !== "")
     .sort(([left], [right]) => left.localeCompare(right));
@@ -123,6 +156,73 @@ export default function TicketDetailPage() {
     rejected: pendingApprovals.items.filter((item) => item.status === "rejected").length,
     timeout: pendingApprovals.items.filter((item) => item.status === "timeout").length
   };
+  const metadata = toRecord(ticket.metadata);
+  const ticketRuntimeTrace = toRecord(copilot?.runtime_trace);
+  const operatorRuntimeTrace = toRecord(operatorCopilot?.runtime_trace);
+  const dispatchRuntimeTrace = toRecord(dispatchCopilot?.runtime_trace);
+  const activeRuntimeTrace = Object.keys(ticketRuntimeTrace).length
+    ? ticketRuntimeTrace
+    : Object.keys(operatorRuntimeTrace).length
+      ? operatorRuntimeTrace
+      : dispatchRuntimeTrace;
+  const currentGraphNode =
+    firstNonEmptyString(
+      metadata.current_graph_node,
+      metadata.graph_node,
+      metadata.runtime_node,
+      metadata.current_node,
+      activeRuntimeTrace.current_node,
+      activeRuntimeTrace.node
+    ) ?? "-";
+  const graphStateSummary =
+    firstNonEmptyString(
+      metadata.graph_state_summary,
+      metadata.graph_state,
+      metadata.lifecycle_stage,
+      metadata.runtime_state,
+      activeRuntimeTrace.state,
+      activeRuntimeTrace.mode
+    ) ??
+    toBriefJson({
+      status: ticket.status,
+      handoff_state: ticket.handoff_state,
+      lifecycle_stage: metadata.lifecycle_stage ?? "unknown"
+    });
+  const pendingApproval = approvalCounts.pending > 0 || ticket.handoff_state === "pending_approval";
+  const pendingCustomer = ticket.handoff_state === "waiting_customer" || toBooleanFlag(metadata.pending_customer);
+  const pendingHandoff =
+    ["requested", "accepted", "pending_claim", "pending_handoff"].includes(ticket.handoff_state) ||
+    toBooleanFlag(metadata.pending_handoff);
+  const topDispatchQueue = toRecord(dispatchCopilot?.queue_summary?.[0]).queue_name;
+  const dispatchStatus =
+    firstNonEmptyString(metadata.dispatch_status, metadata.dispatch_state, topDispatchQueue) ?? "not_available";
+  const deliveryStatus =
+    firstNonEmptyString(metadata.delivery_status, metadata.delivery_state, metadata.message_delivery_status) ??
+    "not_available";
+  const latestApprovalDecision = [...pendingApprovals.items]
+    .reverse()
+    .find((item) => item.status === "approved" || item.status === "rejected" || item.status === "timeout");
+  const resumeRequiredAction =
+    approvalCounts.pending > 0
+      ? t(
+          "需要审批人执行 approve/reject，随后由 runtime 自动恢复到 resume_handoff_state。",
+          "Approver must execute approve/reject; runtime then resumes to resume_handoff_state."
+        )
+      : ticket.handoff_state === "waiting_customer"
+        ? t(
+            "进入 waiting_customer，可在人工动作区执行 customer_confirm / operator_close。",
+            "Ticket is in waiting_customer; continue with customer_confirm / operator_close in Manual Actions."
+          )
+        : t("当前无待审批恢复动作。", "No pending approval resume action now.");
+  const approvalResumeResult = latestApprovalDecision
+    ? [
+        latestApprovalDecision.status,
+        latestApprovalDecision.decided_at ?? "-",
+        latestApprovalDecision.decision_note ?? ""
+      ]
+        .filter((item) => String(item).trim().length > 0)
+        .join(" · ")
+    : t("暂无审批后的恢复记录。", "No post-approval resume record yet.");
 
   async function submitCopilotQuery(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -138,7 +238,7 @@ export default function TicketDetailPage() {
 
   async function submitInvestigation() {
     try {
-      await runInvestigation(investigationQuestion, ticket.assignee ?? undefined);
+      await runInvestigation(investigationQuestion, assigneeForAction);
     } catch {
       // Error state is surfaced through investigationError.
     }
@@ -149,7 +249,7 @@ export default function TicketDetailPage() {
       return;
     }
     try {
-      await runSessionEnd(sessionEndReason, ticket.assignee ?? undefined);
+      await runSessionEnd(sessionEndReason, assigneeForAction);
     } catch {
       // Error state is surfaced through sessionEndError.
     }
@@ -202,6 +302,24 @@ export default function TicketDetailPage() {
               </li>
               <li>{t("接管载荷", "Handoff payload")}: {lastHandoffEvent ? toBriefJson(lastHandoffEvent.payload) : "-"}</li>
             </ul>
+          </article>
+          <article className="card" style={{ marginTop: 12 }}>
+            <h3>{t("Runtime 视角", "Runtime View")}</h3>
+            <ul className="ops-inline-list" style={{ marginTop: 10 }}>
+              <li>current graph node: {currentGraphNode}</li>
+              <li>graph state summary: {toBriefJson(graphStateSummary)}</li>
+              <li>pending approval: {pendingApproval ? "true" : "false"}</li>
+              <li>pending customer: {pendingCustomer ? "true" : "false"}</li>
+              <li>pending handoff: {pendingHandoff ? "true" : "false"}</li>
+              <li>dispatch status: {dispatchStatus}</li>
+              <li>delivery status: {deliveryStatus}</li>
+            </ul>
+            <p className="hint" style={{ marginTop: 8, marginBottom: 0 }}>
+              {t(
+                "该卡片聚焦 graph/runtime 关键态，不再仅依赖旧 workflow 字段。",
+                "This card focuses on graph/runtime states instead of only legacy workflow fields."
+              )}
+            </p>
           </article>
           <article className="card" style={{ marginTop: 12 }}>
             <h3>{t("定制字段", "Custom Fields")}</h3>
@@ -295,20 +413,29 @@ export default function TicketDetailPage() {
               <p style={{ color: "var(--muted)", marginTop: 8 }}>{t("AI 正在生成建议...", "AI is generating advice...")}</p>
             ) : null}
             {copilotError ? (
-              <p style={{ color: "var(--danger)", marginTop: 8 }}>
-                {t("Copilot 查询失败：", "Copilot query failed: ")}
+              <p style={{ color: copilotError.startsWith("Partial copilot degraded") ? "var(--muted)" : "var(--danger)", marginTop: 8 }}>
+                {copilotError.startsWith("Partial copilot degraded")
+                  ? t("AI 局部降级：", "AI partial degradation: ")
+                  : t("Copilot 查询失败：", "Copilot query failed: ")}
                 {copilotError}
               </p>
             ) : null}
             {copilot ? (
               <div style={{ marginTop: 8 }}>
                 <div className="ops-card-title-row">
-                  <strong>{copilot.scope}</strong>
+                  <strong>{t("Ticket Copilot", "Ticket Copilot")}</strong>
                   <span className="ops-chip strong">advice_only=true</span>
                 </div>
                 <p style={{ marginTop: 8 }}>{copilot.answer || copilot.summary}</p>
                 <div className="ops-muted" style={{ fontSize: 13 }}>
                   {t("风险标签", "Risk flags")}: {copilot.risk_flags.join(", ") || "-"}
+                </div>
+                <div className="ops-muted" style={{ fontSize: 13, marginTop: 2 }}>
+                  agent source=ticket_copilot · grounding={copilot.grounding_sources.length} · recommended_actions=
+                  {(copilot.recommended_actions ?? []).length}
+                </div>
+                <div className="ops-muted" style={{ fontSize: 13, marginTop: 2 }}>
+                  runtime_trace={toBriefJson(copilot.runtime_trace ?? copilot.llm_trace)}
                 </div>
                 <button
                   className="btn-ghost"
@@ -332,6 +459,14 @@ export default function TicketDetailPage() {
                   <span className="ops-chip strong">advice_only=true</span>
                 </div>
                 <p style={{ marginTop: 6 }}>{operatorCopilot.answer}</p>
+                <div className="ops-muted" style={{ fontSize: 13 }}>
+                  agent source=operator_agent · grounding={operatorCopilot.grounding_sources.length} · recommended_actions=
+                  {(operatorCopilot.recommended_actions ?? []).length} · confidence=
+                  {operatorCopilot.confidence ?? "-"}
+                </div>
+                <div className="ops-muted" style={{ fontSize: 13, marginTop: 2 }}>
+                  runtime_trace={toBriefJson(operatorCopilot.runtime_trace ?? operatorCopilot.llm_trace)}
+                </div>
               </div>
             ) : null}
             {dispatchCopilot ? (
@@ -341,6 +476,14 @@ export default function TicketDetailPage() {
                   <span className="ops-chip strong">advice_only=true</span>
                 </div>
                 <p style={{ marginTop: 6 }}>{dispatchCopilot.answer}</p>
+                <div className="ops-muted" style={{ fontSize: 13 }}>
+                  agent source=dispatch_agent · grounding={dispatchCopilot.grounding_sources.length} · recommended_actions=
+                  {(dispatchCopilot.recommended_actions ?? []).length} · top_queue=
+                  {toText(toRecord(dispatchCopilot.queue_summary?.[0]).queue_name)}
+                </div>
+                <div className="ops-muted" style={{ fontSize: 13, marginTop: 2 }}>
+                  runtime_trace={toBriefJson(dispatchCopilot.runtime_trace ?? dispatchCopilot.llm_trace)}
+                </div>
               </div>
             ) : null}
             <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
@@ -456,6 +599,18 @@ export default function TicketDetailPage() {
               <li>rejected: {approvalCounts.rejected}</li>
               <li>timeout: {approvalCounts.timeout}</li>
             </ul>
+            <div style={{ marginTop: 10 }}>
+              <div style={{ color: "var(--muted)", fontSize: 13 }}>
+                {t("当前审批状态", "Current approval state")}:{" "}
+                {approvalCounts.pending > 0 ? "pending_approval" : t("无进行中审批", "no pending approval")}
+              </div>
+              <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 4 }}>
+                {t("resume 所需动作", "Resume required action")}: {resumeRequiredAction}
+              </div>
+              <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 4 }}>
+                {t("审批后 graph 恢复结果", "Post-approval graph resume result")}: {approvalResumeResult}
+              </div>
+            </div>
           </article>
           <div style={{ marginTop: 12 }}>
             <PendingApprovalList

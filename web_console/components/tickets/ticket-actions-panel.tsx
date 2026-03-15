@@ -112,9 +112,100 @@ export function TicketActionsPanel({
     }
   }
 
+  const transitionGuide = [
+    {
+      action: "claim" as const,
+      label: t("认领", "Claim"),
+      from: "pending_claim",
+      to: "claimed",
+      description: t("进入人工处理起点。", "Enter the human-handled runtime path.")
+    },
+    {
+      action: "reassign" as const,
+      label: t("改派", "Reassign"),
+      from: "claimed",
+      to: "waiting_internal",
+      description: t("改派到目标队列/处理人。", "Move ticket to another queue or assignee.")
+    },
+    {
+      action: "escalate" as const,
+      label: t("升级", "Escalate"),
+      from: "claimed|waiting_internal",
+      to: "pending_approval",
+      description: t("触发审批链路（人工接入/HITL）。", "Trigger HITL approval flow.")
+    },
+    {
+      action: "resolve" as const,
+      label: t("解决", "Resolve"),
+      from: "claimed|waiting_internal",
+      to: "waiting_customer",
+      description: t("待客户确认恢复。", "Move to customer confirmation stage.")
+    },
+    {
+      action: "customer_confirm" as const,
+      label: t("客户确认", "Customer Confirm"),
+      from: "waiting_customer",
+      to: "completed",
+      description: t("客户确认后闭环。", "Close loop after customer confirmation.")
+    },
+    {
+      action: "operator_close" as const,
+      label: t("运营关闭", "Operator Close"),
+      from: "waiting_customer|escalated",
+      to: "completed",
+      description: t("高风险终态动作，进入审批后执行。", "High-risk terminal action; execute after approval.")
+    }
+  ];
+
+  const resumePathHint =
+    ticket.handoff_state === "pending_approval"
+      ? t(
+          "当前处于 pending_approval：请在审批恢复区完成 approve/reject，再继续图状态迁移。",
+          "Current state is pending_approval: complete approve/reject in Approval Recovery before next transition."
+        )
+      : ticket.handoff_state === "waiting_customer"
+        ? t(
+            "当前处于 waiting_customer：优先执行客户确认(customer_confirm)或运营关闭(operator_close)。",
+            "Current state is waiting_customer: use customer_confirm or operator_close as next transition."
+          )
+        : ticket.handoff_state === "waiting_internal"
+          ? t(
+              "当前处于 waiting_internal：可继续改派(reassign)或升级(escalate)。",
+              "Current state is waiting_internal: continue with reassign or escalate."
+            )
+          : t(
+              "可按下方 transition controls 推进图状态；高风险动作会进入审批链路。",
+              "Use transition controls below to move graph state; high-risk actions enter approval flow."
+            );
+
   return (
     <section className="card">
-      <h3>{t("人工动作区", "Manual Actions")}</h3>
+      <h3>{t("人工动作区（Graph Transition Controls）", "Manual Actions (Graph Transition Controls)")}</h3>
+      <p className="hint" style={{ marginTop: 8 }}>
+        {t(
+          "以下动作按状态机迁移组织，不再是散乱按钮集合。每次执行都需要人工确认。",
+          "Actions are organized by state-machine transitions, not a loose button list. Every action requires human confirmation."
+        )}
+      </p>
+      <article style={{ marginTop: 10, border: "1px solid var(--line)", borderRadius: 10, padding: 10 }}>
+        <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 6 }}>
+          {t("当前 handoff_state", "Current handoff_state")}: <strong>{ticket.handoff_state}</strong>
+        </div>
+        <ul className="list">
+          {transitionGuide.map((item) => (
+            <li className="list-item" key={item.action}>
+              <strong>{item.label}</strong>
+              <div style={{ color: "var(--muted)", fontSize: 13 }}>
+                {item.from} {"->"} {item.to}
+              </div>
+              <div style={{ color: "var(--muted)", fontSize: 13 }}>{item.description}</div>
+            </li>
+          ))}
+        </ul>
+        <p className="hint" style={{ marginTop: 8, marginBottom: 0 }}>
+          {resumePathHint}
+        </p>
+      </article>
       <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
         <label className="ops-label">
           <span>{t("执行人", "Actor")}</span>

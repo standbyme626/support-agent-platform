@@ -88,8 +88,16 @@ describe("Upgrade2 minimal front-end flow smoke", () => {
         prompt_version: "workflow_engine_v1"
       },
       copilot: null,
+      operatorCopilot: null,
+      dispatchCopilot: null,
       copilotLoading: false,
       copilotError: null,
+      investigation: null,
+      investigationLoading: false,
+      investigationError: null,
+      sessionEnd: null,
+      sessionEndLoading: false,
+      sessionEndError: null,
       groundingSources: [],
       similarCases: [],
       events: [],
@@ -98,6 +106,8 @@ describe("Upgrade2 minimal front-end flow smoke", () => {
       actionError: null,
       runAction,
       queryCopilot: vi.fn(),
+      runInvestigation: vi.fn(),
+      runSessionEnd: vi.fn(),
       refetch: vi.fn()
     });
 

@@ -38,6 +38,37 @@ class OutboundSender:
                     ticket_id=str(ticket_id) if ticket_id else None,
                     session_id=outbound.session_id,
                 )
+                deliver_outbound = getattr(adapter, "deliver_outbound", None)
+                if callable(deliver_outbound):
+                    if bool(outbound.metadata.get("skip_delivery")):
+                        self._bindings.trace_logger.log(
+                            "egress_delivery_skipped",
+                            {
+                                "channel": outbound.channel,
+                                "session_id": outbound.session_id,
+                                "attempt": attempt_no,
+                                "max_attempts": max_attempts,
+                                "reason": "skip_delivery_metadata",
+                            },
+                            trace_id=trace_id or None,
+                            ticket_id=str(ticket_id) if ticket_id else None,
+                            session_id=outbound.session_id,
+                        )
+                    else:
+                        delivery = deliver_outbound(outbound=outbound, payload=payload)
+                        self._bindings.trace_logger.log(
+                            "egress_delivered",
+                            {
+                                "channel": outbound.channel,
+                                "session_id": outbound.session_id,
+                                "attempt": attempt_no,
+                                "max_attempts": max_attempts,
+                                "delivery": delivery,
+                            },
+                            trace_id=trace_id or None,
+                            ticket_id=str(ticket_id) if ticket_id else None,
+                            session_id=outbound.session_id,
+                        )
                 return payload
             except ChannelAdapterError as error:
                 last_error = error

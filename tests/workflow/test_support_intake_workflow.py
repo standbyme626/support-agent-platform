@@ -27,10 +27,7 @@ def _build_intake_workflow(tmp_path: Path) -> tuple[SupportIntakeWorkflow, Ticke
     retriever = Retriever(Path(__file__).resolve().parents[2] / "seed_data")
     tool_router = ToolRouter(ticket_api=ticket_api, retriever=retriever)
     policy_path = (
-        Path(__file__).resolve().parents[2]
-        / "seed_data"
-        / "sla_rules"
-        / "default_sla_rules.json"
+        Path(__file__).resolve().parents[2] / "seed_data" / "sla_rules" / "default_sla_rules.json"
     )
 
     engine = WorkflowEngine(
@@ -61,10 +58,7 @@ def _build_intake_workflow_with_session_mapper(
     retriever = Retriever(Path(__file__).resolve().parents[2] / "seed_data")
     tool_router = ToolRouter(ticket_api=ticket_api, retriever=retriever)
     policy_path = (
-        Path(__file__).resolve().parents[2]
-        / "seed_data"
-        / "sla_rules"
-        / "default_sla_rules.json"
+        Path(__file__).resolve().parents[2] / "seed_data" / "sla_rules" / "default_sla_rules.json"
     )
 
     engine = WorkflowEngine(
@@ -134,7 +128,7 @@ def test_support_intake_repair_creates_ticket_and_pushes_collab(tmp_path: Path) 
 
     assert result.outcome.ticket.intent == "repair"
     assert result.collab_push is not None
-    assert result.reply_text == f"已创建工单 {result.ticket_id}，状态：待认领。已通知处理同学。"
+    assert result.reply_text == f"已创建工单 {result.ticket_id}，状态：待认领。已通知处理人员。"
     assert "/claim" in result.collab_push["message"]
     assert "/resolve" in result.collab_push["message"]
     assert result.ticket_action == "create_ticket"
@@ -331,6 +325,36 @@ def test_support_intake_awaiting_new_issue_mode_creates_new_ticket(
     assert context_after["session_mode"] == "new_issue_detected"
 
 
+def test_support_intake_new_issue_phrase_uses_script_reply_copy(
+    tmp_path: Path,
+) -> None:
+    workflow, _, session_mapper = _build_intake_workflow_with_session_mapper(tmp_path)
+    session_id = "session-new-issue-copy-flow"
+    first = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id=session_id,
+            message_text="空调不制冷，办公室 3A，今天一直有异响。",
+            metadata={"thread_id": "thread-new-issue-copy-flow"},
+        )
+    )
+    second = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id=session_id,
+            message_text="我有一个新问题，重新开始：会议室投屏连不上。",
+            metadata={
+                "thread_id": "thread-new-issue-copy-flow",
+                "ticket_id": first.ticket_id,
+                "active_ticket_id": first.ticket_id,
+                "session_context": session_mapper.get_session_context(session_id),
+            },
+        )
+    )
+    assert second.ticket_id != first.ticket_id
+    assert second.reply_text == "已开启新问题处理流程，正在为你生成新的工单记录。"
+
+
 def test_support_intake_explicit_new_command_switches_mode_without_creating_ticket(
     tmp_path: Path,
 ) -> None:
@@ -359,12 +383,74 @@ def test_support_intake_explicit_new_command_switches_mode_without_creating_tick
         )
     )
 
-    assert second.ticket_id == first.ticket_id
-    assert second.ticket_action == "new_issue_mode"
-    assert second.reply_text == "已切换到新问题模式，请描述你的新问题。"
+    assert second.ticket_id is not None
+    assert second.ticket_id != first.ticket_id
     context_after = session_mapper.get_session_context(session_id)
-    assert context_after["active_ticket_id"] is None
-    assert context_after["session_mode"] == "awaiting_new_issue"
+    assert context_after["active_ticket_id"] == second.ticket_id
+
+
+def test_support_intake_explicit_new_command_with_inline_issue_creates_new_ticket(
+    tmp_path: Path,
+) -> None:
+    workflow, _, session_mapper = _build_intake_workflow_with_session_mapper(tmp_path)
+    session_id = "session-command-new-inline-ticket"
+    first = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id=session_id,
+            message_text="停车场抬杆故障，需要报修",
+            metadata={"thread_id": "thread-command-new-inline-ticket"},
+        )
+    )
+    second = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id=session_id,
+            message_text="/new D栋厕所漏水，位置在三楼B区男厕门口",
+            metadata={
+                "thread_id": "thread-command-new-inline-ticket",
+                "active_ticket_id": first.ticket_id,
+                "session_context": session_mapper.get_session_context(session_id),
+            },
+        )
+    )
+
+    assert second.ticket_id is not None
+    assert second.ticket_id != first.ticket_id
+    context_after = session_mapper.get_session_context(session_id)
+    assert context_after["active_ticket_id"] == second.ticket_id
+
+
+def test_support_intake_explicit_new_command_with_whitespace_and_inline_issue_creates_new_ticket(
+    tmp_path: Path,
+) -> None:
+    workflow, _, session_mapper = _build_intake_workflow_with_session_mapper(tmp_path)
+    session_id = "session-command-new-inline-whitespace"
+    first = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id=session_id,
+            message_text="停车场抬杆故障，需要报修",
+            metadata={"thread_id": "thread-command-new-inline-whitespace"},
+        )
+    )
+    second = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id=session_id,
+            message_text="/ new D栋厕所漏水，位置在三楼B区男厕门口",
+            metadata={
+                "thread_id": "thread-command-new-inline-whitespace",
+                "active_ticket_id": first.ticket_id,
+                "session_context": session_mapper.get_session_context(session_id),
+            },
+        )
+    )
+
+    assert second.ticket_id is not None
+    assert second.ticket_id != first.ticket_id
+    context_after = session_mapper.get_session_context(session_id)
+    assert context_after["active_ticket_id"] == second.ticket_id
 
 
 def test_support_intake_end_phrase_resets_session_context_without_new_ticket(
@@ -410,6 +496,7 @@ def test_support_intake_end_phrase_resets_session_context_without_new_ticket(
 
     assert after_count == before_count
     assert ended.ticket_action == "session_end"
+    assert ended.reply_text == "好的，本次会话已结束。后续可随时发新问题。"
     assert ended.reply_trace["session_action"] == "session_end"
     assert "session_end" in ended.trace_events
     context_after = session_mapper.get_session_context(session_id)
@@ -457,6 +544,49 @@ def test_support_intake_message_after_session_end_creates_new_context_reply(
     )
     assert next_issue.ticket_id != first.ticket_id
     assert next_issue.reply_text == "已按新会话处理，并创建/关联新工单上下文。"
+
+
+def test_support_intake_explicit_end_and_new_commands_follow_92_copy(
+    tmp_path: Path,
+) -> None:
+    workflow, _, session_mapper = _build_intake_workflow_with_session_mapper(tmp_path)
+    session_id = "session-explicit-end-new-flow"
+    seeded = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id=session_id,
+            message_text="会议室投屏连不上。",
+            metadata={"thread_id": "thread-explicit-end-new-flow"},
+        )
+    )
+    ended = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id=session_id,
+            message_text="/end",
+            metadata={
+                "thread_id": "thread-explicit-end-new-flow",
+                "ticket_id": seeded.ticket_id,
+                "active_ticket_id": seeded.ticket_id,
+                "session_context": session_mapper.get_session_context(session_id),
+            },
+        )
+    )
+    assert ended.ticket_action == "session_end"
+    assert ended.reply_text == "当前会话已结束，可继续发起新问题。"
+    new_mode = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id=session_id,
+            message_text="/new",
+            metadata={
+                "thread_id": "thread-explicit-end-new-flow",
+                "session_context": session_mapper.get_session_context(session_id),
+            },
+        )
+    )
+    assert new_mode.ticket_action == "new_issue_mode"
+    assert new_mode.reply_text == "已切换到新问题模式，请描述你的新问题。"
 
 
 def test_support_intake_explicit_ticket_reference_uses_switch_reply_type(
@@ -576,6 +706,98 @@ def test_support_intake_collab_commands_execute_with_ticket_id_argument(
     assert ticket_after_close.close_reason == "customer_confirmed"
 
 
+def test_support_intake_collab_command_variants_are_normalized(
+    tmp_path: Path,
+) -> None:
+    workflow, ticket_api, session_mapper = _build_intake_workflow_with_session_mapper(tmp_path)
+    seed = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-collab-command-variants",
+            message_text="机房温度过高，当前 34 度。",
+            metadata={"thread_id": "thread-collab-command-variants"},
+        )
+    )
+    session_context = session_mapper.get_session_context("session-collab-command-variants")
+    base_metadata = {
+        "thread_id": "thread-collab-command-variants",
+        "ticket_id": seed.ticket_id,
+        "active_ticket_id": seed.ticket_id,
+        "session_context": session_context,
+    }
+
+    claimed_slash_space = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-collab-command-variants",
+            message_text=f"/ claim {seed.ticket_id}",
+            metadata=base_metadata | {"actor_id": "u_ops_a"},
+        )
+    )
+    assert claimed_slash_space.ticket_action == "collab_claim"
+    assert claimed_slash_space.reply_text == f"认领成功：{seed.ticket_id}，当前处理人员：u_ops_a。"
+
+    claimed_natural = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-collab-command-variants",
+            message_text=f"认领工单 {seed.ticket_id}",
+            metadata=base_metadata | {"actor_id": "u_ops_b"},
+        )
+    )
+    assert claimed_natural.ticket_action == "collab_claim"
+    assert claimed_natural.reply_text == f"认领成功：{seed.ticket_id}，当前处理人员：u_ops_b。"
+
+    resolved_natural = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-collab-command-variants",
+            message_text=f"已解决 {seed.ticket_id}",
+            metadata=base_metadata | {"actor_id": "u_ops_b"},
+        )
+    )
+    assert resolved_natural.ticket_action == "collab_resolve"
+    assert resolved_natural.reply_text == f"工单 {seed.ticket_id} 已处理完成，请确认是否恢复正常。"
+
+    closed_natural = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-collab-command-variants",
+            message_text=f"强制关闭 {seed.ticket_id}",
+            metadata=base_metadata | {"actor_id": "u_ops_b"},
+        )
+    )
+    assert closed_natural.ticket_action == "collab_operator_close"
+    assert closed_natural.reply_text == f"已强制关闭 {seed.ticket_id}，原因已记录。"
+    closed_ticket = ticket_api.require_ticket(seed.ticket_id)
+    assert closed_ticket.status == "closed"
+
+
+def test_support_intake_collab_command_invalid_ticket_returns_actionable_feedback(
+    tmp_path: Path,
+) -> None:
+    workflow, _, _ = _build_intake_workflow_with_session_mapper(tmp_path)
+    invalid_ticket_id = "TCK-NOT-FOUND-001"
+    failed = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-collab-command-invalid-ticket",
+            message_text=f"/claim {invalid_ticket_id}",
+            metadata={
+                "thread_id": "thread-collab-command-invalid-ticket",
+                "actor_id": "u_ops_invalid",
+            },
+        )
+    )
+
+    assert failed.ticket_action == "collab_command_failed"
+    assert f"未找到工单 {invalid_ticket_id}" in failed.reply_text
+    assert "查询当前工单" in failed.reply_text
+    assert "collab_command_failed" in failed.trace_events
+    assert failed.reply_trace["failure_reason"] == "ticket_not_found"
+    assert failed.reply_trace["error_type"] == "KeyError"
+
+
 def test_support_intake_customer_confirmation_phrase_closes_resolved_ticket(
     tmp_path: Path,
 ) -> None:
@@ -683,3 +905,218 @@ def test_support_intake_operator_close_and_advice_only_terminal_phrase(
     )
     untouched_ticket = ticket_api.require_ticket(another.ticket_id)
     assert untouched_ticket.status != "closed"
+
+
+def test_support_intake_collab_command_cross_group_sync_notifications(
+    tmp_path: Path,
+) -> None:
+    workflow, _, _ = _build_intake_workflow_with_session_mapper(tmp_path)
+    repair_session_id = "group:repair-room:user:u_customer_01"
+    ops_session_id = "group:ops-room:user:u_ops_99"
+    seeded = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id=repair_session_id,
+            message_text="空调不制冷，办公室 3A，今天一直有异响。",
+            metadata={"thread_id": "thread-repair-room"},
+        )
+    )
+    claimed = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id=ops_session_id,
+            message_text=f"/claim {seeded.ticket_id}",
+            metadata={
+                "thread_id": "thread-ops-room",
+                "ticket_id": seeded.ticket_id,
+                "active_ticket_id": seeded.ticket_id,
+                "actor_id": "u_ops_99",
+            },
+        )
+    )
+    assert claimed.reply_text == f"认领成功：{seeded.ticket_id}，当前处理人员：u_ops_99。"
+    assert claimed.collab_push == {
+        "ticket_id": seeded.ticket_id,
+        "session_id": repair_session_id,
+        "message": f"工单 {seeded.ticket_id} 已由 u_ops_99 正在处理（接手处理）。",
+        "command": "claim",
+        "source": "collab_command",
+        "source_session_id": ops_session_id,
+    }
+    assert "cross_group_sync" in claimed.trace_events
+
+    resolved = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id=ops_session_id,
+            message_text=f"/resolve {seeded.ticket_id} 远程重启后已恢复",
+            metadata={
+                "thread_id": "thread-ops-room",
+                "ticket_id": seeded.ticket_id,
+                "active_ticket_id": seeded.ticket_id,
+                "actor_id": "u_ops_99",
+            },
+        )
+    )
+    assert resolved.reply_text == f"工单 {seeded.ticket_id} 已处理完成，请确认是否恢复正常。"
+    assert resolved.collab_push == {
+        "ticket_id": seeded.ticket_id,
+        "session_id": repair_session_id,
+        "message": f"工单 {seeded.ticket_id} 已处理完成，请确认是否恢复正常。",
+        "command": "resolve",
+        "source": "collab_command",
+        "source_session_id": ops_session_id,
+    }
+    assert "cross_group_sync" in resolved.trace_events
+
+    forced_close_seed = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id=repair_session_id,
+            message_text="停车场道闸故障，无法落杆。",
+            metadata={"thread_id": "thread-repair-room"},
+        )
+    )
+    operator_closed = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id=ops_session_id,
+            message_text=f"/operator-close {forced_close_seed.ticket_id} 用户离线，电话确认恢复",
+            metadata={
+                "thread_id": "thread-ops-room",
+                "ticket_id": forced_close_seed.ticket_id,
+                "active_ticket_id": forced_close_seed.ticket_id,
+                "actor_id": "u_ops_99",
+            },
+        )
+    )
+    assert operator_closed.reply_text == f"已强制关闭 {forced_close_seed.ticket_id}，原因已记录。"
+    assert operator_closed.collab_push == {
+        "ticket_id": forced_close_seed.ticket_id,
+        "session_id": repair_session_id,
+        "message": (
+            f"工单 {forced_close_seed.ticket_id} 已由处理工程师关闭，原因：用户离线，电话确认恢复。"
+        ),
+        "command": "operator-close",
+        "source": "collab_command",
+        "source_session_id": ops_session_id,
+    }
+    assert "cross_group_sync" in operator_closed.trace_events
+
+
+def test_support_intake_graph_runtime_trace_is_exposed_across_primary_paths(
+    tmp_path: Path,
+) -> None:
+    workflow, _, session_mapper = _build_intake_workflow_with_session_mapper(tmp_path)
+
+    faq = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-graph-faq",
+            message_text="如何 查询 工单 进度",
+            metadata={"thread_id": "thread-graph-faq"},
+        )
+    )
+    assert faq.ticket_action == "faq_reply"
+    assert faq.reply_trace["runtime_graph"] == "workflow1-intake-graph-v1"
+    faq_runtime_path_raw = faq.reply_trace.get("runtime_path")
+    assert isinstance(faq_runtime_path_raw, list)
+    faq_runtime_path = [str(item) for item in faq_runtime_path_raw]
+    assert "classify_intent" in faq_runtime_path
+    assert "emit_user_reply" in faq_runtime_path
+
+    created = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-graph-create",
+            message_text="空调不制冷，办公室 3A，今天一直有异响。",
+            metadata={"thread_id": "thread-graph-create"},
+        )
+    )
+    assert created.ticket_action in {"create_ticket", "handoff"}
+    created_runtime_path_raw = created.reply_trace.get("runtime_path")
+    assert isinstance(created_runtime_path_raw, list)
+    created_runtime_path = [str(item) for item in created_runtime_path_raw]
+    assert "retrieve_context" in created_runtime_path
+    assert "faq_answer_or_ticket_open" in created_runtime_path
+    assert "emit_collab_push" in created_runtime_path
+
+    ended = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-graph-create",
+            message_text="/end",
+            metadata={
+                "thread_id": "thread-graph-create",
+                "ticket_id": created.ticket_id,
+                "active_ticket_id": created.ticket_id,
+                "session_context": session_mapper.get_session_context("session-graph-create"),
+            },
+        )
+    )
+    assert ended.ticket_action == "session_end"
+    ended_runtime_path_raw = ended.reply_trace.get("runtime_path")
+    assert isinstance(ended_runtime_path_raw, list)
+    ended_runtime_path = [str(item) for item in ended_runtime_path_raw]
+    assert "session_control_detect" in ended_runtime_path
+
+    new_mode = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-graph-create",
+            message_text="/new",
+            metadata={
+                "thread_id": "thread-graph-create",
+                "session_context": session_mapper.get_session_context("session-graph-create"),
+            },
+        )
+    )
+    assert new_mode.ticket_action == "new_issue_mode"
+    new_mode_runtime_path_raw = new_mode.reply_trace.get("runtime_path")
+    assert isinstance(new_mode_runtime_path_raw, list)
+    new_mode_runtime_path = [str(item) for item in new_mode_runtime_path_raw]
+    assert "session_control_detect" in new_mode_runtime_path
+
+    customer_seed = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-graph-customer-confirm",
+            message_text="打印机卡纸无法工作",
+            metadata={"thread_id": "thread-graph-customer-confirm"},
+        )
+    )
+    workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-graph-customer-confirm",
+            message_text=f"/resolve {customer_seed.ticket_id} 现场处理后恢复",
+            metadata={
+                "thread_id": "thread-graph-customer-confirm",
+                "ticket_id": customer_seed.ticket_id,
+                "active_ticket_id": customer_seed.ticket_id,
+                "session_context": session_mapper.get_session_context(
+                    "session-graph-customer-confirm"
+                ),
+            },
+        )
+    )
+    confirmed = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-graph-customer-confirm",
+            message_text="已经恢复了，可以结单。",
+            metadata={
+                "thread_id": "thread-graph-customer-confirm",
+                "ticket_id": customer_seed.ticket_id,
+                "active_ticket_id": customer_seed.ticket_id,
+                "session_context": session_mapper.get_session_context(
+                    "session-graph-customer-confirm"
+                ),
+            },
+        )
+    )
+    assert confirmed.ticket_action == "collab_customer_confirm"
+    confirmed_runtime_path_raw = confirmed.reply_trace.get("runtime_path")
+    assert isinstance(confirmed_runtime_path_raw, list)
+    confirmed_runtime_path = [str(item) for item in confirmed_runtime_path_raw]
+    assert "customer_confirm_detect" in confirmed_runtime_path

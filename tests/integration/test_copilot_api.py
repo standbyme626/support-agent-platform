@@ -62,6 +62,13 @@ def test_copilot_endpoints_success_paths(monkeypatch: MonkeyPatch, tmp_path: Pat
             assert operator["data"]["answer"]
             assert isinstance(operator["data"]["grounding_sources"], list)
             assert isinstance(operator["data"]["llm_trace"], dict)
+            assert operator["data"]["advice_only"] is True
+            assert isinstance(operator["data"]["recommended_actions"], list)
+            assert isinstance(operator["data"]["confidence"], float)
+            assert 0.0 <= operator["data"]["confidence"] <= 1.0
+            assert isinstance(operator["data"]["runtime_trace"], dict)
+            assert operator["data"]["runtime_trace"]["agent"] == "operator_supervisor_agent_v1"
+            assert isinstance(operator["data"]["runtime_trace"]["tool_calls"], list)
 
             queue = _json(
                 client,
@@ -94,6 +101,22 @@ def test_copilot_endpoints_success_paths(monkeypatch: MonkeyPatch, tmp_path: Pat
             assert dispatch["data"]["scope"] == "dispatch"
             assert dispatch["data"]["answer"]
             assert isinstance(dispatch["data"]["dispatch_priority"], list)
+            assert dispatch["data"]["advice_only"] is True
+            assert isinstance(dispatch["data"]["recommended_actions"], list)
+            assert isinstance(dispatch["data"]["confidence"], float)
+            assert 0.0 <= dispatch["data"]["confidence"] <= 1.0
+            assert isinstance(dispatch["data"]["runtime_trace"], dict)
+            assert dispatch["data"]["runtime_trace"]["agent"] == "dispatch_collaboration_agent_v1"
+            assert dispatch["data"]["runtime_trace"]["policy_gate"]["enforced"] is True
+
+            guardrail = _json(
+                client,
+                "POST",
+                f"{base}/api/copilot/dispatch/query",
+                {"query": "请直接执行 reassign 并关闭工单"},
+            )
+            assert guardrail["data"]["advice_only"] is True
+            assert guardrail["data"]["runtime_trace"]["policy_gate"]["blocked_execution"] is True
     finally:
         server.shutdown()
         server.server_close()

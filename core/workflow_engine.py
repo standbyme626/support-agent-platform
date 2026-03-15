@@ -10,6 +10,7 @@ from storage.models import InboundEnvelope, KBDocument, Ticket
 from .disambiguation import DisambiguationResult, NewIssueDetector
 from .handoff_manager import HandoffDecision, HandoffManager
 from .intent_router import IntentDecision, IntentRouter
+from .priority_detector import detect_ticket_priority
 from .recommended_actions_engine import RecommendedAction, RecommendedActionsEngine
 from .reply_generator import ReplyGenerator
 from .reply_orchestration import ReplyGenerationType
@@ -179,6 +180,7 @@ class WorkflowEngine:
                         session_id=ticket.session_id,
                     )
             else:
+                detected_priority = detect_ticket_priority(envelope.message_text)
                 ticket = self._ticket_api.create_ticket(
                     channel=envelope.channel,
                     session_id=envelope.session_id,
@@ -186,12 +188,13 @@ class WorkflowEngine:
                     title=envelope.message_text[:24] or "客户咨询",
                     latest_message=envelope.message_text,
                     intent=intent.intent,
-                    priority="P2" if intent.intent in {"repair", "billing"} else "P3",
+                    priority=detected_priority,
                     queue="support",
                     metadata={
                         **envelope.metadata,
                         "trace_id": trace_id,
                         "last_intent": intent.intent,
+                        "priority_detected": detected_priority,
                     },
                 )
         else:
@@ -215,8 +218,7 @@ class WorkflowEngine:
         events = self._ticket_api.list_events(ticket.ticket_id)
         summary = self._summary_engine.case_summary(ticket, events)
         llm_trace = {
-            key: value
-            for key, value in self._summary_engine.last_generation_metadata().items()
+            key: value for key, value in self._summary_engine.last_generation_metadata().items()
         }
         self._log(
             "summary_generated",
@@ -480,11 +482,7 @@ class WorkflowEngine:
         ).strip()
         raw_recent_ticket_ids = metadata.get("recent_ticket_ids")
         recent_ticket_ids = (
-            [
-                str(item).strip()
-                for item in raw_recent_ticket_ids
-                if str(item).strip()
-            ]
+            [str(item).strip() for item in raw_recent_ticket_ids if str(item).strip()]
             if isinstance(raw_recent_ticket_ids, list)
             else []
         )

@@ -142,30 +142,48 @@ export function useTicketDetail(ticketId: string) {
       copilotLoading: true,
       copilotError: null
     }));
-    try {
-      const [ticketResponse, operatorResponse, dispatchResponse] = await Promise.all([
-        queryTicketCopilot(ticketId, trimmed),
-        queryOperatorCopilot(trimmed),
-        queryDispatchCopilot(trimmed)
-      ]);
-      setState((previous) => ({
-        ...previous,
-        copilot: ticketResponse.data,
-        operatorCopilot: operatorResponse.data,
-        dispatchCopilot: dispatchResponse.data,
-        copilotLoading: false,
-        copilotError: null
-      }));
-      return ticketResponse.data;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to query ticket copilot";
-      setState((previous) => ({
-        ...previous,
-        copilotLoading: false,
-        copilotError: message
-      }));
-      throw error instanceof Error ? error : new Error(message);
+    const [ticketResult, operatorResult, dispatchResult] = await Promise.allSettled([
+      queryTicketCopilot(ticketId, trimmed),
+      queryOperatorCopilot(trimmed),
+      queryDispatchCopilot(trimmed)
+    ]);
+
+    const ticketData = ticketResult.status === "fulfilled" ? ticketResult.value.data : null;
+    const operatorData = operatorResult.status === "fulfilled" ? operatorResult.value.data : null;
+    const dispatchData = dispatchResult.status === "fulfilled" ? dispatchResult.value.data : null;
+    const failures: string[] = [];
+    if (ticketResult.status === "rejected") {
+      failures.push("ticket");
     }
+    if (operatorResult.status === "rejected") {
+      failures.push("operator");
+    }
+    if (dispatchResult.status === "rejected") {
+      failures.push("dispatch");
+    }
+
+    const allFailed = failures.length === 3;
+    const warningMessage =
+      failures.length === 0
+        ? null
+        : allFailed
+          ? "Failed to query ticket copilot"
+          : `Partial copilot degraded: ${failures.join(", ")} branch failed`;
+
+    setState((previous) => ({
+      ...previous,
+      copilot: ticketData,
+      operatorCopilot: operatorData,
+      dispatchCopilot: dispatchData,
+      copilotLoading: false,
+      copilotError: warningMessage
+    }));
+
+    if (allFailed) {
+      throw new Error("Failed to query ticket copilot");
+    }
+
+    return ticketData ?? operatorData ?? dispatchData;
   }
 
   async function runInvestigation(question: string, actorId?: string) {

@@ -1,8 +1,8 @@
-# API Contract v2 (Upgrade 5 Draft)
+# API Contract v2 (Upgrade 5 Baseline)
 
 - Contract ID: `api-contract-v2`
-- Status: `draft`
-- Phase: `upgrade5-s2`
+- Status: `active`
+- Phase: `upgrade5-s4`
 - Compatibility Base: `API_CONTRACT_V1.md`
 
 ## 1. Global Conventions
@@ -45,6 +45,10 @@
 - Compatibility behavior must be explicit and deterministic:
   - `customer_confirm` and `operator_close` are distinct semantics in v2.
   - Ambiguous `close` requests should return validation errors instead of semantic guessing.
+- v1 close compat resolution order:
+  - `action` when provided (`customer_confirm|operator_close`) is the primary signal.
+  - `close_reason` can be used only as deterministic fallback mapping.
+  - If `action` and `close_reason` both exist but imply different semantics, request must fail with `400 invalid_payload`.
 
 ## 4. Boundary Rules
 

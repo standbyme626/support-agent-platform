@@ -102,6 +102,24 @@ def test_new_issue_detector_explicit_new_command_has_highest_priority() -> None:
     assert result.session_action == "new_issue"
 
 
+def test_new_issue_detector_accepts_slash_new_with_whitespace() -> None:
+    detector = NewIssueDetector()
+    result = detector.evaluate(
+        message_text="/ new 继续当前问题",
+        intent=_intent("repair"),
+        candidate_ticket_ids=["TCK-4012", "TCK-4011"],
+        active_ticket_id="TCK-4012",
+        requested_ticket_id=None,
+        session_mode="multi_issue",
+        last_intent="repair",
+        active_ticket=_ticket("TCK-4012", intent="repair", latest_message="停车场抬杆故障"),
+    )
+
+    assert result.decision == "new_issue_detected"
+    assert result.reason == "explicit_new_command"
+    assert result.session_action == "new_issue"
+
+
 def test_new_issue_detector_accepts_wecom_mention_with_backslash_new_command() -> None:
     detector = NewIssueDetector()
     result = detector.evaluate(
@@ -153,4 +171,22 @@ def test_new_issue_detector_end_phrase_requests_session_end() -> None:
 
     assert result.decision == "continue_current"
     assert result.reason == "chinese_end_phrase"
+    assert result.session_action == "session_end"
+
+
+def test_new_issue_detector_accepts_slash_end_with_whitespace() -> None:
+    detector = NewIssueDetector()
+    result = detector.evaluate(
+        message_text="/ end",
+        intent=_intent("repair"),
+        candidate_ticket_ids=["TCK-5102", "TCK-5101"],
+        active_ticket_id="TCK-5102",
+        requested_ticket_id=None,
+        session_mode="multi_issue",
+        last_intent="repair",
+        active_ticket=_ticket("TCK-5102", intent="repair", latest_message="电梯异响"),
+    )
+
+    assert result.decision == "continue_current"
+    assert result.reason == "explicit_end_command"
     assert result.session_action == "session_end"

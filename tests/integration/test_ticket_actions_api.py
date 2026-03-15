@@ -86,6 +86,9 @@ def test_ticket_actions_chain_and_timeline(monkeypatch: MonkeyPatch, tmp_path: P
             assert escalated["data"]["handoff_state"] == "pending_approval"
             approval_id = str(escalated["data"]["approval_id"])
             assert approval_id
+            assert isinstance(escalated["data"]["collab_graph"], dict)
+            assert escalated["data"]["collab_graph"]["approval_status"] == "pending_approval"
+            assert isinstance(escalated["data"]["collab_graph"].get("pause_checkpoint_id"), str)
 
             pending = _json(client, "GET", f"{base}/api/approvals/pending?page=1&page_size=20")
             pending_ids = {item["approval_id"] for item in pending["items"]}
@@ -98,6 +101,8 @@ def test_ticket_actions_chain_and_timeline(monkeypatch: MonkeyPatch, tmp_path: P
                 {"actor_id": "u_supervisor_01", "note": "approved"},
             )
             assert approved["data"]["status"] == "escalated"
+            assert approved["collab_graph"]["approval_status"] == "approved"
+            assert approved["collab_graph"]["result_action"] == "escalate"
 
             resolved = _json(
                 client,
@@ -181,6 +186,8 @@ def test_approval_reject_and_timeout_paths(monkeypatch: MonkeyPatch, tmp_path: P
                 {"actor_id": "u_supervisor_01", "note": "insufficient context"},
             )
             assert rejected["approval"]["status"] == "rejected"
+            assert rejected["collab_graph"]["approval_status"] == "rejected"
+            assert rejected["collab_graph"]["result_action"] == "rejected"
 
             timeout_request = _json(
                 client,
@@ -361,6 +368,16 @@ def test_v2_actions_and_v1_close_control_and_v2_intake_investigate(
         priority="P2",
         queue="support",
     )
+    v1_close_reason = runtime.ticket_api.create_ticket(
+        channel="wecom",
+        session_id="sess-v1-close-005",
+        thread_id="thread-v1-close-005",
+        title="地库照明异常",
+        latest_message="地库灯光闪烁",
+        intent="repair",
+        priority="P2",
+        queue="support",
+    )
     v2_investigate = runtime.ticket_api.create_ticket(
         channel="wecom",
         session_id="sess-v2-investigate-004",
@@ -445,6 +462,45 @@ def test_v2_actions_and_v1_close_control_and_v2_intake_investigate(
             ambiguous_payload = ambiguous.json()
             assert ambiguous_payload["code"] == "invalid_payload"
             assert "ambiguous close action" in ambiguous_payload["message"]
+
+            _json(
+                client,
+                "POST",
+                f"{base}/api/tickets/{v1_close_reason.ticket_id}/resolve",
+                {
+                    "actor_id": "u_ops_15",
+                    "resolution_note": "已确认线路恢复",
+                    "trace_id": "trace_v1_reason_resolve_001",
+                },
+            )
+            conflicting = client.post(
+                f"{base}/api/tickets/{v1_close_reason.ticket_id}/close",
+                json={
+                    "actor_id": "u_ops_15",
+                    "action": "customer_confirm",
+                    "close_reason": "operator_forced_close",
+                    "trace_id": "trace_v1_close_conflict_001",
+                },
+            )
+            assert conflicting.status_code == 400
+            conflicting_payload = conflicting.json()
+            assert conflicting_payload["code"] == "invalid_payload"
+            assert "conflicting close action" in conflicting_payload["message"]
+
+            deterministic_reason_close = _json(
+                client,
+                "POST",
+                f"{base}/api/tickets/{v1_close_reason.ticket_id}/close",
+                {
+                    "actor_id": "u_ops_15",
+                    "close_reason": "manual_close",
+                    "resolution_note": "按运维规则关单",
+                    "trace_id": "trace_v1_close_reasoned_001",
+                },
+            )
+            assert deterministic_reason_close["data"]["status"] == "closed"
+            assert deterministic_reason_close["data"]["resolved_action"] == "operator_close"
+            assert deterministic_reason_close["data"]["trace_id"] == "trace_v1_close_reasoned_001"
 
             controlled_close = _json(
                 client,
@@ -571,7 +627,8 @@ def test_v2_actions_and_v1_close_control_and_v2_intake_investigate(
 
             investigate_trace = runtime.trace_logger.query_by_trace(investigate_trace_id, limit=100)
             assert any(
-                str(item.get("event_type")) == "ticket_investigation_v2" for item in investigate_trace
+                str(item.get("event_type")) == "ticket_investigation_v2"
+                for item in investigate_trace
             )
             intake_trace = runtime.trace_logger.query_by_trace(intake_trace_id, limit=100)
             assert any(str(item.get("event_type")) == "intake_run_v2" for item in intake_trace)

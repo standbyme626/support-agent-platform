@@ -8,7 +8,10 @@ version = "0.3.0"
 description = "Workflow-first support ticket platform ingress foundation"
 requires-python = ">=3.11"
 dependencies = [
+  "deepagents",
   "httpx>=0.27",
+  "langchain>=1.0.0",
+  "langgraph>=1.0.0",
   "pydantic>=2.9",
 ]
 
@@ -58,6 +61,12 @@ packages = [
   "core",
   "llm",
   "openclaw_adapter",
+  "runtime",
+  "runtime.agents",
+  "runtime.checkpoints",
+  "runtime.graph",
+  "runtime.state",
+  "runtime.tools",
   "storage",
   "tools",
   "workflows",

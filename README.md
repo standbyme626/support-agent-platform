@@ -186,12 +186,16 @@ export SUPPORT_AGENT_ENV=dev
 
 ```bash
 python -m scripts.ops_api_server --env dev --host 127.0.0.1 --port 18082
+# 开发调试可加热重载（代码变更自动重启）
+# python -m scripts.ops_api_server --env dev --host 127.0.0.1 --port 18082 --reload
 ```
 
 ### 3) 启动企业微信 bridge（可选）
 
 ```bash
 python -m scripts.wecom_bridge_server --env dev --host 127.0.0.1 --port 18081
+# 开发调试可加热重载（代码变更自动重启）
+# python -m scripts.wecom_bridge_server --env dev --host 127.0.0.1 --port 18081 --reload
 ```
 
 ### 4) 启动前端
@@ -205,10 +209,16 @@ npm run dev
 ### 5) 常用重启命令（前端 / 后端 / 网关）
 
 > 说明：本地默认是嵌入式 Gateway，随 `Ops API` 进程一起重启；企业微信桥接服务为 `wecom_bridge_server`。
+> 若希望开发期自动重载，请使用前台 `--reload` 模式，不建议与 `nohup` 混用。
 
 ```bash
 # 在仓库根目录 support-agent-platform 执行
 mkdir -p logs
+
+# 0) WeCom 群聊与派发目标（2026-03-14 已核验）
+# 工单处理群 chatid: wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A
+# 故障处理群 chatid: wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ
+# 当前默认派发到“工单处理群”
 
 # 1) 重启后端 Ops API
 pkill -f "python -m scripts.ops_api_server" || true
@@ -216,6 +226,7 @@ nohup python -m scripts.ops_api_server --env dev --host 127.0.0.1 --port 18082 >
 
 # 2) 重启网关桥接（WeCom bridge）
 pkill -f "python -m scripts.wecom_bridge_server" || true
+export WECOM_DISPATCH_TARGETS_JSON='{"queue:human-handoff":"group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:u_dispatch_bot","inbox:wecom.default":"group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:u_dispatch_bot","default":"group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:u_dispatch_bot"}'
 nohup python -m scripts.wecom_bridge_server --env dev --host 127.0.0.1 --port 18081 > logs/wecom_bridge_server.log 2>&1 &
 
 # 3) 重启前端

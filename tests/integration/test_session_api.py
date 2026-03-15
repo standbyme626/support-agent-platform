@@ -115,7 +115,10 @@ def test_session_api_supports_active_switch_and_new_issue(
             assert new_command_data["reason"] == "explicit_new_command"
             assert new_command_data["session"]["active_ticket_id"] is None
             assert new_command_data["session"]["session_mode"] == "awaiting_new_issue"
-            assert new_command_data["session_action_result"]["trace_id"] == "trace_session_new_command_001"
+            assert (
+                new_command_data["session_action_result"]["trace_id"]
+                == "trace_session_new_command_001"
+            )
 
             switched = _json(
                 client,
@@ -145,7 +148,10 @@ def test_session_api_supports_active_switch_and_new_issue(
             assert end_phrase_data["reason"] == "chinese_end_phrase"
             assert end_phrase_data["session"]["active_ticket_id"] is None
             assert end_phrase_data["session"]["session_mode"] == "awaiting_new_issue"
-            assert end_phrase_data["session_action_result"]["trace_id"] == "trace_session_end_phrase_001"
+            assert (
+                end_phrase_data["session_action_result"]["trace_id"]
+                == "trace_session_end_phrase_001"
+            )
 
             new_issue = _json(
                 client,

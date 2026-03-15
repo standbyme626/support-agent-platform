@@ -1,0 +1,25 @@
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 54334)
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/socketserver.py", line 692, in process_request_thread
+    self.finish_request(request, client_address)
+  File "/usr/lib/python3.12/socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+  File "/usr/lib/python3.12/socketserver.py", line 761, in __init__
+    self.handle()
+  File "/usr/lib/python3.12/http/server.py", line 436, in handle
+    self.handle_one_request()
+  File "/usr/lib/python3.12/http/server.py", line 424, in handle_one_request
+    method()
+  File "/home/kkk/Project/support-agent-platform/scripts/wecom_bridge_server.py", line 711, in do_POST
+    self._write_json(HTTPStatus.OK, result.as_json())
+  File "/home/kkk/Project/support-agent-platform/scripts/wecom_bridge_server.py", line 744, in _write_json
+    self.wfile.write(encoded)
+  File "/usr/lib/python3.12/socketserver.py", line 840, in write
+    self._sock.sendall(b)
+BrokenPipeError: [Errno 32] Broken pipe
+----------------------------------------
+===== RESTART at 2026-03-15 01:48:59 CST +0800 =====
+===== RESTART at 2026-03-15 01:49:09 CST +0800 =====
+===== RESTART at 2026-03-15 01:53:04 CST +0800 =====
+===== RESTART(PTY) at 2026-03-15 01:53:48 CST +0800 =====

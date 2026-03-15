@@ -82,7 +82,13 @@ describe("TraceDetailPage", () => {
             timestamp: "2026-03-11T00:00:01+00:00",
             ticket_id: "TCK-001",
             session_id: "sess-001",
-            payload: { intent: "repair" }
+            payload: {
+              intent: "repair",
+              node: "router",
+              from_node: "ingress",
+              to_node: "dispatch",
+              summary: "agent suggested dispatch"
+            }
           }
         ]
       },
@@ -95,7 +101,10 @@ describe("TraceDetailPage", () => {
     expect(screen.getByText("工具调用")).toBeInTheDocument();
     expect(screen.getByText("Grounding 与摘要")).toBeInTheDocument();
     expect(screen.getByText("Trace 时间线")).toBeInTheDocument();
-    expect(screen.getByText("search_kb")).toBeInTheDocument();
+    expect(screen.getByText("Graph Execution Drilldown")).toBeInTheDocument();
+    expect(screen.getByText(/ingress -> dispatch/)).toBeInTheDocument();
+    expect(screen.getByText(/route_decision: agent suggested dispatch/)).toBeInTheDocument();
+    expect(screen.getAllByText("search_kb").length).toBeGreaterThan(0);
   });
 
   it("renders error state", () => {

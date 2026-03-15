@@ -188,9 +188,13 @@ export type TicketCopilotQueryData = {
   grounding_sources: GroundingSourceItem[];
   risk_flags: string[];
   llm_trace: Record<string, unknown>;
+  runtime_trace?: Record<string, unknown> | null;
+  recommended_actions?: Array<Record<string, unknown>>;
+  confidence?: number | null;
   generated_at: string | null;
   advice_only: boolean;
   dashboard_summary?: Record<string, unknown>;
+  queue_summary?: Array<Record<string, unknown>>;
   dispatch_priority?: Array<Record<string, unknown>>;
 };
 
@@ -290,6 +294,32 @@ export async function fetchTicketDetail(ticketId: string) {
 
 function toPayloadRecord(value: unknown) {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+function toRecord(value: unknown) {
+  return toPayloadRecord(value);
+}
+
+function toStringOrNull(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function toNumberOrNull(value: unknown): number | null {
+  return typeof value === "number" ? value : null;
+}
+
+function toBoolean(value: unknown): boolean {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "string") {
+    return value.trim().toLowerCase() === "true";
+  }
+  return false;
 }
 
 function sortTimestamp(value: string | null | undefined) {
@@ -441,11 +471,7 @@ export async function queryTicketCopilot(ticketId: string, query: string) {
   );
   return {
     ...response,
-    data: {
-      ...response.data,
-      generated_at: response.data.generated_at ?? null,
-      advice_only: true
-    }
+    data: normalizeCopilotQueryData(response.data)
   };
 }
 
@@ -460,11 +486,7 @@ export async function queryOperatorCopilot(query: string) {
   });
   return {
     ...response,
-    data: {
-      ...response.data,
-      generated_at: response.data.generated_at ?? null,
-      advice_only: true
-    }
+    data: normalizeCopilotQueryData(response.data)
   };
 }
 
@@ -479,11 +501,53 @@ export async function queryDispatchCopilot(query: string) {
   });
   return {
     ...response,
-    data: {
-      ...response.data,
-      generated_at: response.data.generated_at ?? null,
-      advice_only: true
-    }
+    data: normalizeCopilotQueryData(response.data)
+  };
+}
+
+function normalizeCopilotQueryData(raw: TicketCopilotQueryData): TicketCopilotQueryData {
+  const record = toRecord(raw);
+  const groundingSources = Array.isArray(record.grounding_sources)
+    ? (record.grounding_sources as GroundingSourceItem[])
+    : [];
+  const riskFlags = Array.isArray(record.risk_flags)
+    ? record.risk_flags.map((item: unknown) => String(item)).filter((item) => item.length > 0)
+    : [];
+  const recommendedActions = Array.isArray(record.recommended_actions)
+    ? record.recommended_actions
+        .filter((item: unknown) => item && typeof item === "object" && !Array.isArray(item))
+        .map((item: unknown) => item as Record<string, unknown>)
+    : [];
+  const dispatchPriority = Array.isArray(record.dispatch_priority)
+    ? record.dispatch_priority
+        .filter((item: unknown) => item && typeof item === "object" && !Array.isArray(item))
+        .map((item: unknown) => item as Record<string, unknown>)
+    : [];
+  const queueSummary = Array.isArray(record.queue_summary)
+    ? record.queue_summary
+        .filter((item: unknown) => item && typeof item === "object" && !Array.isArray(item))
+        .map((item: unknown) => item as Record<string, unknown>)
+    : [];
+
+  return {
+    scope: toStringOrNull(record.scope) ?? "ticket",
+    query: toStringOrNull(record.query) ?? "",
+    ticket_id: toStringOrNull(record.ticket_id) ?? undefined,
+    answer: toStringOrNull(record.answer) ?? "",
+    summary: toStringOrNull(record.summary) ?? undefined,
+    grounding_sources: groundingSources,
+    risk_flags: riskFlags,
+    llm_trace: toRecord(record.llm_trace),
+    runtime_trace: Object.keys(toRecord(record.runtime_trace)).length ? toRecord(record.runtime_trace) : null,
+    recommended_actions: recommendedActions,
+    confidence: toNumberOrNull(record.confidence),
+    generated_at: toStringOrNull(record.generated_at),
+    advice_only: toBoolean(record.advice_only),
+    dashboard_summary: Object.keys(toRecord(record.dashboard_summary)).length
+      ? toRecord(record.dashboard_summary)
+      : undefined,
+    queue_summary: queueSummary,
+    dispatch_priority: dispatchPriority
   };
 }
 

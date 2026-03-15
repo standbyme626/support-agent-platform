@@ -33,6 +33,28 @@ class _FlakyAdapter(BaseChannelAdapter):
         return {"chat_id": envelope.session_id, "text": envelope.body}
 
 
+class _DeliveryProbeAdapter(BaseChannelAdapter):
+    channel = "probe"
+
+    def __init__(self) -> None:
+        self.deliver_called = 0
+
+    def build_inbound(self, payload: dict[str, Any]) -> InboundEnvelope:  # pragma: no cover
+        return InboundEnvelope(channel=self.channel, session_id="s", message_text="m", metadata={})
+
+    def build_outbound(self, envelope: OutboundEnvelope) -> dict[str, object]:
+        return {"chat_id": envelope.session_id, "text": envelope.body}
+
+    def deliver_outbound(
+        self,
+        *,
+        outbound: OutboundEnvelope,
+        payload: dict[str, object],
+    ) -> dict[str, object]:
+        self.deliver_called += 1
+        return {"ok": True}
+
+
 def test_outbound_sender_retries_retryable_error(tmp_path: Path) -> None:
     sqlite_path = tmp_path / "tickets.db"
     log_path = tmp_path / "trace.log"
@@ -65,3 +87,30 @@ def test_outbound_sender_retries_retryable_error(tmp_path: Path) -> None:
     retry_payload = payload.get("retry")
     assert isinstance(retry_payload, dict)
     assert retry_payload.get("classification") == "temporary"
+
+
+def test_outbound_sender_can_skip_delivery_by_metadata_flag(tmp_path: Path) -> None:
+    sqlite_path = tmp_path / "tickets.db"
+    log_path = tmp_path / "trace.log"
+    adapter = _DeliveryProbeAdapter()
+    bindings = GatewayBindings(
+        channel_router=ChannelRouter({"probe": adapter}),
+        session_mapper=SessionMapper(sqlite_path),
+        trace_logger=JsonTraceLogger(log_path),
+    )
+    sender = OutboundSender(bindings)
+
+    payload = sender.send(
+        OutboundEnvelope(
+            channel="probe",
+            session_id="session-skip",
+            body="skip deliver",
+            metadata={"trace_id": "trace-skip", "skip_delivery": True},
+        ),
+        retries=0,
+    )
+
+    assert payload["chat_id"] == "session-skip"
+    assert adapter.deliver_called == 0
+    events = bindings.trace_logger.query_by_trace("trace-skip")
+    assert any(item["event_type"] == "egress_delivery_skipped" for item in events)

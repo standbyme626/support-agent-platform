@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any, Protocol, TypedDict
 
@@ -23,10 +24,17 @@ class InvestigationAgentProtocol(Protocol):
     ) -> dict[str, Any]: ...
 
 
-def build_intake_graph(intake_service: Any, investigation_agent: InvestigationAgentProtocol | None = None):
+def build_intake_graph(
+    intake_service: Any,
+    investigation_agent: InvestigationAgentProtocol | None = None,
+) -> Callable[..., dict[str, Any]]:
     """Build a minimal intake orchestration entrypoint with observable trace."""
 
-    def run_intake(payload: IntakeGraphState, *, previous: dict[str, Any] | None = None) -> dict[str, Any]:
+    def run_intake(
+        payload: IntakeGraphState,
+        *,
+        previous: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         session_id = str(payload.get("session_id", ""))
         text = str(payload.get("text", ""))
         metadata = payload.get("metadata", {}) or {}
@@ -40,9 +48,16 @@ def build_intake_graph(intake_service: Any, investigation_agent: InvestigationAg
         _record_trace(trace_steps, "intake_applied", {"status": intake_result.get("status")})
 
         investigation_result: dict[str, Any] | None = None
-        if investigation_agent is not None and _should_investigate(intent=intent, metadata=metadata):
+        if investigation_agent is not None and _should_investigate(
+            intent=intent,
+            metadata=metadata,
+        ):
             ticket_id = str(metadata.get("ticket_id") or session_id)
-            question = str(metadata.get("investigation_question") or text or "Please analyze this ticket.")
+            question = str(
+                metadata.get("investigation_question")
+                or text
+                or "Please analyze this ticket."
+            )
             actor_id = str(metadata.get("actor_id") or "system")
             investigation_result = investigation_agent.analyze(
                 ticket_id,
@@ -119,7 +134,11 @@ def _should_investigate(*, intent: str, metadata: dict[str, Any]) -> bool:
     return intent == "support"
 
 
-def _record_trace(steps: list[dict[str, Any]], step: str, details: dict[str, Any] | None = None) -> None:
+def _record_trace(
+    steps: list[dict[str, Any]],
+    step: str,
+    details: dict[str, Any] | None = None,
+) -> None:
     steps.append(
         {
             "step": step,

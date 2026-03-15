@@ -13,11 +13,21 @@ DisambiguationDecision = Literal[
     "new_issue_detected",
     "awaiting_disambiguation",
 ]
-SessionControlAction = Literal["session_end", "new_issue", "continue_current"]
+SessionControlAction = Literal[
+    "session_end",
+    "new_issue",
+    "continue_current",
+    "pause_session",
+    "resume_session",
+    "transfer_to_agent",
+    "view_history",
+    "reopen_ticket",
+    "list_tickets",
+]
 SessionControlSource = Literal["explicit_command", "chinese_rule"]
 
 _EXPLICIT_COMMAND_RE = re.compile(
-    r"^\s*(?:[@＠][^\s]+[:：,，]?\s*)*(?:\\|/|／|＼)(?P<command>end|new)\b",
+    r"^\s*(?:[@＠][^\s]+[:：,，]?\s*)*(?:\\|/|／|＼)\s*(?P<command>end|new|pause|resume|transfer|history|reopen|list)\b",
     re.IGNORECASE,
 )
 _END_RULE_PHRASES = (
@@ -27,6 +37,9 @@ _END_RULE_PHRASES = (
     "结束会话",
     "这轮先到这里",
     "先到这里",
+    "结束",
+    "关闭对话",
+    "关闭会话",
 )
 _NEW_RULE_PHRASES = (
     "我有一个新问题",
@@ -35,6 +48,14 @@ _NEW_RULE_PHRASES = (
     "新问题",
     "另一个问题",
     "另外一个问题",
+    "新建工单",
+    "开新工单",
+    "新建问题",
+    "新开工单",
+    "新创建工单",
+    "创建一个工单",
+    "开一个新工单",
+    "新建一个工单",
 )
 _CONTINUE_RULE_PHRASES = (
     "继续当前",
@@ -43,6 +64,57 @@ _CONTINUE_RULE_PHRASES = (
     "继续当前工单",
     "继续看一下工单",
     "还是这个问题",
+)
+_PAUSE_RULE_PHRASES = (
+    "暂停会话",
+    "暂时结束",
+    "先暂停",
+    "等一下",
+    "暂停",
+)
+_RESUME_RULE_PHRASES = (
+    "恢复会话",
+    "继续会话",
+    "继续刚才的",
+    "回来",
+    "继续",
+)
+_TRANSFER_RULE_PHRASES = (
+    "转人工",
+    "人工服务",
+    "需要人工",
+    "转接人工",
+    "找人工",
+)
+_HISTORY_RULE_PHRASES = (
+    "查看历史",
+    "之前的问题",
+    "历史记录",
+    "之前那个",
+)
+_REOPEN_RULE_PHRASES = (
+    "重新打开",
+    "重开工单",
+    "重新开启",
+    "再开一下",
+)
+_LIST_TICKETS_PHRASES = (
+    "查看工单列表",
+    "查看所有工单",
+    "查看我的工单列表",
+    "我的工单列表",
+    "工单列表",
+    "有哪些工单",
+    "查看P1工单",
+    "查看P2工单",
+    "查看P3工单",
+    "查看P4工单",
+    "查看紧急工单",
+    "查看高优先级工单",
+    "查看低优先级工单",
+    "待处理工单列表",
+    "处理中工单列表",
+    "已完结工单列表",
 )
 
 
@@ -79,6 +151,54 @@ def detect_session_control(message_text: str) -> SessionControlMatch | None:
                 reason="explicit_new_command",
                 confidence=1.0,
             )
+        if command == "pause":
+            return SessionControlMatch(
+                action="pause_session",
+                source="explicit_command",
+                priority=1,
+                reason="explicit_pause_command",
+                confidence=1.0,
+            )
+        if command == "resume":
+            return SessionControlMatch(
+                action="resume_session",
+                source="explicit_command",
+                priority=1,
+                reason="explicit_resume_command",
+                confidence=1.0,
+            )
+        if command == "transfer":
+            return SessionControlMatch(
+                action="transfer_to_agent",
+                source="explicit_command",
+                priority=1,
+                reason="explicit_transfer_command",
+                confidence=1.0,
+            )
+        if command == "history":
+            return SessionControlMatch(
+                action="view_history",
+                source="explicit_command",
+                priority=1,
+                reason="explicit_history_command",
+                confidence=1.0,
+            )
+        if command == "reopen":
+            return SessionControlMatch(
+                action="reopen_ticket",
+                source="explicit_command",
+                priority=1,
+                reason="explicit_reopen_command",
+                confidence=1.0,
+            )
+        if command == "list":
+            return SessionControlMatch(
+                action="list_tickets",
+                source="explicit_command",
+                priority=1,
+                reason="explicit_list_command",
+                confidence=1.0,
+            )
 
     lowered = text.lower()
     if any(phrase in text for phrase in _END_RULE_PHRASES):
@@ -105,6 +225,46 @@ def detect_session_control(message_text: str) -> SessionControlMatch | None:
             reason="chinese_continue_phrase",
             confidence=0.88,
         )
+    if any(phrase in text for phrase in _PAUSE_RULE_PHRASES):
+        return SessionControlMatch(
+            action="pause_session",
+            source="chinese_rule",
+            priority=2,
+            reason="chinese_pause_phrase",
+            confidence=0.90,
+        )
+    if any(phrase in text for phrase in _RESUME_RULE_PHRASES):
+        return SessionControlMatch(
+            action="resume_session",
+            source="chinese_rule",
+            priority=2,
+            reason="chinese_resume_phrase",
+            confidence=0.90,
+        )
+    if any(phrase in text for phrase in _TRANSFER_RULE_PHRASES):
+        return SessionControlMatch(
+            action="transfer_to_agent",
+            source="chinese_rule",
+            priority=2,
+            reason="chinese_transfer_phrase",
+            confidence=0.95,
+        )
+    if any(phrase in text for phrase in _HISTORY_RULE_PHRASES):
+        return SessionControlMatch(
+            action="view_history",
+            source="chinese_rule",
+            priority=2,
+            reason="chinese_history_phrase",
+            confidence=0.85,
+        )
+    if any(phrase in text for phrase in _REOPEN_RULE_PHRASES):
+        return SessionControlMatch(
+            action="reopen_ticket",
+            source="chinese_rule",
+            priority=2,
+            reason="chinese_reopen_phrase",
+            confidence=0.90,
+        )
 
     if "keep current" in lowered:
         return SessionControlMatch(
@@ -113,6 +273,14 @@ def detect_session_control(message_text: str) -> SessionControlMatch | None:
             priority=2,
             reason="english_continue_phrase",
             confidence=0.85,
+        )
+    if any(phrase in text for phrase in _LIST_TICKETS_PHRASES):
+        return SessionControlMatch(
+            action="list_tickets",
+            source="chinese_rule",
+            priority=2,
+            reason="chinese_list_tickets_phrase",
+            confidence=0.90,
         )
     return None
 
@@ -218,6 +386,78 @@ class NewIssueDetector:
                     candidate_ticket_ids=normalized_candidates,
                     active_ticket_id=normalized_active,
                     session_action="continue_current",
+                )
+
+            if session_control.action == "pause_session":
+                return self._build_result(
+                    decision="continue_current",
+                    confidence=session_control.confidence,
+                    reason=session_control.reason,
+                    intent=intent,
+                    suggested_ticket_id=normalized_active,
+                    candidate_ticket_ids=normalized_candidates,
+                    active_ticket_id=normalized_active,
+                    session_action="pause_session",
+                )
+
+            if session_control.action == "resume_session":
+                return self._build_result(
+                    decision="continue_current",
+                    confidence=session_control.confidence,
+                    reason=session_control.reason,
+                    intent=intent,
+                    suggested_ticket_id=normalized_active,
+                    candidate_ticket_ids=normalized_candidates,
+                    active_ticket_id=normalized_active,
+                    session_action="resume_session",
+                )
+
+            if session_control.action == "transfer_to_agent":
+                return self._build_result(
+                    decision="continue_current",
+                    confidence=session_control.confidence,
+                    reason=session_control.reason,
+                    intent=intent,
+                    suggested_ticket_id=normalized_active,
+                    candidate_ticket_ids=normalized_candidates,
+                    active_ticket_id=normalized_active,
+                    session_action="transfer_to_agent",
+                )
+
+            if session_control.action == "view_history":
+                return self._build_result(
+                    decision="continue_current",
+                    confidence=session_control.confidence,
+                    reason=session_control.reason,
+                    intent=intent,
+                    suggested_ticket_id=normalized_active,
+                    candidate_ticket_ids=normalized_candidates,
+                    active_ticket_id=normalized_active,
+                    session_action="view_history",
+                )
+
+            if session_control.action == "reopen_ticket":
+                return self._build_result(
+                    decision="continue_current",
+                    confidence=session_control.confidence,
+                    reason=session_control.reason,
+                    intent=intent,
+                    suggested_ticket_id=normalized_active,
+                    candidate_ticket_ids=normalized_candidates,
+                    active_ticket_id=normalized_active,
+                    session_action="reopen_ticket",
+                )
+
+            if session_control.action == "list_tickets":
+                return self._build_result(
+                    decision="continue_current",
+                    confidence=session_control.confidence,
+                    reason=session_control.reason,
+                    intent=intent,
+                    suggested_ticket_id=None,
+                    candidate_ticket_ids=normalized_candidates,
+                    active_ticket_id=normalized_active,
+                    session_action="list_tickets",
                 )
 
         if normalized_requested:

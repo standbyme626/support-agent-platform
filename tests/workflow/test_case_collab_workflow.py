@@ -79,6 +79,32 @@ def test_case_collab_commands_end_to_end(tmp_path: Path) -> None:
     assert "final_action_trail" in closed.ticket.metadata
 
 
+def test_case_collab_push_message_keeps_long_latest_message_context(tmp_path: Path) -> None:
+    sqlite_path = tmp_path / "tickets.db"
+    repo = TicketRepository(sqlite_path)
+    repo.apply_migrations()
+    api = TicketAPI(repo)
+    long_message = (
+        "停车场闸机无法落杆，入口车辆排队超过20台，请求立即处理。"
+        "同时伴随报警声和屏幕报错代码E102。"
+    ) * 6 + "尾部标记XYZ。"
+    ticket = api.create_ticket(
+        channel="wecom",
+        session_id="session-collab-long-msg",
+        thread_id="thread-collab-long-msg",
+        title="停车系统异常",
+        latest_message=long_message,
+        intent="repair",
+        queue="support",
+    )
+    collab = CaseCollabWorkflow(api)
+
+    pushed = collab.push_new_ticket(ticket.ticket_id)
+
+    assert "summary=" in pushed["message"]
+    assert "尾部标记XYZ" in pushed["message"]
+
+
 def test_case_collab_sensitive_reassign_requires_approval(tmp_path: Path) -> None:
     api, ticket_id = _prepare_ticket(tmp_path)
     collab = CaseCollabWorkflow(api)
@@ -148,6 +174,8 @@ def test_case_collab_supports_close_compat_operator_close_and_end_session(tmp_pa
     )
     assert ended.command == "end-session"
     events = api.list_events(session_ticket.ticket_id)
-    session_end_events = [item for item in events if item.event_type == "collab_session_end_requested"]
+    session_end_events = [
+        item for item in events if item.event_type == "collab_session_end_requested"
+    ]
     assert session_end_events
     assert session_end_events[-1].payload["session_id"] == "session-collab-end"
