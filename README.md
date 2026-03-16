@@ -7,17 +7,70 @@
 
 ## 一句话定位
 
-一个把“多渠道报修入口、工单流转、协同处理、运营工作台、AI辅助”收敛到同一套 ticket core 的内部支持平台。
+一个把"多渠道报修入口、工单流转、协同处理、运营工作台、AI辅助"收敛到同一套 ticket core 的内部支持平台。
 
-## 解决的业务问题
+## 解决的业务痛点
 
 这个系统针对以下高频痛点设计：
 
-1. 消息入口分散：企业微信/内部渠道消息进入后，难统一到一个可追踪工单主线。
-2. 处理过程不透明：谁认领、谁转派、为何升级、是否超 SLA，缺少统一视图。
-3. 重复判断成本高：相同问题反复人工检索 FAQ/SOP/历史案例，效率低。
-4. 用户追问难恢复上下文：多轮沟通后难快速回放已发生动作与证据来源。
-5. 内部协同链条割裂：处理群、工单系统、前端工作台之间状态不一致。
+### 1. 消息入口分散
+- **痛点**：企业微信/飞书/钉钉/内部渠道消息进入后，难统一到一个可追踪工单主线
+- **解决**：多渠道统一接入层（OpenClaw Gateway），所有入口消息自动转为可追踪 ticket
+
+### 2. 处理过程不透明
+- **痛点**：谁认领、谁转派、为何升级、是否超 SLA，缺少统一视图
+- **解决**：完整工单生命周期状态机 + Timeline 审计 + SLA 预警/超时监控
+
+### 3. 重复判断成本高
+- **痛点**：相同问题反复人工检索 FAQ/SOP/历史案例，效率低
+- **解决**：AI 入口分流（FAQ 直答）+ 相似案例推荐 + 智能摘要生成
+
+### 4. 用户追问难恢复上下文
+- **痛点**：多轮沟通后难快速回放已发生动作与证据来源
+- **解决**：完整事件时间线 + Trace 链路追踪 + Grounding 证据溯源
+
+### 5. 内部协同链条割裂
+- **痛点**：处理群、工单系统、前端工作台之间状态不一致
+- **解决**：统一工单核心 + 协同工作流 + 实时同步的处理状态
+
+### 6. 高风险操作缺乏审批
+- **痛点**：转派、升级等敏感操作缺少审批机制，难以追溯
+- **解决**：HITL（Human-In-The-Loop）审批流，高风险动作必须审批后执行
+
+### 7. 知识维护成本高
+- **痛点**：FAQ/SOP/历史案例散落各处，更新不及时
+- **解决**：统一知识库管理（FAQ/SOP/历史案例）+ AI 辅助检索
+
+### 8. 运营数据不透明
+- **痛点**：无法快速了解队列压力、SLA 风险、处理效率
+- **解决**：运营 Dashboard + 队列监控 + 实时指标看板
+
+## 核心功能特性
+
+### 多渠道统一接入
+- 支持企业微信、飞书、钉钉等渠道
+- OpenClaw Gateway 统一入口、会话绑定、路由分发
+- 签名验证、重放防护、 retry 观测
+
+### 智能工单处理
+- AI 入口分流：自动识别 FAQ 直答还是建单
+- 相似案例推荐：减少重复处理
+- 智能摘要：快速了解工单上下文
+- 推荐动作：AI 建议下一步操作
+
+### 完整工作流
+- **员工请求入口**：消息 → 理解 → 检索 → 建单/回复
+- **处理人员协同**：认领 → 转派 → 升级 → 解决 → 关闭
+- **前端工作台处理**：筛选 → 查看 → 处理 → 审批 → 知识维护
+
+### 可观测性
+- 全链路 Trace：每个请求完整追踪
+- SLA 监控：预警/超时实时提醒
+- Channel 健康度：各渠道接入状态监控
+
+### 审批与合规
+- HITL 审批流：高风险动作必须审批
+- 完整审计日志：所有操作可追溯
 
 ## 面向角色
 
@@ -206,6 +259,148 @@ npm install
 npm run dev
 ```
 
+## 完整命令参考
+
+### Makefile 命令（项目根目录）
+
+```bash
+# 代码质量
+make format          # 代码格式化 (ruff format)
+make lint            # 代码检查 (ruff check)
+make typecheck       # 类型检查 (mypy)
+make validate-structure  # 目录结构校验
+
+# 测试
+make test            # 运行所有测试
+make test-unit       # 单元测试
+make test-workflow   # 工作流测试
+make test-regression # 回归测试
+make test-integration # 集成测试
+make smoke-replay    # Gateway 冒烟测试
+
+# 验收与部署
+make acceptance           # 运行验收测试
+make acceptance-gate      # 验收 + Trace KPI
+make trace-kpi            # 生成 Trace KPI 报告
+make ci                   # CI 完整检查 (validate-structure + lint + typecheck + 所有测试)
+make check                # 本地快速检查
+
+# 部署相关
+make deploy-release       # 部署发布
+make verify-release       # 验证发布
+make rollback-release     # 回滚发布
+make container-smoke      # Docker 容器冒烟测试
+
+# 环境变量
+make deploy-release ENV=prod   # 指定环境部署
+```
+
+### 前端命令（web_console 目录）
+
+```bash
+# 开发
+npm run dev              # 启动开发服务器 (localhost:3000)
+npm run build            # 生产构建
+npm run start            # 启动生产服务器
+
+# 测试与质量
+npm run test             # 运行测试 (vitest)
+npm run lint             # ESLint 检查
+npm run typecheck        # TypeScript 类型检查
+```
+
+### 常用脚本命令
+
+```bash
+# 事件重放（模拟用户请求）
+python -m scripts.replay_gateway_event.py --env dev --channel wecom --session-id demo-u1 --text "停车场抬杆故障" --trace-id trace_demo_u1
+
+# Gateway 状态查询
+python -m scripts.gateway_status --env dev
+
+# Trace 调试
+python -m scripts.trace_debug --env dev --trace-id <trace_id>
+
+# 健康检查
+python -m scripts.healthcheck --env dev
+
+# 验收测试
+python -m scripts.run_acceptance --env dev
+
+# Trace KPI 分析
+python -m scripts.trace_kpi --env dev --output storage/acceptance/trace_kpi_from_log.json
+
+# 发布相关
+python -m scripts.deploy_release --env dev
+python -m scripts.verify_release --env dev --require-active-release
+python -m scripts.rollback_release --env dev
+```
+
+### 常用重启命令（前端 / 后端 / 网关）
+
+> 说明：本地默认是嵌入式 Gateway，随 `Ops API` 进程一起重启；企业微信桥接服务为 `wecom_bridge_server`。
+> 若希望开发期自动重载，请使用前台 `--reload` 模式，不建议与 `nohup` 混用。
+
+```bash
+# 在仓库根目录 support-agent-platform 执行
+mkdir -p logs
+
+# 0) WeCom 群聊与派发目标（2026-03-14 已核验）
+# 工单处理群 chatid: wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A
+# 故障处理群 chatid: wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ
+# 当前默认派发到"工单处理群"
+
+# 1) 重启后端 Ops API
+pkill -f "python -m scripts.ops_api_server" || true
+nohup python -m scripts.ops_api_server --env dev --host 127.0.0.1 --port 18082 > logs/ops_api_server.log 2>&1 &
+
+# 2) 重启网关桥接（WeCom bridge）
+pkill -f "python -m scripts.wecom_bridge_server" || true
+export WECOM_DISPATCH_TARGETS_JSON='{"queue:human-handoff":"group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:u_dispatch_bot","inbox:wecom.default":"group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:u_dispatch_bot","default":"group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:u_dispatch_bot"}'
+nohup python -m scripts.wecom_bridge_server --env dev --host 127.0.0.1 --port 18081 > logs/wecom_bridge_server.log 2>&1 &
+
+# 3) 重启前端
+pkill -f "next dev --hostname 0.0.0.0 --port 3000" || true
+(cd web_console && nohup npm run dev -- --hostname 0.0.0.0 --port 3000 > ../logs/web_console_dev.log 2>&1 &)
+
+# 4) 健康检查
+curl http://127.0.0.1:18082/healthz
+curl http://127.0.0.1:18081/healthz
+curl -I http://127.0.0.1:3000
+```
+
+### 服务端口说明
+
+| 服务 | 端口 | 说明 |
+|------|------|------|
+| Ops API | 18082 | 主要业务 API 服务 |
+| WeCom Bridge | 18081 | 企业微信消息桥接 |
+| Web Console | 3000 | 前端开发/生产服务 |
+
+### 2) 启动 Ops API
+
+```bash
+python -m scripts.ops_api_server --env dev --host 127.0.0.1 --port 18082
+# 开发调试可加热重载（代码变更自动重启）
+# python -m scripts.ops_api_server --env dev --host 127.0.0.1 --port 18082 --reload
+```
+
+### 3) 启动企业微信 bridge（可选）
+
+```bash
+python -m scripts.wecom_bridge_server --env dev --host 127.0.0.1 --port 18081
+# 开发调试可加热重载（代码变更自动重启）
+# python -m scripts.wecom_bridge_server --env dev --host 127.0.0.1 --port 18081 --reload
+```
+
+### 4) 启动前端
+
+```bash
+cd web_console
+npm install
+npm run dev
+```
+
 ### 5) 常用重启命令（前端 / 后端 / 网关）
 
 > 说明：本地默认是嵌入式 Gateway，随 `Ops API` 进程一起重启；企业微信桥接服务为 `wecom_bridge_server`。
@@ -253,21 +448,75 @@ curl -I http://127.0.0.1:3000
 - `web_console/`：Ops Console 页面、组件、API 客户端、前端测试。
 - `seed_data/`：FAQ/SOP/history_case、SLA规则、acceptance样本。
 
-## 关键页面
+## 关键页面功能说明
 
-- `/`：Dashboard（运营概览）
-- `/tickets`：工单列表
-- `/tickets/[ticketId]`：工单详情 + 时间线 + AI Assist
-- `/traces`：链路列表
-- `/traces/[traceId]`：链路详情
-- `/queues`：队列视图
-- `/kb/faq`、`/kb/sop`、`/kb/cases`：知识库管理
-- `/channels`：渠道与 OpenClaw 可靠性观察
+### 运营工作台 Dashboard `/`
+
+**核心指标卡片：**
+- 今日新建工单数（最近24小时创建）
+- 处理中工单数（open + pending）
+- SLA 风险工单（预警 + 超时）
+- 已升级工单数
+- 待接管工单（handoff pending）
+- Trace 错误数（最近错误事件）
+- 待审批数（高风险动作等待审批）
+- 咨询复用数（FAQ/Greeting 复用历史咨询）
+- 并单建议数（重复候选识别）
+- 并单采纳率
+
+**状态块：**
+- SLA 状态块：预警/超时统计
+- Trace 错误块：最近错误事件列表
+- Channel/Gateway 状态块：各渠道连接状态
+- 队列摘要块：各队列工单分布
+- 待处理审批块：待审批列表
+
+### 工单列表 `/tickets`
+
+- 工单筛选（状态、SLA、创建时间、队列等）
+- 工单表格展示
+- 批量操作支持
+- 工单导出
+
+### 工单详情 `/tickets/[ticketId]`
+
+- 工单基本信息（标题、状态、优先级、SLA）
+- AI 摘要卡片（自动生成工单摘要）
+- 时间线（完整事件演进）
+- AI Assist 面板（相似案例、推荐动作、Grounding 证据）
+- 操作面板（认领、转派、升级、解决、关闭）
+- 审批操作（批准/拒绝）
+
+### 链路追踪 `/traces`
+
+- Trace 列表（按时间排序）
+- Trace 详情（路由卡片、Tool Calls 卡片、Grounding 卡片）
+- 错误溯源
+
+### 队列视图 `/queues`
+
+- 队列汇总卡片
+- 处理人工作量卡片
+- 队列分布可视化
+
+### 知识库 `/kb/*`
+
+- **FAQ** `/kb/faq`：常见问题管理
+- **SOP** `/kb/sop`：标准操作流程管理
+- **历史案例** `/kb/cases`：历史工单案例库
+- 知识条目增删改查
+- 来源类型标签
+
+### 渠道监控 `/channels`
+
+- Gateway 状态卡片
+- Channel 健康度卡片
+- Webhook 日志表
 
 ## 演示链路（员工报修 -> 建单 -> 协同 -> 前端处理 -> 进度查询）
 
 1. 员工报修：
-   `python scripts/replay_gateway_event.py --env dev --channel wecom --session-id demo-u1 --text "停车场抬杆故障" --trace-id trace_demo_u1`
+   `python -m scripts.replay_gateway_event.py --env dev --channel wecom --session-id demo-u1 --text "停车场抬杆故障" --trace-id trace_demo_u1`
 2. 建单确认：
    `curl "http://127.0.0.1:18082/api/tickets?page=1&page_size=20"`
 3. 协同处理：
