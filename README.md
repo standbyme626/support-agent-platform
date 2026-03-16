@@ -377,56 +377,116 @@ curl -I http://127.0.0.1:3000
 | WeCom Bridge | 18081 | 企业微信消息桥接 |
 | Web Console | 3000 | 前端开发/生产服务 |
 
-### 2) 启动 Ops API
+## 企业微信（WeCom）相关命令与配置
+
+### 环境变量配置
 
 ```bash
-python -m scripts.ops_api_server --env dev --host 127.0.0.1 --port 18082
-# 开发调试可加热重载（代码变更自动重启）
-# python -m scripts.ops_api_server --env dev --host 127.0.0.1 --port 18082 --reload
+# 派发目标配置（必填）
+export WECOM_DISPATCH_TARGETS_JSON='{"inbox:wecom.default":"group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:u_dispatch_bot"}'
+
+# 自动派发开关（默认关闭）
+export WECOM_DISPATCH_AUTO_ENABLED=1
+
+# 长消息分段阈值（默认1200字符）
+export WECOM_BRIDGE_OUTBOUND_CHUNK_CHARS=1200
+
+# 群聊模板去重窗口（默认60秒，设为0关闭）
+export WECOM_GROUP_TEMPLATE_DEDUP_WINDOW_SECONDS=60
+
+# 私聊详情异步发送（默认开启）
+export WECOM_GROUP_PRIVATE_DETAIL_ASYNC=1
+
+# 真实 API 发送（默认关闭，仅渲染不投递）
+export WECOM_APP_API_ENABLED=1
+export WECOM_CORP_ID=wwd783420586740f2d
+export WECOM_AGENT_ID=1000044
+export WECOM_AGENT_SECRET="$WECOM_AGENT_SECRET"
 ```
 
-### 3) 启动企业微信 bridge（可选）
+### WeCom 派发目标映射（Target Mapping）
+
+`WECOM_DISPATCH_TARGETS_JSON` 支持的键优先级：
+1. `queue:<queue_name>`
+2. `inbox:<inbox_name>`
+3. `<queue_name>`
+4. `<inbox_name>`
+5. `default`
+
+值写法：
+- `group:<group_id>:user:<actor_id>`（完整 session_id）
+- `group:<group_id>`（自动补 `:user:u_dispatch_bot`）
+- `<group_id>`（纯群 ID，自动补前缀）
+
+### 企业微信协同命令
+
+| 命令 | 何时可用 | 典型场景 | 示例 |
+| --- | --- | --- | --- |
+| `/new` | 当前会话中要切换到新问题 | 同一用户连续报修多个故障 | `/new` |
+| `/end` | 当前会话要结束 | 本轮咨询结束 | `/end` |
+| `/claim` | 处理群内、工单已存在 | 工程师接手工单 | `/claim TCK-123456` |
+| `/resolve` | 工程师已处理完成 | 进入"待用户确认恢复" | `/resolve TCK-123456 已修复并复测正常` |
+| `/customer-confirm` | 用户确认恢复 | 结束工单闭环 | `/customer-confirm TCK-123456` |
+| `/operator-close` | 需要人工强制关闭 | 用户失联、重复单、误报等 | `/operator-close TCK-123456 用户失联` |
+| `/end-session` | 协同侧主动结束会话上下文 | 工单处理结束后清理会话态 | `/end-session TCK-123456 manual_end_session` |
+| `/close` | 兼容命令 | 老命令平滑过渡 | `/close TCK-123456` |
+
+**支持空格变体**：`/ claim TCK-xxx`、`/ resolve TCK-xxx 备注`
+
+**支持中文自然语义**：
+- `认领工单 TCK-xxx`、`我来处理 TCK-xxx` -> `claim`
+- `已解决 TCK-xxx`、`处理完成 TCK-xxx` -> `resolve`
+- `人工关闭 TCK-xxx` -> `operator-close`
+
+### WeCom 重放测试命令
 
 ```bash
-python -m scripts.wecom_bridge_server --env dev --host 127.0.0.1 --port 18081
-# 开发调试可加热重载（代码变更自动重启）
-# python -m scripts.wecom_bridge_server --env dev --host 127.0.0.1 --port 18081 --reload
+# 模拟企业微信群消息（Dispatch Bridge 流程）
+python -m scripts.replay_wecom_dispatch_bridge.py \
+  --env dev \
+  --sender-id u_report_user \
+  --chat-id wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ \
+  --text "停车场抬杆故障" \
+  --trace-id trace_wecom_dispatch_test
+
+# 模拟企业微信用户消息（普通入口流程）
+python -m scripts.replay_gateway_event.py \
+  --env dev \
+  --channel wecom \
+  --session-id demo-u1 \
+  --text "停车场抬杆故障" \
+  --trace-id trace_demo_u1
 ```
 
-### 4) 启动前端
+### WeCom Bridge 推荐启动命令
 
 ```bash
-cd web_console
-npm install
-npm run dev
+cd /home/kkk/Project/support-agent-platform
+
+PYTHONPATH=. \
+WECOM_APP_API_ENABLED=1 \
+WECOM_DISPATCH_AUTO_ENABLED=1 \
+WECOM_CORP_ID=wwd783420586740f2d \
+WECOM_AGENT_ID=1000044 \
+WECOM_AGENT_SECRET="$WECOM_AGENT_SECRET" \
+WECOM_DISPATCH_TARGETS_JSON='{"inbox:wecom.default":"group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:u_dispatch_bot"}' \
+python scripts/wecom_bridge_server.py --env dev --host 0.0.0.0 --port 18081 --path /wecom/process
 ```
 
-### 5) 常用重启命令（前端 / 后端 / 网关）
+**配套群信息**：
+- 故障维修群（上报入口）：`wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ`
+- 工单处理群（派工目标）：`wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A`
 
-> 说明：本地默认是嵌入式 Gateway，随 `Ops API` 进程一起重启；企业微信桥接服务为 `wecom_bridge_server`。
-> 若希望开发期自动重载，请使用前台 `--reload` 模式，不建议与 `nohup` 混用。
+### WeCom Trace 事件
 
-```bash
-# 在仓库根目录 support-agent-platform 执行
-mkdir -p logs
+- `wecom_dispatch_decision`：派发决策
+- `wecom_dispatch_blocked`：派发阻断
+- `wecom_dispatch_delivery`：派发投递结果
+- `wecom_group_template_dedup_suppressed`：群聊模板去重
+- `wecom_private_detail_async_scheduled`：私聊详情异步调度
+- `wecom_private_detail_session_bound`：私聊详情会话绑定
 
-# 0) WeCom 群聊与派发目标（2026-03-14 已核验）
-# 工单处理群 chatid: wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A
-# 故障处理群 chatid: wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ
-# 当前默认派发到“工单处理群”
-
-# 1) 重启后端 Ops API
-pkill -f "python -m scripts.ops_api_server" || true
-nohup python -m scripts.ops_api_server --env dev --host 127.0.0.1 --port 18082 > logs/ops_api_server.log 2>&1 &
-
-# 2) 重启网关桥接（WeCom bridge）
-pkill -f "python -m scripts.wecom_bridge_server" || true
-export WECOM_DISPATCH_TARGETS_JSON='{"queue:human-handoff":"group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:u_dispatch_bot","inbox:wecom.default":"group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:u_dispatch_bot","default":"group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:u_dispatch_bot"}'
-nohup python -m scripts.wecom_bridge_server --env dev --host 127.0.0.1 --port 18081 > logs/wecom_bridge_server.log 2>&1 &
-
-# 3) 重启前端
-pkill -f "next dev --hostname 0.0.0.0 --port 3000" || true
-(cd web_console && nohup npm run dev -- --hostname 0.0.0.0 --port 3000 > ../logs/web_console_dev.log 2>&1 &)
+## 主要目录说明
 
 # 4) 健康检查
 curl http://127.0.0.1:18082/healthz
