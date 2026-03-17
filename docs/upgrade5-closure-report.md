@@ -28,7 +28,8 @@
 - 现状是已下沉一部分路由到 `app/transport/http/handlers.py`，并新增
 - `app/application/intake_runtime_service.py`（intake/investigation）
 - `app/application/session_runtime_service.py`（session_new_issue/session_end_v2）
-- 但 `scripts/ops_api_server.py` 仍承担较多编排与流程控制逻辑，仍需继续下沉
+- `app/application/ticket_runtime_service.py`（close compat/ticket assist）
+- 但 `scripts/ops_api_server.py` 仍保留部分 ticket action 编排逻辑（如 `_resolve_action/_execute_v2_ticket_action`），仍需继续下沉
 
 ## 4. 风险点
 

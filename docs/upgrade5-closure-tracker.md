@@ -66,6 +66,10 @@
   - 新增 `app/application/session_runtime_service.py`，承接 `session_new_issue/session_end_v2` 编排逻辑。
   - `scripts/ops_api_server.py` 对应会话控制函数改为薄壳转发，行为保持一致。
   - 已通过：`17 passed`（`test_session_api + test_ticket_actions_api + U5 runtime/copilot/wecom bridge`）。
+- [x] P1-1 薄壳化阶段C已落地（本次）
+  - 新增 `app/application/ticket_runtime_service.py`，承接 `close compat` 与 `ticket assist` 逻辑。
+  - `scripts/ops_api_server.py` 中 `_execute_close_compat_action/_build_ticket_assist_payload` 已改为薄壳转发。
+  - 已通过：`18 passed`（`test_ticket_actions_api + test_session_api + test_reply_events_api + U5 runtime/copilot/wecom bridge`）。
 
 ### 进行中
 
