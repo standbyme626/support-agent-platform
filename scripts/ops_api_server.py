@@ -32,6 +32,10 @@ from app.application.intake_runtime_service import (
     run_intake_graph_v2 as run_intake_graph_v2_service,
     run_ticket_investigation_v2 as run_ticket_investigation_v2_service,
 )
+from app.application.session_runtime_service import (
+    run_session_end_v2 as run_session_end_v2_service,
+    run_session_new_issue as run_session_new_issue_service,
+)
 from app.application.intake_service import IntakeService
 from app.bootstrap.runtime import build_ops_api_bootstrap
 from app.domain.ticket.ticket_api import TicketAPI as TicketAPIV2
@@ -1746,42 +1750,12 @@ def _run_session_new_issue(
     session_id: str,
     payload: dict[str, Any],
 ) -> dict[str, Any]:
-    if runtime.gateway.bindings.session_mapper.get(session_id) is None:
-        raise KeyError(f"session {session_id} not found")
-    actor_id = str(payload.get("actor_id") or "").strip()
-    if not actor_id:
-        raise ValueError("actor_id is required")
-    reason = str(payload.get("reason") or "new_issue_requested").strip() or "new_issue_requested"
-    trace_id = str(payload.get("trace_id") or new_trace_id()).strip()
-    runtime.gateway.bindings.session_mapper.begin_new_issue(
-        session_id,
-        metadata={
-            "session_mode": "awaiting_new_issue",
-            "last_intent": "new_issue_requested",
-            "updated_by": actor_id,
-            "new_issue_reason": reason,
-        },
-    )
-    runtime.trace_logger.log(
-        "session_new_issue",
-        {
-            "session_id": session_id,
-            "actor_id": actor_id,
-            "reason": reason,
-            "event_type": "session_new_issue",
-        },
-        trace_id=trace_id,
+    return run_session_new_issue_service(
+        runtime,
         session_id=session_id,
+        payload=payload,
+        session_payload_getter=_session_payload,
     )
-    return {
-        "session_id": session_id,
-        "actor_id": actor_id,
-        "reason": reason,
-        "event_type": "session_new_issue",
-        "message": "Session switched to new issue mode.",
-        "trace_id": trace_id,
-        "session": _session_payload(runtime, session_id),
-    }
 
 
 def _run_session_end_v2(
@@ -1790,34 +1764,12 @@ def _run_session_end_v2(
     session_id: str,
     payload: dict[str, Any],
 ) -> dict[str, Any]:
-    if runtime.gateway.bindings.session_mapper.get(session_id) is None:
-        raise KeyError(f"session {session_id} not found")
-    actor_id = str(payload.get("actor_id") or "").strip()
-    if not actor_id:
-        raise ValueError("actor_id is required")
-    reason = str(payload.get("reason") or "manual_end").strip() or "manual_end"
-    trace_id = str(payload.get("trace_id") or new_trace_id()).strip()
-    action_result = runtime.ticket_api_v2.end_session(
-        session_id,
-        actor_id=actor_id,
-        reason=reason,
-    )
-    runtime.trace_logger.log(
-        "session_end_v2",
-        {
-            "session_id": session_id,
-            "actor_id": actor_id,
-            "reason": reason,
-            "event_type": action_result.event_type,
-        },
-        trace_id=trace_id,
+    return run_session_end_v2_service(
+        runtime,
         session_id=session_id,
+        payload=payload,
+        session_payload_getter=_session_payload,
     )
-    return {
-        **asdict(action_result),
-        "trace_id": trace_id,
-        "session": _session_payload(runtime, session_id),
-    }
 
 
 def _extract_runtime_trace_fields(

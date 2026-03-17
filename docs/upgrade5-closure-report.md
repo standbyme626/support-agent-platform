@@ -25,7 +25,9 @@
 ## 3. 还没完成什么
 
 - P1-1 `ops_api_server.py` 薄壳化还未完成：
-- 现状是已下沉一部分路由到 `app/transport/http/handlers.py`，并新增 `app/application/intake_runtime_service.py` 承接 intake/investigation 逻辑
+- 现状是已下沉一部分路由到 `app/transport/http/handlers.py`，并新增
+- `app/application/intake_runtime_service.py`（intake/investigation）
+- `app/application/session_runtime_service.py`（session_new_issue/session_end_v2）
 - 但 `scripts/ops_api_server.py` 仍承担较多编排与流程控制逻辑，仍需继续下沉
 
 ## 4. 风险点
