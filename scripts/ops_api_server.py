@@ -22,11 +22,7 @@ from app.agents.deep.ticket_investigation_agent import (
     TicketInvestigationAgent,
     build_ticket_investigation_agent,
 )
-from app.application.collab_service import (
-    CollabService,
-    prepare_collab_action_state,
-    resume_collab_action_state_from_payload,
-)
+from app.application.collab_service import CollabService
 from app.application.intake_runtime_service import (
     extract_runtime_trace_fields as extract_runtime_trace_fields_service,
     run_intake_graph_v2 as run_intake_graph_v2_service,
@@ -38,7 +34,10 @@ from app.application.session_runtime_service import (
 )
 from app.application.ticket_runtime_service import (
     build_ticket_assist_payload as build_ticket_assist_payload_service,
+    execute_action_without_approval as execute_action_without_approval_service,
     execute_close_compat_action as execute_close_compat_action_service,
+    execute_v2_ticket_action as execute_v2_ticket_action_service,
+    resolve_action as resolve_action_service,
 )
 from app.application.intake_service import IntakeService
 from app.bootstrap.runtime import build_ops_api_bootstrap
@@ -61,7 +60,6 @@ from app.transport.http.server import build_http_handler
 from config import AppConfig
 from core.disambiguation import NewIssueDetector
 from core.hitl.approval_runtime import ApprovalRuntime
-from core.hitl.handoff_context import build_approval_context
 from core.intent_router import IntentRouter
 from core.recommended_actions_engine import RecommendedActionsEngine
 from core.retrieval.source_attribution import build_source_payloads
@@ -1379,215 +1377,26 @@ def _coerce_int(raw: object) -> int | None:
 def _resolve_action(
     runtime: OpsApiRuntime, *, ticket_id: str, action: str, body: dict[str, Any]
 ) -> dict[str, Any]:
-    actor_id = str(body.get("actor_id") or "").strip()
-    if not actor_id:
-        raise ValueError("actor_id is required")
-
-    action_payload = dict(body)
-    action_payload["actor_id"] = actor_id
-    collab_state = prepare_collab_action_state(
-        runtime.collab_service,
+    return resolve_action_service(
+        runtime,
         ticket_id=ticket_id,
         action=action,
-        actor_id=actor_id,
-        payload=action_payload,
+        body=body,
+        ticket_to_dict=_ticket_to_dict,
+        ticket_trace_id_getter=_ticket_trace_id,
     )
-    if isinstance(collab_state, dict):
-        checkpoint_id = str(collab_state.get("pause_checkpoint_id") or "").strip()
-        normalized_action = str(collab_state.get("normalized_action") or "").strip()
-        if checkpoint_id:
-            action_payload["collab_checkpoint_id"] = checkpoint_id
-        if normalized_action:
-            action_payload["collab_normalized_action"] = normalized_action
-        if collab_state.get("requires_approval") is not None:
-            action_payload["collab_requires_approval"] = bool(collab_state["requires_approval"])
-    maybe_trace_id = str(body.get("trace_id") or "").strip() or None
-    approval_result = runtime.approval_runtime.request_approval_if_needed(
-        ticket_id=ticket_id,
-        action_type=action,
-        actor_id=actor_id,
-        payload=action_payload,
-        context=build_approval_context(
-            ticket=runtime.ticket_api.require_ticket(ticket_id),
-            action_type=action,
-            payload=action_payload,
-        ),
-        timeout_minutes=(
-            int(body["timeout_minutes"]) if isinstance(body.get("timeout_minutes"), int) else None
-        ),
-        trace_id=maybe_trace_id,
-    )
-    if approval_result.requires_approval and approval_result.pending_action is not None:
-        ticket_payload = _ticket_to_dict(approval_result.ticket)
-        ticket_payload.update(
-            {
-                "approval_required": True,
-                "approval_id": approval_result.pending_action.approval_id,
-                "approval_status": approval_result.pending_action.status,
-                "approval_action_type": approval_result.pending_action.action_type,
-                "collab_graph": collab_state,
-            }
-        )
-        return ticket_payload
-
-    if action_payload.get("collab_checkpoint_id"):
-        resumed = resume_collab_action_state_from_payload(
-            runtime.collab_service,
-            pending_payload=action_payload,
-            decision="approve",
-            actor_id=actor_id,
-        )
-        if resumed is not None:
-            collab_state = resumed
-
-    if action == "claim":
-        ticket = runtime.ticket_api.assign_ticket(ticket_id, assignee=actor_id, actor_id=actor_id)
-    elif action == "reassign":
-        target_queue = str(body.get("target_queue") or "").strip()
-        target_assignee = str(body.get("target_assignee") or "").strip()
-        updates: dict[str, Any] = {}
-        if target_queue:
-            updates["queue"] = target_queue
-        if updates:
-            runtime.ticket_api.update_ticket(ticket_id, updates, actor_id=actor_id)
-        ticket = (
-            runtime.ticket_api.assign_ticket(ticket_id, assignee=target_assignee, actor_id=actor_id)
-            if target_assignee
-            else runtime.ticket_api.require_ticket(ticket_id)
-        )
-        runtime.ticket_api.add_event(
-            ticket_id,
-            event_type="ticket_reassign_requested",
-            actor_type="agent",
-            actor_id=actor_id,
-            payload={"target_queue": target_queue, "target_assignee": target_assignee},
-        )
-    elif action == "escalate":
-        note = str(body.get("note") or "升级处理")
-        ticket = runtime.ticket_api.escalate_ticket(ticket_id, actor_id=actor_id, reason=note)
-    elif action == "resolve":
-        action_result = _execute_v2_ticket_action(
-            runtime,
-            ticket_id=ticket_id,
-            action="resolve",
-            actor_id=actor_id,
-            payload=body,
-        )
-        ticket = runtime.ticket_api.require_ticket(ticket_id)
-        payload = _ticket_to_dict(ticket)
-        payload["approval_required"] = False
-        payload["event_type"] = action_result["event_type"]
-        payload["resolved_action"] = action_result["resolved_action"]
-        payload["trace_id"] = action_result["trace_id"]
-        if collab_state is not None:
-            payload["collab_graph"] = collab_state
-        return payload
-    elif action in {"customer-confirm", "operator-close"}:
-        action_result = _execute_v2_ticket_action(
-            runtime,
-            ticket_id=ticket_id,
-            action=action,
-            actor_id=actor_id,
-            payload=body,
-        )
-        ticket = runtime.ticket_api.require_ticket(ticket_id)
-        payload = _ticket_to_dict(ticket)
-        payload["approval_required"] = False
-        payload["event_type"] = action_result["event_type"]
-        payload["resolved_action"] = action_result["resolved_action"]
-        payload["trace_id"] = action_result["trace_id"]
-        if collab_state is not None:
-            payload["collab_graph"] = collab_state
-        return payload
-    elif action == "close":
-        action_result = _execute_close_compat_action(
-            runtime,
-            ticket_id=ticket_id,
-            actor_id=actor_id,
-            payload=body,
-        )
-        ticket = runtime.ticket_api.require_ticket(ticket_id)
-        payload = _ticket_to_dict(ticket)
-        payload["approval_required"] = False
-        payload["event_type"] = action_result["event_type"]
-        payload["resolved_action"] = action_result["resolved_action"]
-        payload["trace_id"] = action_result["trace_id"]
-        if collab_state is not None:
-            payload["collab_graph"] = collab_state
-        return payload
-    else:
-        raise ValueError(f"unsupported action: {action}")
-
-    payload = _ticket_to_dict(ticket)
-    payload["approval_required"] = False
-    if collab_state is not None:
-        payload["collab_graph"] = collab_state
-    return payload
 
 
 def _execute_action_without_approval(
     runtime: OpsApiRuntime, *, ticket_id: str, action: str, payload: dict[str, Any]
 ) -> Ticket:
-    actor_id = str(payload.get("actor_id") or "").strip()
-    if not actor_id:
-        raise ValueError("actor_id is required")
-    if action == "claim":
-        return runtime.ticket_api.assign_ticket(ticket_id, assignee=actor_id, actor_id=actor_id)
-    if action == "reassign":
-        target_queue = str(payload.get("target_queue") or "").strip()
-        target_assignee = str(payload.get("target_assignee") or "").strip()
-        updates: dict[str, Any] = {}
-        if target_queue:
-            updates["queue"] = target_queue
-        if updates:
-            runtime.ticket_api.update_ticket(ticket_id, updates, actor_id=actor_id)
-        ticket = (
-            runtime.ticket_api.assign_ticket(ticket_id, assignee=target_assignee, actor_id=actor_id)
-            if target_assignee
-            else runtime.ticket_api.require_ticket(ticket_id)
-        )
-        runtime.ticket_api.add_event(
-            ticket_id,
-            event_type="ticket_reassign_requested",
-            actor_type="agent",
-            actor_id=actor_id,
-            payload={
-                "target_queue": target_queue,
-                "target_assignee": target_assignee,
-                "requested_via": "approval_runtime",
-            },
-        )
-        return ticket
-    if action == "escalate":
-        note = str(payload.get("note") or "升级处理")
-        return runtime.ticket_api.escalate_ticket(ticket_id, actor_id=actor_id, reason=note)
-    if action == "resolve":
-        _execute_v2_ticket_action(
-            runtime,
-            ticket_id=ticket_id,
-            action="resolve",
-            actor_id=actor_id,
-            payload=payload,
-        )
-        return runtime.ticket_api.require_ticket(ticket_id)
-    if action in {"customer-confirm", "operator-close"}:
-        _execute_v2_ticket_action(
-            runtime,
-            ticket_id=ticket_id,
-            action=action,
-            actor_id=actor_id,
-            payload=payload,
-        )
-        return runtime.ticket_api.require_ticket(ticket_id)
-    if action == "close":
-        _execute_close_compat_action(
-            runtime,
-            ticket_id=ticket_id,
-            actor_id=actor_id,
-            payload=payload,
-        )
-        return runtime.ticket_api.require_ticket(ticket_id)
-    raise ValueError(f"unsupported action: {action}")
+    return execute_action_without_approval_service(
+        runtime,
+        ticket_id=ticket_id,
+        action=action,
+        payload=payload,
+        ticket_trace_id_getter=_ticket_trace_id,
+    )
 
 
 def _execute_v2_ticket_action(
@@ -1598,53 +1407,13 @@ def _execute_v2_ticket_action(
     actor_id: str,
     payload: dict[str, Any],
 ) -> dict[str, str]:
-    session_id = str(
-        payload.get("session_id") or runtime.ticket_api.require_ticket(ticket_id).session_id
-    ).strip()
-    trace_id = str(payload.get("trace_id") or new_trace_id()).strip()
-
-    if action == "resolve":
-        result = runtime.ticket_api_v2.resolve(
-            ticket_id,
-            actor_id=actor_id,
-            resolution_note=str(payload.get("resolution_note") or "已处理"),
-            resolution_code=str(payload.get("resolution_code") or "") or None,
-            session_id=session_id or None,
-        )
-    elif action == "customer-confirm":
-        result = runtime.ticket_api_v2.customer_confirm(
-            ticket_id,
-            actor_id=actor_id,
-            note=str(payload.get("note") or payload.get("resolution_note") or "customer_confirm"),
-            session_id=session_id or None,
-        )
-    elif action == "operator-close":
-        close_reason = str(
-            payload.get("close_reason") or payload.get("reason") or "operator_forced_close"
-        )
-        result = runtime.ticket_api_v2.operator_close(
-            ticket_id,
-            actor_id=actor_id,
-            reason=close_reason,
-            note=str(payload.get("note") or payload.get("resolution_note") or "operator_close"),
-            session_id=session_id or None,
-        )
-    else:
-        raise ValueError(f"unsupported v2 action: {action}")
-
-    runtime.trace_logger.log(
-        "ticket_action_v2",
-        {
-            "ticket_id": ticket_id,
-            "action": action,
-            "event_type": result.event_type,
-            "actor_id": actor_id,
-        },
-        trace_id=trace_id,
+    return execute_v2_ticket_action_service(
+        runtime,
         ticket_id=ticket_id,
-        session_id=session_id or None,
+        action=action,
+        actor_id=actor_id,
+        payload=payload,
     )
-    return {"event_type": result.event_type, "resolved_action": action, "trace_id": trace_id}
 
 
 def _execute_close_compat_action(

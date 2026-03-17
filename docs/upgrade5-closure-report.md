@@ -24,12 +24,11 @@
 
 ## 3. 还没完成什么
 
-- P1-1 `ops_api_server.py` 薄壳化还未完成：
-- 现状是已下沉一部分路由到 `app/transport/http/handlers.py`，并新增
-- `app/application/intake_runtime_service.py`（intake/investigation）
-- `app/application/session_runtime_service.py`（session_new_issue/session_end_v2）
-- `app/application/ticket_runtime_service.py`（close compat/ticket assist）
-- 但 `scripts/ops_api_server.py` 仍保留部分 ticket action 编排逻辑（如 `_resolve_action/_execute_v2_ticket_action`），仍需继续下沉
+- Upgrade 5 收口清单项已完成：
+- `P0` 全部完成
+- `P1-1` 薄壳化阶段 A/B/C/D 完成
+- `P1-2` 一页报告完成
+- 当前剩余为持续优化项（非 Upgrade 5 收口阻塞项）。
 
 ## 4. 风险点
 

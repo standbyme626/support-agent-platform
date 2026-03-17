@@ -19,7 +19,7 @@
 
 ### P1（P0 完成后推进）
 
-- [ ] P1-1 薄壳化收口：继续收缩 `scripts/ops_api_server.py`，业务逻辑继续下沉到 `app/transport + app/application + app/domain`
+- [x] P1-1 薄壳化收口：继续收缩 `scripts/ops_api_server.py`，业务逻辑继续下沉到 `app/transport + app/application + app/domain`
 - [x] P1-2 升级5收口报告：一页版（已完成/未完成/风险点/旧路径退役计划）
 
 ## 3. 验收标准（Definition of Done）
@@ -70,6 +70,10 @@
   - 新增 `app/application/ticket_runtime_service.py`，承接 `close compat` 与 `ticket assist` 逻辑。
   - `scripts/ops_api_server.py` 中 `_execute_close_compat_action/_build_ticket_assist_payload` 已改为薄壳转发。
   - 已通过：`18 passed`（`test_ticket_actions_api + test_session_api + test_reply_events_api + U5 runtime/copilot/wecom bridge`）。
+- [x] P1-1 薄壳化阶段D已落地（本次）
+  - `scripts/ops_api_server.py` 中 `_resolve_action/_execute_v2_ticket_action/_execute_action_without_approval` 已改为薄壳转发。
+  - `app/application/ticket_runtime_service.py` 新增对应服务实现并复用 compat/v2 action 逻辑。
+  - 已通过：`22 passed`（`test_ticket_actions_api + test_session_api + test_reply_events_api + test_ops_api_server_smoke + U5 runtime/collab/copilot/wecom bridge`）。
 
 ### 进行中
 
@@ -82,7 +86,7 @@
 - [x] Step 1：统一 intake 图运行契约（输入/输出/runtime_trace 字段，先完成 `/api/v2/intake/run` 输出侧）
 - [x] Step 2：将 Workflow1 默认图路径并轨到 `app/graph_runtime/intake_graph.py`
 - [x] Step 3：保留 `runtime/graph/*` 兼容回退开关并冻结新增逻辑
-- [ ] Step 4：继续 `ops_api_server.py` 薄壳化下沉
+- [x] Step 4：继续 `ops_api_server.py` 薄壳化下沉
 - [x] Step 5：发布一页版升级5收口报告并确认退役窗口
 
 ## 6. 风险与回滚策略
