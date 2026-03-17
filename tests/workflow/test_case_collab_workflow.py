@@ -157,6 +157,33 @@ def test_case_collab_supports_close_compat_operator_close_and_end_session(tmp_pa
     assert operator_closed.ticket.status == "closed"
     assert operator_closed.ticket.close_reason == "operator_forced_close"
     assert operator_closed.ticket.metadata.get("resolved_action") == "operator-close"
+    reopened = collab.handle_command(
+        ticket_id=operator_ticket.ticket_id,
+        actor_id="agent-b",
+        command_line="/reopen need additional verification",
+    )
+    assert reopened.command == "reopen"
+    assert reopened.ticket.status == "open"
+    assert reopened.ticket.handoff_state == "in_progress"
+    state_updated = collab.handle_command(
+        ticket_id=operator_ticket.ticket_id,
+        actor_id="agent-b",
+        command_line="/state in_progress",
+    )
+    assert state_updated.command == "state"
+    assert state_updated.ticket.handoff_state == "in_progress"
+    reopened_again = collab.handle_command(
+        ticket_id=operator_ticket.ticket_id,
+        actor_id="agent-b",
+        command_line="/reopen verification still running",
+    )
+    assert reopened_again.command == "reopen"
+    assert reopened_again.ticket.status == "open"
+    assert reopened_again.ticket.handoff_state == "in_progress"
+    noop_events = [
+        item for item in api.list_events(operator_ticket.ticket_id) if item.event_type == "collab_reopen_noop"
+    ]
+    assert noop_events
 
     session_ticket = api.create_ticket(
         channel="telegram",

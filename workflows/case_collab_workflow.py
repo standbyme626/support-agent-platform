@@ -25,6 +25,7 @@ class CaseCollabWorkflow:
 
     _STATE_SET: ClassVar[frozenset[str]] = frozenset(
         {
+            "in_progress",
             "pending_claim",
             "claimed",
             "waiting_customer",
@@ -74,7 +75,15 @@ class CaseCollabWorkflow:
             actor_id="case-collab",
             payload=payload | {"message": push_message},
         )
-        return {"ticket_id": ticket.ticket_id, "message": push_message}
+        return {
+            "ticket_id": ticket.ticket_id,
+            "message": push_message,
+            "queue": ticket.queue,
+            "priority": ticket.priority,
+            "customer_id": ticket.customer_id,
+            "assignee": ticket.assignee or "",
+            "created_at": ticket.created_at.isoformat() if ticket.created_at else "",
+        }
 
     def handle_command(
         self, *, ticket_id: str, actor_id: str, command_line: str
@@ -376,21 +385,27 @@ class CaseCollabWorkflow:
         if command == "reopen":
             reason = " ".join(args).strip() or "manual_reopen"
             ticket = self._ticket_api.require_ticket(ticket_id)
+            if ticket.status == "open":
+                if ticket.handoff_state != "in_progress":
+                    ticket = self._ticket_api.update_ticket(
+                        ticket_id,
+                        {"handoff_state": "in_progress", "last_agent_action": "reopen"},
+                        actor_id=actor_id,
+                    )
+                self._ticket_api.add_event(
+                    ticket_id,
+                    event_type="collab_reopen_noop",
+                    actor_type="agent",
+                    actor_id=actor_id,
+                    payload={"reason": reason, "command": command_line, "status": ticket.status},
+                )
+                return CaseCollabAction("reopen", ticket, f"{ticket_id} already open")
             if ticket.status != "closed":
                 raise ValueError(f"Cannot reopen ticket {ticket_id}: status is {ticket.status}")
-            updated = self._ticket_api.update_ticket(
+            updated = self._ticket_api.reopen_ticket(
                 ticket_id,
-                {
-                    "status": "open",
-                    "handoff_state": "in_progress",
-                    "lifecycle_stage": "in_progress",
-                    "resolution_note": None,
-                    "resolution_code": None,
-                    "closed_at": None,
-                    "resolved_at": None,
-                    "last_agent_action": "reopen",
-                },
                 actor_id=actor_id,
+                reason=reason,
             )
             self._ticket_api.add_event(
                 ticket_id,

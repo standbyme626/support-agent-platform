@@ -73,6 +73,8 @@ class SupportIntakeWorkflow:
         "escalate": "escalate",
         "assign": "assign",
         "list": "list",
+        "reassign": "reassign",
+        "state": "state",
     }
     _COLLAB_NATURAL_KEYWORDS = {
         "claim": (
@@ -161,8 +163,6 @@ class SupportIntakeWorkflow:
             "待处理工单列表",
             "处理中工单列表",
             "已完结工单列表",
-            "我的工单",
-            "查看工单",
         ),
         "priority": (
             "紧急",
@@ -173,6 +173,14 @@ class SupportIntakeWorkflow:
             "重要",
             "重要紧急",
             "急",
+            "十万火急",
+            "非常紧急",
+            "立即处理",
+            "马上处理",
+            "尽快处理",
+            "很急",
+            "非常急",
+            "比较急",
             "设置优先级",
             "优先级",
             "调高优先级",
@@ -180,26 +188,6 @@ class SupportIntakeWorkflow:
             "提升优先级",
             "降低优先级",
             "设置优先",
-        ),
-        "priority_p1": (
-            "紧急",
-            "十万火急",
-            "非常紧急",
-            "立即处理",
-            "马上处理",
-            "重要紧急",
-            "急",
-            "很急",
-            "非常急",
-        ),
-        "priority_p2": (
-            "加急",
-            "高优先级",
-            "优先处理",
-            "紧急处理",
-            "尽快处理",
-            "重要",
-            "比较急",
         ),
         "status": (
             "工单状态",
@@ -252,6 +240,7 @@ class SupportIntakeWorkflow:
     }
     _COLLAB_DEFAULT_NOTES = {
         "resolve": "处理人员确认问题已处理完成。",
+        "customer-confirm": "用户确认问题已恢复。",
         "operator-close": "处理人员执行关闭，原因已记录。",
         "reopen": "处理人员重新打开工单。",
         "merge": "工单已合并。",
@@ -275,6 +264,10 @@ class SupportIntakeWorkflow:
         "可以结单",
         "可以关闭",
         "确认恢复",
+        "已确认",
+        "确认",
+        "好的",
+        "可以了",
     )
 
     def __init__(
@@ -375,6 +368,13 @@ class SupportIntakeWorkflow:
         )
         if session_detail_result is not None:
             return session_detail_result
+        session_misc_result = self._build_session_misc_control_result(
+            envelope=envelope_with_disambiguation,
+            disambiguation=disambiguation,
+            existing_ticket_id=existing_ticket_id,
+        )
+        if session_misc_result is not None:
+            return session_misc_result
         collab_command_result = self._build_collab_command_result(
             envelope=envelope_with_disambiguation,
             disambiguation=disambiguation,
@@ -443,8 +443,6 @@ class SupportIntakeWorkflow:
         reply_text = self._build_collab_reply_text(
             outcome=outcome,
             collab_push=collab_push,
-            envelope=envelope,
-            disambiguation=disambiguation,
         )
         return self._build_outcome_result(
             outcome=outcome,
@@ -457,28 +455,9 @@ class SupportIntakeWorkflow:
         *,
         outcome: WorkflowOutcome,
         collab_push: dict[str, str] | None,
-        envelope: InboundEnvelope,
-        disambiguation: DisambiguationResult,
     ) -> str:
-        reply_text = outcome.reply_text
-        if collab_push is None:
-            return reply_text
-        session_mode = ""
-        session_context = envelope.metadata.get("session_context")
-        if isinstance(session_context, dict):
-            session_mode = str(session_context.get("session_mode") or "").strip()
-        if session_mode == "awaiting_new_issue":
-            return "已按新会话处理，并创建/关联新工单上下文。"
-        if (
-            disambiguation.decision == "new_issue_detected"
-            and disambiguation.reason == "session_mode_awaiting_new_issue"
-        ):
-            return "已按新会话处理，并创建/关联新工单上下文。"
-        if disambiguation.decision == "new_issue_detected":
-            return "已开启新问题处理流程，正在为你生成新的工单记录。"
-        if outcome.handoff.should_handoff:
-            return reply_text
-        return f"已创建工单 {outcome.ticket.ticket_id}，状态：待认领。已通知处理人员。"
+        _ = collab_push
+        return outcome.reply_text
 
     def _build_outcome_result(
         self,
@@ -782,6 +761,174 @@ class SupportIntakeWorkflow:
             queue="",
             priority="",
             trace_events=["view_ticket_detail"],
+            llm_trace=None,
+            reply_trace=reply_trace,
+        )
+
+    def _build_session_misc_control_result(
+        self,
+        *,
+        envelope: InboundEnvelope,
+        disambiguation: DisambiguationResult,
+        existing_ticket_id: str | None,
+    ) -> SupportIntakeResult | None:
+        action = disambiguation.session_action
+        if action not in {"pause_session", "resume_session", "transfer_to_agent", "view_history"}:
+            return None
+
+        if self._ticket_api is None:
+            return None
+
+        ticket_id = self._resolve_active_ticket_id(
+            envelope=envelope,
+            disambiguation=disambiguation,
+            requested_ticket_id=existing_ticket_id,
+        )
+        ticket = self._ticket_api.get_ticket(ticket_id) if ticket_id else None
+
+        if action == "pause_session":
+            if ticket_id:
+                self._ticket_api.switch_active_session_ticket(
+                    envelope.session_id,
+                    ticket_id,
+                    metadata={
+                        "session_mode": "paused",
+                        "last_intent": "pause_session_requested",
+                        "disambiguation_reason": disambiguation.reason,
+                    },
+                )
+            return self._build_lightweight_session_control_result(
+                ticket=ticket,
+                ticket_id=ticket_id,
+                action=action,
+                reply_text="会话已暂停。需要继续时请发送 /resume 或继续描述问题。",
+                reason=disambiguation.reason,
+                trace_events=["pause_session"],
+            )
+
+        if action == "resume_session":
+            if ticket_id:
+                self._ticket_api.switch_active_session_ticket(
+                    envelope.session_id,
+                    ticket_id,
+                    metadata={
+                        "session_mode": "single_issue",
+                        "last_intent": "resume_session_requested",
+                        "disambiguation_reason": disambiguation.reason,
+                    },
+                )
+            return self._build_lightweight_session_control_result(
+                ticket=ticket,
+                ticket_id=ticket_id,
+                action=action,
+                reply_text="会话已恢复，请继续描述当前问题。",
+                reason=disambiguation.reason,
+                trace_events=["resume_session"],
+            )
+
+        if action == "transfer_to_agent":
+            if ticket is None:
+                return self._build_lightweight_session_control_result(
+                    ticket=None,
+                    ticket_id=None,
+                    action=action,
+                    reply_text="已收到转人工请求。请先提供工单号或描述当前问题。",
+                    reason=disambiguation.reason,
+                    trace_events=["transfer_to_agent_missing_ticket"],
+                )
+            if ticket.status != "closed":
+                ticket = self._ticket_api.update_ticket(
+                    ticket.ticket_id,
+                    {
+                        "needs_handoff": True,
+                        "handoff_state": "requested",
+                        "last_agent_action": "transfer_to_agent",
+                    },
+                    actor_id="support-intake",
+                )
+                self._ticket_api.add_event(
+                    ticket.ticket_id,
+                    event_type="session_transfer_requested",
+                    actor_type="agent",
+                    actor_id="support-intake",
+                    payload={
+                        "session_id": envelope.session_id,
+                        "reason": disambiguation.reason,
+                        "source": "session_control",
+                    },
+                )
+            return self._build_lightweight_session_control_result(
+                ticket=ticket,
+                ticket_id=ticket.ticket_id,
+                action=action,
+                reply_text=f"已发起人工接管请求，工单 {ticket.ticket_id} 将优先由人工跟进。",
+                reason=disambiguation.reason,
+                trace_events=["transfer_to_agent", "handoff_requested"],
+                ticket_action="handoff",
+                handoff_required=True,
+            )
+
+        history_ids: list[str] = []
+        if ticket_id:
+            history_ids.append(ticket_id)
+        history_ids.extend(
+            [str(item).strip() for item in disambiguation.candidate_ticket_ids if str(item).strip()]
+        )
+        # Preserve order while removing duplicates.
+        deduped: list[str] = []
+        seen: set[str] = set()
+        for raw_ticket_id in history_ids:
+            if raw_ticket_id in seen:
+                continue
+            seen.add(raw_ticket_id)
+            deduped.append(raw_ticket_id)
+        if not deduped:
+            reply_text = "当前暂无历史工单记录。"
+        else:
+            top = ", ".join(deduped[:5])
+            reply_text = f"最近工单：{top}。如需详情可发送“查看工单详情”。"
+        return self._build_lightweight_session_control_result(
+            ticket=ticket,
+            ticket_id=ticket_id,
+            action=action,
+            reply_text=reply_text,
+            reason=disambiguation.reason,
+            trace_events=["view_history"],
+        )
+
+    @staticmethod
+    def _build_lightweight_session_control_result(
+        *,
+        ticket: Ticket | None,
+        ticket_id: str | None,
+        action: str,
+        reply_text: str,
+        reason: str,
+        trace_events: list[str],
+        ticket_action: str | None = None,
+        handoff_required: bool = False,
+    ) -> SupportIntakeResult:
+        reply_trace = {
+            "provider": "fallback",
+            "prompt_key": f"{action}_reply",
+            "generation_type": "session_control",
+            "fallback_used": True,
+            "session_action": action,
+            "reason": reason,
+        }
+        return SupportIntakeResult(
+            ticket_id=ticket_id,
+            reply_text=reply_text,
+            handoff=handoff_required,
+            collab_push=None,
+            outcome=None,
+            ticket_action=ticket_action or action,
+            summary=None,
+            recommended_actions=[],
+            handoff_required=handoff_required,
+            queue=ticket.queue if ticket is not None else "",
+            priority=ticket.priority if ticket is not None else "",
+            trace_events=trace_events,
             llm_trace=None,
             reply_trace=reply_trace,
         )
@@ -1094,7 +1241,9 @@ class SupportIntakeWorkflow:
         command_args = list(args)
         if command_args and self._TICKET_ID_RE.match(command_args[0]):
             if command in {"merge", "link"}:
-                pass
+                if ticket_id is None:
+                    ticket_id = command_args[0]
+                    command_args = command_args[1:]
             else:
                 ticket_id = command_args[0]
                 command_args = command_args[1:]
@@ -1112,6 +1261,16 @@ class SupportIntakeWorkflow:
                 command_line=command_line,
             )
         except KeyError as error:
+            return self._build_collab_command_error_result(
+                envelope=envelope,
+                disambiguation=disambiguation,
+                command=command,
+                command_source=command_source,
+                requested_ticket_id=ticket_id,
+                fallback_ticket_id=active_ticket_id,
+                error=error,
+            )
+        except RuntimeError as error:
             return self._build_collab_command_error_result(
                 envelope=envelope,
                 disambiguation=disambiguation,
@@ -1140,10 +1299,25 @@ class SupportIntakeWorkflow:
                 error=error,
             )
 
-        ticket = self._ticket_api.require_ticket(ticket_id)
+        resolved_command = action.command
+        resolved_ticket_id = action.ticket.ticket_id if action.ticket is not None else ticket_id
+        if resolved_ticket_id is None:
+            return None
+        if resolved_command != "end-session":
+            self._ticket_api.switch_active_session_ticket(
+                envelope.session_id,
+                resolved_ticket_id,
+                metadata={
+                    "session_mode": "single_issue",
+                    "last_intent": "collab_command",
+                    "last_collab_command": resolved_command,
+                    "updated_by": actor_id,
+                },
+            )
+
+        ticket = self._ticket_api.require_ticket(resolved_ticket_id)
         events = self._ticket_api.list_events(ticket.ticket_id)
         sla_result = self._build_clarification_sla(ticket, events)
-        resolved_command = action.command
         reply_text = self._render_collab_command_reply(
             command=resolved_command,
             ticket=ticket,
@@ -1482,65 +1656,44 @@ class SupportIntakeWorkflow:
             "别",
             "不需要",
             "不想",
-            "能不能",
-            "可以",
-            "能帮我",
-            "能否",
-            "可不可以",
-            "能不能够",
-            "吗",
-            "嘛",
-            "呢",
-            "?",
-            "？",
-        )
-        question_patterns = (
-            "能不能",
-            "是否可以",
-            "能否",
-            "是不是",
-            "有没有",
-            "会不会",
-            "可不可以",
-            "能否",
-            "请问",
-            "问一下",
-            "想知道",
-        )
-        request_help_patterns = (
-            "帮我",
-            "帮我一下",
-            "请帮我",
-            "麻烦",
-            "能不能帮我",
-            "能否帮我",
-            "可以帮我",
-            "帮我处理",
-            "帮我看看",
+            "不必",
+            "无需",
+            "别再",
         )
 
         if any(neg in lowered for neg in negative_patterns):
             return None
-        if any(q in lowered for q in question_patterns):
-            return None
-        if any(p in lowered for p in request_help_patterns):
-            return None
 
-        if len(normalized) < 4:
+        short_confirmation_phrases = {"已确认", "确认", "好的", "可以了"}
+        if len(normalized) < 4 and normalized not in short_confirmation_phrases:
             return None
 
         ticket_match = cls._TICKET_ID_SEARCH_RE.search(normalized)
         ticket_id = ticket_match.group(0).upper() if ticket_match is not None else None
+        keyword_matches: list[tuple[str, str]] = []
         for command, keywords in cls._COLLAB_NATURAL_KEYWORDS.items():
-            matched_keyword = next((item for item in keywords if item in normalized), None)
-            if matched_keyword is None:
-                continue
-            if matched_keyword in {"我来处理", "由我处理"} and ticket_id is None:
-                continue
+            for keyword in keywords:
+                if keyword not in normalized:
+                    continue
+                if keyword in {"我来处理", "由我处理"} and ticket_id is None:
+                    continue
+                keyword_matches.append((command, keyword))
+
+        if keyword_matches:
+            command_bias = {
+                "customer-confirm": 5,
+                "operator-close": 4,
+                "resolve": 3,
+                "priority": 2,
+            }
+            command, matched_keyword = max(
+                keyword_matches,
+                key=lambda item: (len(item[1]), command_bias.get(item[0], 0)),
+            )
             args: list[str] = []
             if ticket_id is not None:
                 args.append(ticket_id)
-            if command in {"resolve", "operator-close"}:
+            if command in {"resolve", "customer-confirm", "operator-close"}:
                 note = cls._extract_natural_collab_note(
                     normalized,
                     ticket_id=ticket_id,
@@ -1628,13 +1781,21 @@ class SupportIntakeWorkflow:
         existing_args: list[str],
     ) -> list[str]:
         lowered = text.lower()
-        has_priority = any(arg in ("P1", "P2", "P3", "P4") for arg in existing_args)
-        args = list(existing_args)
-        if ticket_id:
-            args = [ticket_id] + args
-        if has_priority:
+        explicit_priority = next(
+            (
+                arg.strip().upper()
+                for arg in existing_args
+                if arg.strip().upper() in {"P1", "P2", "P3", "P4"}
+            ),
+            None,
+        )
+        if explicit_priority is not None:
+            args = [explicit_priority]
+            if ticket_id:
+                args.insert(0, ticket_id)
             return args
-        priority_found = False
+
+        inferred_priority = None
         p1_keywords = (
             "紧急",
             "十万火急",
@@ -1651,23 +1812,24 @@ class SupportIntakeWorkflow:
         p4_keywords = ("不急", "不紧急", "低优先", "建议", "p4", "low", "enhancement")
         for kw in p1_keywords:
             if kw in lowered:
-                args.append("P1")
-                priority_found = True
+                inferred_priority = "P1"
                 break
-        if not priority_found:
+        if inferred_priority is None:
             for kw in p2_keywords:
                 if kw in lowered:
-                    args.append("P2")
-                    priority_found = True
+                    inferred_priority = "P2"
                     break
-        if not priority_found:
+        if inferred_priority is None:
             for kw in p4_keywords:
                 if kw in lowered:
-                    args.append("P4")
-                    priority_found = True
+                    inferred_priority = "P4"
                     break
-        if not priority_found:
-            args.append("P1")
+        if inferred_priority is None:
+            inferred_priority = "P1"
+
+        args = [inferred_priority]
+        if ticket_id:
+            args.insert(0, ticket_id)
         return args
 
     def _build_collab_command_error_result(
@@ -1822,6 +1984,11 @@ class SupportIntakeWorkflow:
         session_context = envelope.metadata.get("session_context")
         if isinstance(session_context, dict):
             active = str(session_context.get("active_ticket_id") or "").strip()
+            if active:
+                return active
+        runtime_session_context = self._ticket_api.get_session_context(envelope.session_id)
+        if isinstance(runtime_session_context, dict):
+            active = str(runtime_session_context.get("active_ticket_id") or "").strip()
             if active:
                 return active
         active_from_disambiguation = str(disambiguation.active_ticket_id or "").strip()
