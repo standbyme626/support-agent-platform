@@ -38,7 +38,6 @@ _END_RULE_PHRASES = (
     "结束会话",
     "这轮先到这里",
     "先到这里",
-    "结束",
     "关闭对话",
     "关闭会话",
 )
@@ -119,8 +118,6 @@ _LIST_TICKETS_PHRASES = (
     "待处理工单列表",
     "处理中工单列表",
     "已完结工单列表",
-    "我的工单",
-    "查看工单",
 )
 _VIEW_TICKET_PHRASES = (
     "查看详情",
@@ -373,6 +370,24 @@ class NewIssueDetector:
         lowered = text.lower()
         explicit_ticket = self._extract_ticket_id(text)
         session_control = detect_session_control(text)
+
+        if (
+            explicit_ticket
+            and explicit_ticket in normalized_candidates
+            and session_control is not None
+            and session_control.source != "explicit_command"
+            and session_control.action in {"continue_current", "resume_session"}
+        ):
+            return self._build_result(
+                decision="continue_current",
+                confidence=0.99,
+                reason="explicit_ticket_in_message",
+                intent=intent,
+                suggested_ticket_id=explicit_ticket,
+                candidate_ticket_ids=normalized_candidates,
+                active_ticket_id=normalized_active,
+                session_action=None,
+            )
 
         if session_control is not None:
             if session_control.action == "session_end":

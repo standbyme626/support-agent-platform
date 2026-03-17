@@ -170,6 +170,30 @@ def test_support_intake_progress_query_updates_existing_ticket(tmp_path: Path) -
     assert "负责人" in second.reply_text
 
 
+def test_support_intake_list_tickets_phrase_routes_to_list_action(tmp_path: Path) -> None:
+    workflow, _ = _build_intake_workflow(tmp_path)
+    workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-list-tickets",
+            message_text="停车场抬杆故障",
+            metadata={"thread_id": "thread-list-tickets"},
+        )
+    )
+    listed = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-list-tickets",
+            message_text="查看工单列表",
+            metadata={"thread_id": "thread-list-tickets"},
+        )
+    )
+
+    assert listed.ticket_action == "list_tickets"
+    assert listed.ticket_id is None
+    assert "工单列表" in listed.reply_text
+
+
 def test_support_intake_handoff_event_contains_policy_paths(tmp_path: Path) -> None:
     workflow, ticket_api = _build_intake_workflow(tmp_path)
     result = workflow.run(
