@@ -6,14 +6,14 @@
 ## 1. 目标与范围
 
 - 目标：把 Upgrade 5 从“可运行但双轨并存”收口到“单主线、口径一致、可验收”。
-- 主线决策（待代码落地）：`app/graph_runtime/*` 作为唯一演进主线；`runtime/graph/*` 进入兼容冻结并逐步退役。
+- 主线决策（已落地）：`app/graph_runtime/*` 作为唯一演进主线；`runtime/graph/*` 进入兼容冻结并逐步退役。
 
 ## 2. 当前问题清单（按优先级）
 
 ### P0（必须先完成）
 
 - [x] P0-1 红灯清除：`tests/workflow/test_support_intake_workflow.py` 失败用例修复并全绿
-- [ ] P0-2 唯一架构主线落地：Workflow1 默认运行路径并轨到 `app/graph_runtime/*`
+- [x] P0-2 唯一架构主线落地：Workflow1 默认运行路径并轨到 `app/graph_runtime/*`
 - [x] P0-3a 文档口径对齐（README）：`WECOM_DISPATCH_AUTO_ENABLED` 默认值已与代码对齐
 - [ ] P0-3b 文档口径对齐（升级文档）：升级5相关文档与主线决策、兼容壳状态保持一致
 
@@ -55,15 +55,15 @@
 
 ### 进行中
 
-- [ ] 主线唯一化并轨设计与代码落地（P0-2）
+- [x] 主线唯一化并轨设计与代码落地（P0-2）
 - [ ] 文档口径对齐全量清扫（P0-3b）
 - [x] Step 1 子项：`/api/v2/intake/run` 返回契约已补齐 `runtime_graph/runtime_current_node/runtime_path/runtime_state`（加字段兼容）
 
 ## 5. 迁移执行顺序（后续按此打勾）
 
 - [x] Step 1：统一 intake 图运行契约（输入/输出/runtime_trace 字段，先完成 `/api/v2/intake/run` 输出侧）
-- [ ] Step 2：将 Workflow1 默认图路径并轨到 `app/graph_runtime/intake_graph.py`
-- [ ] Step 3：保留 `runtime/graph/*` 兼容回退开关并冻结新增逻辑
+- [x] Step 2：将 Workflow1 默认图路径并轨到 `app/graph_runtime/intake_graph.py`
+- [x] Step 3：保留 `runtime/graph/*` 兼容回退开关并冻结新增逻辑
 - [ ] Step 4：继续 `ops_api_server.py` 薄壳化下沉
 - [ ] Step 5：发布一页版升级5收口报告并确认退役窗口
 

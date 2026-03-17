@@ -12,7 +12,7 @@ from core.sla_engine import SlaCheckResult
 from core.summary_engine import build_handoff_summary
 from core.ticket_api import TicketAPI
 from core.workflow_engine import WorkflowEngine, WorkflowOutcome
-from runtime.graph.intake_graph import SupportIntakeGraphRunner
+from app.graph_runtime.intake_graph import SupportIntakeGraphRunner
 from storage.models import InboundEnvelope, Ticket, TicketEvent
 
 from .case_collab_workflow import CaseCollabWorkflow

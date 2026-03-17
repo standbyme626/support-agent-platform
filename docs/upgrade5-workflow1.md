@@ -7,8 +7,9 @@ This phase migrates Workflow 1 (Support Intake) to a graph-first execution path 
 ## Entry and Compatibility
 
 - Entry API is unchanged: `SupportIntakeWorkflow.run(envelope, existing_ticket_id=...)`.
-- Internally, the workflow now uses `runtime/graph/intake_graph.py` (`SupportIntakeGraphRunner`) by default.
+- Internally, the workflow now uses `app/graph_runtime/intake_graph.py` (`SupportIntakeGraphRunner`) by default.
 - A graph-disabled fallback remains available through `use_graph_runtime=False`.
+- `runtime/graph/intake_graph.py` remains as a compat shell and should not carry new business logic.
 
 ## Graph Nodes
 
