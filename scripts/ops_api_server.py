@@ -1816,6 +1816,42 @@ def _run_session_end_v2(
     }
 
 
+def _extract_runtime_trace_fields(
+    result_payload: dict[str, Any],
+    *,
+    default_graph: str,
+) -> tuple[str, str, list[str], dict[str, Any]]:
+    trace_payload = result_payload.get("trace")
+    trace_details = trace_payload if isinstance(trace_payload, dict) else {}
+    runtime_graph = str(trace_details.get("graph") or default_graph)
+    steps_payload = trace_details.get("steps")
+    runtime_path: list[str] = []
+    if isinstance(steps_payload, list):
+        for item in steps_payload:
+            if not isinstance(item, dict):
+                continue
+            step_name = str(item.get("step") or "").strip()
+            if step_name:
+                runtime_path.append(step_name)
+
+    runtime_current_node = runtime_path[-1] if runtime_path else "unknown"
+    decision_payload = result_payload.get("decision")
+    decision = decision_payload if isinstance(decision_payload, dict) else {}
+    runtime_state: dict[str, Any] = {
+        "route": decision.get("route"),
+        "high_risk_action_executed": bool(decision.get("high_risk_action_executed", False)),
+    }
+    session_action_payload = result_payload.get("session_action")
+    if isinstance(session_action_payload, dict):
+        session_action = str(session_action_payload.get("action") or "").strip()
+        if session_action:
+            runtime_state["session_action"] = session_action
+    intake_result_payload = result_payload.get("intake_result")
+    if isinstance(intake_result_payload, dict):
+        runtime_state["intake_status"] = intake_result_payload.get("status")
+    return runtime_graph, runtime_current_node, runtime_path, runtime_state
+
+
 def _run_intake_graph_v2(
     runtime: OpsApiRuntime,
     *,
@@ -1920,13 +1956,21 @@ def _run_intake_graph_v2(
             ticket_id=str(metadata.get("ticket_id") or "").strip() or None,
             session_id=session_id,
         )
+        runtime_graph, runtime_current_node, runtime_path, runtime_state = _extract_runtime_trace_fields(
+            control_result,
+            default_graph="intake_graph_v1",
+        )
         return {
             "result": control_result,
             "advice_only": True,
             "high_risk_action_executed": False,
+            "runtime_graph": runtime_graph,
+            "runtime_current_node": runtime_current_node,
+            "runtime_path": runtime_path,
+            "runtime_state": runtime_state,
             "trace": {
                 "trace_id": trace_id,
-                "graph": "intake_graph_v1",
+                "graph": runtime_graph,
             },
         }
 
@@ -1964,15 +2008,21 @@ def _run_intake_graph_v2(
         ticket_id=str(metadata.get("ticket_id") or "").strip() or None,
         session_id=session_id,
     )
-    trace_payload = result.get("trace")
-    trace_details = trace_payload if isinstance(trace_payload, dict) else {}
+    runtime_graph, runtime_current_node, runtime_path, runtime_state = _extract_runtime_trace_fields(
+        result,
+        default_graph="intake_graph_v1",
+    )
     return {
         "result": result,
         "advice_only": advice_only,
         "high_risk_action_executed": high_risk_action_executed,
+        "runtime_graph": runtime_graph,
+        "runtime_current_node": runtime_current_node,
+        "runtime_path": runtime_path,
+        "runtime_state": runtime_state,
         "trace": {
             "trace_id": trace_id,
-            "graph": str(trace_details.get("graph") or "intake_graph_v1"),
+            "graph": runtime_graph,
         },
     }
 

@@ -552,6 +552,10 @@ def test_v2_actions_and_v1_close_control_and_v2_intake_investigate(
             assert intake_result["data"]["trace"]["trace_id"] == intake_trace_id
             assert intake_result["data"]["advice_only"] is True
             assert intake_result["data"]["high_risk_action_executed"] is False
+            assert intake_result["data"]["runtime_graph"] == "intake_graph_v1"
+            assert isinstance(intake_result["data"]["runtime_current_node"], str)
+            assert isinstance(intake_result["data"]["runtime_path"], list)
+            assert isinstance(intake_result["data"]["runtime_state"], dict)
             assert isinstance(intake_result["data"]["result"]["trace"]["steps"], list)
             assert intake_result["data"]["result"]["trace"]["steps"]
 
@@ -574,6 +578,7 @@ def test_v2_actions_and_v1_close_control_and_v2_intake_investigate(
             assert intake_new_result["data"]["trace"]["trace_id"] == intake_new_trace_id
             assert intake_new_result["data"]["advice_only"] is True
             assert intake_new_result["data"]["high_risk_action_executed"] is False
+            assert intake_new_result["data"]["runtime_state"]["session_action"] == "new_issue"
             assert (
                 intake_new_result["data"]["result"]["session_action"]["action"] == "new_issue"
             )
@@ -603,6 +608,7 @@ def test_v2_actions_and_v1_close_control_and_v2_intake_investigate(
             assert intake_end_result["data"]["trace"]["trace_id"] == intake_end_trace_id
             assert intake_end_result["data"]["advice_only"] is True
             assert intake_end_result["data"]["high_risk_action_executed"] is False
+            assert intake_end_result["data"]["runtime_state"]["session_action"] == "session_end"
             assert (
                 intake_end_result["data"]["result"]["session_action"]["action"] == "session_end"
             )

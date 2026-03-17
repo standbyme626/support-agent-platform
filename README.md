@@ -385,7 +385,7 @@ curl -I http://127.0.0.1:3000
 # 派发目标配置（必填）
 export WECOM_DISPATCH_TARGETS_JSON='{"inbox:wecom.default":"group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:u_dispatch_bot"}'
 
-# 自动派发开关（默认关闭）
+# 自动派发开关（默认开启；设为 0/false/off 可关闭）
 export WECOM_DISPATCH_AUTO_ENABLED=1
 
 # 长消息分段阈值（默认1200字符）
