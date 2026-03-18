@@ -30,13 +30,12 @@ def run_reply_draft_v2(
     max_length = _coerce_max_length(payload.get("max_length"))
     trace_id = str(payload.get("trace_id") or new_trace_id()).strip()
 
-    summary = str(ticket.title or ticket.latest_message or "").strip()
-    detail = str(ticket.latest_message or "").strip()
-    draft_text = (
-        f"您好，关于工单 {ticket.ticket_id}（{summary}），我们已收到并正在处理。"
-        f"{detail[:120] if detail else ''}"
-        f"如有补充信息请直接回复，本次回复风格：{style}。"
-    ).strip()
+    style_profile = _resolve_draft_style_profile(style)
+    draft_text = _build_draft_text(
+        ticket=ticket,
+        style=style,
+        style_profile=style_profile,
+    )
     draft_text = _truncate(draft_text, max_length=max_length)
     risk_flags = _draft_risk_flags(draft_text)
     grounding = {
@@ -52,6 +51,7 @@ def run_reply_draft_v2(
         "actor_id": actor_id,
         "actor_role": actor_role,
         "style": style,
+        "style_effective": style_profile["key"],
         "max_length": max_length,
         "advice_only": True,
         "risk_flags": risk_flags,
@@ -81,6 +81,7 @@ def run_reply_draft_v2(
         "grounding": grounding,
         "advice_only": True,
         "trace_id": trace_id,
+        "style_effective": style_profile["key"],
     }
 
 
@@ -297,6 +298,78 @@ def _resolve_actor_role(raw_role: Any, *, actor_id: str) -> str:
     if "supervisor" in actor or actor.startswith("u_supervisor"):
         return "supervisor"
     return "operator"
+
+
+def _build_draft_text(*, ticket: Any, style: str, style_profile: dict[str, str]) -> str:
+    summary = str(ticket.title or ticket.latest_message or "").strip()
+    detail = str(ticket.latest_message or "").strip()
+    detail_snippet = detail[:120] if detail else ""
+    status_text = _resolve_status_phrase(ticket)
+    opening = style_profile["opening"]
+    action = style_profile["action"]
+    closing = style_profile["closing"]
+    tone_tag = style_profile["tone_tag"]
+    return (
+        f"{opening}关于工单 {ticket.ticket_id}（{summary}），当前进度：{status_text}。"
+        f"{action}"
+        f"{detail_snippet}"
+        f"{closing}（风格：{style}/{tone_tag}）"
+    ).strip()
+
+
+def _resolve_status_phrase(ticket: Any) -> str:
+    status = str(getattr(ticket, "status", "") or "").strip() or "unknown"
+    handoff_state = str(getattr(ticket, "handoff_state", "") or "").strip() or "none"
+    if status == "handoff":
+        return f"已进入人工接管（handoff_state={handoff_state}）"
+    if status in {"resolved", "closed", "completed"}:
+        return "问题已完成处理，待结果确认"
+    if handoff_state in {"pending_claim", "claimed", "waiting_internal", "waiting_customer"}:
+        return f"人工流转中（handoff_state={handoff_state}）"
+    return f"处理中（status={status}）"
+
+
+def _resolve_draft_style_profile(style: str) -> dict[str, str]:
+    normalized = style.strip().lower()
+    if any(keyword in normalized for keyword in ("安抚", "抱歉", "温和", "同理", "耐心")):
+        return {
+            "key": "empathy",
+            "tone_tag": "安抚同理",
+            "opening": "您好，给您带来不便我们非常抱歉。",
+            "action": "我们已第一时间安排同事跟进并持续回传进展；",
+            "closing": "若您方便，也请补充现场时间点或截图，我们会优先处理。",
+        }
+    if any(keyword in normalized for keyword in ("已处理", "完成", "结论", "闭环", "结果")):
+        return {
+            "key": "resolved",
+            "tone_tag": "结果导向",
+            "opening": "您好，处理结果已更新。",
+            "action": "当前已完成主要处置动作；",
+            "closing": "请您核验体验是否恢复，若仍异常我们将立即继续处理。",
+        }
+    if any(keyword in normalized for keyword in ("紧急", "催办", "升级", "加急", "优先")):
+        return {
+            "key": "urgent",
+            "tone_tag": "紧急推进",
+            "opening": "您好，该问题已按紧急级别处理。",
+            "action": "我们已加急联动值班同事并优先排查；",
+            "closing": "请保持联系方式畅通，我们会在下一次进展出现后立即回告。",
+        }
+    if any(keyword in normalized for keyword in ("简短", "简洁", "一句话", "短")):
+        return {
+            "key": "concise",
+            "tone_tag": "简洁直给",
+            "opening": "您好，已收到并在处理。",
+            "action": "",
+            "closing": "有新进展会第一时间通知您。",
+        }
+    return {
+        "key": "explain",
+        "tone_tag": "说明",
+        "opening": "您好，您的问题我们已收到。",
+        "action": "目前正在按流程排查并推进处理；",
+        "closing": "如有补充信息请直接回复，我们会据此加快处理。",
+    }
 
 
 def _resolve_target_user_id(*, ticket: Any, payload: dict[str, Any], session_id: str) -> str:

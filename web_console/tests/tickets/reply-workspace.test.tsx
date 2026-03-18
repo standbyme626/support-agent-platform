@@ -167,4 +167,40 @@ describe("ReplyWorkspace", () => {
     expect(screen.getByText("reply_send_delivered")).toBeInTheDocument();
     expect(screen.getByText("消息已提交，状态=queued。")).toBeInTheDocument();
   });
+
+  it("shows suggested status transition and executes manual action with confirmation", async () => {
+    const confirmSpy = vi.spyOn(window, "confirm");
+    confirmSpy.mockReturnValue(true);
+    const onGenerateDraft = vi.fn().mockResolvedValue(baseDraft);
+    const onSendReply = vi.fn().mockResolvedValue(baseSendResult);
+    const onAction = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <ReplyWorkspace
+        ticket={{ ...baseTicket, handoff_state: "pending_claim" }}
+        assignees={["u_ops_01"]}
+        replyDraft={baseDraft}
+        replyDraftLoading={false}
+        replyDraftError={null}
+        replySend={baseSendResult}
+        replySendLoading={false}
+        replySendError={null}
+        actionLoading={null}
+        replyEvents={baseReplyEvents}
+        onGenerateDraft={onGenerateDraft}
+        onSendReply={onSendReply}
+        onAction={onAction}
+      />
+    );
+
+    expect(
+      screen.getByText("发送回复只记录 reply-events，不会自动推进工单状态；请按需要手动执行状态流转。")
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "建议下一步：认领" }));
+
+    await waitFor(() => {
+      expect(onAction).toHaveBeenCalledTimes(1);
+    });
+    expect(onAction).toHaveBeenCalledWith("claim", expect.objectContaining({ actor_id: "u_ops_01" }));
+  });
 });

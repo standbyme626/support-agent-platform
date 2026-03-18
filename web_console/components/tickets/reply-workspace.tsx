@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { ActionFeedback } from "@/components/shared/action-feedback";
 import {
+  type TicketActionPayload,
+  type TicketActionType,
   type ReplyDraftData,
   type ReplyDraftPayload,
   type ReplyEventItem,
@@ -34,6 +36,20 @@ function formatTimestamp(value: string | null | undefined) {
   return new Date(timestamp).toLocaleString();
 }
 
+function suggestNextAction(handoffState: string): TicketActionType | null {
+  const normalized = handoffState.trim().toLowerCase();
+  if (["pending_claim", "requested", "accepted", "pending_handoff"].includes(normalized)) {
+    return "claim";
+  }
+  if (["claimed", "in_progress", "waiting_internal", "none"].includes(normalized)) {
+    return "resolve";
+  }
+  if (normalized === "waiting_customer") {
+    return "customer_confirm";
+  }
+  return null;
+}
+
 export function ReplyWorkspace({
   ticket,
   assignees,
@@ -43,9 +59,11 @@ export function ReplyWorkspace({
   replySend,
   replySendLoading,
   replySendError,
+  actionLoading,
   replyEvents,
   onGenerateDraft,
-  onSendReply
+  onSendReply,
+  onAction
 }: {
   ticket: TicketItem;
   assignees: string[];
@@ -55,9 +73,11 @@ export function ReplyWorkspace({
   replySend: ReplySendData | null;
   replySendLoading: boolean;
   replySendError: string | null;
+  actionLoading?: TicketActionType | null;
   replyEvents: ReplyEventItem[];
   onGenerateDraft: (payload: ReplyDraftPayload) => Promise<ReplyDraftData>;
   onSendReply: (payload: ReplySendPayload) => Promise<ReplySendData>;
+  onAction?: (action: TicketActionType, payload: TicketActionPayload) => Promise<void>;
 }) {
   const { t } = useI18n();
   const defaultActorId = useMemo(
@@ -113,6 +133,12 @@ export function ReplyWorkspace({
     () => [...(Array.isArray(replyEvents) ? replyEvents : [])].reverse().slice(0, 8),
     [replyEvents]
   );
+  const suggestedAction = useMemo(() => suggestNextAction(ticket.handoff_state), [ticket.handoff_state]);
+  const actionButtonLoading =
+    !!actionLoading &&
+    ((suggestedAction === "claim" && actionLoading === "claim") ||
+      (suggestedAction === "resolve" && actionLoading === "resolve") ||
+      (suggestedAction === "customer_confirm" && actionLoading === "customer_confirm"));
 
   async function handleGenerateDraft() {
     setFeedback(null);
@@ -171,6 +197,57 @@ export function ReplyWorkspace({
       }
     } catch (error) {
       setLocalError(error instanceof Error ? error.message : "Failed to send reply");
+    }
+  }
+
+  async function handleSuggestedTransition() {
+    if (!onAction || !suggestedAction) {
+      return;
+    }
+    const actionLabel =
+      suggestedAction === "claim"
+        ? t("认领", "Claim")
+        : suggestedAction === "resolve"
+          ? t("解决（进入待客户确认）", "Resolve (to waiting_customer)")
+          : t("客户确认", "Customer Confirm");
+    const confirmText = t(
+      `发送不会自动改变工单状态。\n确认执行状态流转：${actionLabel} ？`,
+      `Reply sending will not change ticket state automatically.\nConfirm transition: ${actionLabel}?`
+    );
+    if (!window.confirm(confirmText)) {
+      return;
+    }
+    const payload: TicketActionPayload =
+      suggestedAction === "claim"
+        ? { actor_id: actorId }
+        : suggestedAction === "resolve"
+          ? {
+              actor_id: actorId,
+              resolution_note:
+                trimmedContent ||
+                t("人工回复已发送，推进至待客户确认。", "Manual reply sent; moved to waiting customer."),
+              resolution_code: "manual_reply_sent"
+            }
+          : {
+              actor_id: actorId,
+              note:
+                trimmedContent ||
+                t("客户确认后闭环。", "Closed after customer confirmation."),
+              resolution_note:
+                trimmedContent ||
+                t("客户确认后闭环。", "Closed after customer confirmation."),
+              resolution_code: "customer_confirmed"
+            };
+    try {
+      await onAction(suggestedAction, payload);
+      setFeedback(
+        t(
+          `状态已流转：${actionLabel}。`,
+          `Ticket transition executed: ${actionLabel}.`
+        )
+      );
+    } catch (error) {
+      setLocalError(error instanceof Error ? error.message : "Failed to transition ticket status");
     }
   }
 
@@ -262,6 +339,26 @@ export function ReplyWorkspace({
               "This content has already been sent successfully; edit content before sending again."
             )}
           </p>
+        ) : null}
+        <p className="hint" style={{ margin: 0 }}>
+          {t(
+            "发送回复只记录 reply-events，不会自动推进工单状态；请按需要手动执行状态流转。",
+            "Reply send only records reply-events and does not auto-transition ticket state; run transition manually when needed."
+          )}
+        </p>
+        {onAction && suggestedAction ? (
+          <button
+            className="btn-ghost"
+            type="button"
+            disabled={actionButtonLoading || replySendLoading}
+            onClick={() => void handleSuggestedTransition()}
+          >
+            {suggestedAction === "claim"
+              ? t("建议下一步：认领", "Suggested next step: Claim")
+              : suggestedAction === "resolve"
+                ? t("建议下一步：解决（待客户确认）", "Suggested next step: Resolve")
+                : t("建议下一步：客户确认", "Suggested next step: Customer Confirm")}
+          </button>
         ) : null}
       </div>
 

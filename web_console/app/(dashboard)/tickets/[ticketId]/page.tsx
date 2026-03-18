@@ -596,9 +596,13 @@ export default function TicketDetailPage() {
             replySend={replySend}
             replySendLoading={replySendLoading}
             replySendError={replySendError}
+            actionLoading={actionLoading}
             replyEvents={replyEvents}
             onGenerateDraft={(payload) => runReplyDraft(payload)}
             onSendReply={(payload) => runReplySend(payload)}
+            onAction={(action: TicketActionType, payload: TicketActionPayload) =>
+              runAction(action, payload)
+            }
           />
           <TicketActionsPanel
             ticket={ticket}

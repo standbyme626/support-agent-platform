@@ -70,6 +70,22 @@ def test_reply_send_and_reply_draft_support_manual_loop(monkeypatch: MonkeyPatch
             assert draft["data"]["advice_only"] is True
             assert isinstance(draft["data"]["draft_text"], str)
             assert draft["data"]["trace_id"] == "trace_reply_draft_001"
+            assert "风格：说明/" in draft["data"]["draft_text"]
+
+            empathy_draft = _json(
+                client,
+                "POST",
+                f"{base}/api/v2/tickets/{ticket.ticket_id}/reply-draft",
+                {
+                    "actor_id": "u_ops_01",
+                    "actor_role": "operator",
+                    "style": "安抚同理",
+                    "max_length": 180,
+                    "trace_id": "trace_reply_draft_002",
+                },
+            )
+            assert "给您带来不便" in empathy_draft["data"]["draft_text"]
+            assert empathy_draft["data"]["draft_text"] != draft["data"]["draft_text"]
 
             send_trace_id = "trace_reply_send_success_001"
             first_send = _json(
