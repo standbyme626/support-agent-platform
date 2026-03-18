@@ -99,8 +99,13 @@ export function useTicketDetail(ticketId: string) {
     assignees: []
   });
 
-  async function load() {
-    setState((previous) => ({ ...previous, loading: true, error: null }));
+  async function load(options?: { silent?: boolean }) {
+    const silent = options?.silent ?? false;
+    setState((previous) => ({
+      ...previous,
+      loading: silent ? previous.loading : true,
+      error: null
+    }));
     try {
       const [detail, assist, groundingSources, similarCases, events, replyEvents, assignees] =
         await Promise.all([
@@ -127,7 +132,7 @@ export function useTicketDetail(ticketId: string) {
     } catch (error) {
       setState((previous) => ({
         ...previous,
-        loading: false,
+        loading: silent ? previous.loading : false,
         error: error instanceof Error ? error.message : "Failed to load ticket detail"
       }));
     }
@@ -149,7 +154,7 @@ export function useTicketDetail(ticketId: string) {
     setState((previous) => ({ ...previous, actionLoading: action, actionError: null }));
     try {
       await runTicketAction(ticketId, action, payload);
-      await load();
+      await load({ silent: true });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to execute action";
       setState((previous) => ({
@@ -277,7 +282,7 @@ export function useTicketDetail(ticketId: string) {
         sessionEndLoading: false,
         sessionEndError: null
       }));
-      await load();
+      await load({ silent: true });
       return response.data;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to end session";

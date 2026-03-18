@@ -79,4 +79,20 @@ describe("TicketTimeline", () => {
     expect(screen.getByText(/intent=repair/)).toBeInTheDocument();
     expect(screen.getByText(/confidence=0.87/)).toBeInTheDocument();
   });
+
+  it("truncates long inline payload text to avoid oversized timeline cards", () => {
+    const veryLongNote =
+      "x".repeat(260) +
+      "这是一个非常长的备注，用来模拟工单事件里过大的 payload 文本，避免把整个页面撑到难以阅读。";
+    const events = [
+      buildEvent(
+        "ticket_resolved",
+        { resolution_note: veryLongNote, resolution_code: "resolved" },
+        "2026-03-11T01:00:02+00:00"
+      )
+    ];
+    render(<TicketTimeline events={events} />);
+    expect(screen.getAllByText(/resolution_note=/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/…/).length).toBeGreaterThan(0);
+  });
 });

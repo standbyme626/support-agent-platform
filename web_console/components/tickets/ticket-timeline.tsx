@@ -18,6 +18,8 @@ const EVENT_SUMMARY_FIELDS: Record<string, string[]> = {
   handoff_decision: ["should_handoff", "reason", "policy_version"]
 };
 
+const INLINE_TEXT_MAX = 180;
+
 function formatTimestamp(value: string | null, locale: string) {
   if (!value) {
     return "n/a";
@@ -29,17 +31,24 @@ function formatTimestamp(value: string | null, locale: string) {
   return parsed.toLocaleString(locale, { hour12: false });
 }
 
+function truncateInlineText(value: string) {
+  if (value.length <= INLINE_TEXT_MAX) {
+    return value;
+  }
+  return `${value.slice(0, INLINE_TEXT_MAX - 1)}…`;
+}
+
 function toInlineValue(value: unknown): string {
   if (value === null || value === undefined || value === "") {
     return "-";
   }
   if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-    return String(value);
+    return truncateInlineText(String(value));
   }
   if (Array.isArray(value)) {
-    return value.map((item) => toInlineValue(item)).join(",");
+    return truncateInlineText(value.map((item) => toInlineValue(item)).join(","));
   }
-  return JSON.stringify(value);
+  return truncateInlineText(JSON.stringify(value));
 }
 
 function buildEventSummary(event: TicketEventItem, emptyText: string) {
