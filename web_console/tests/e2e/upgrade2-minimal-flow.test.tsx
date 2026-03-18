@@ -98,6 +98,13 @@ describe("Upgrade2 minimal front-end flow smoke", () => {
       sessionEnd: null,
       sessionEndLoading: false,
       sessionEndError: null,
+      replyDraft: null,
+      replyDraftLoading: false,
+      replyDraftError: null,
+      replySend: null,
+      replySendLoading: false,
+      replySendError: null,
+      replyEvents: [],
       groundingSources: [],
       similarCases: [],
       events: [],
@@ -108,6 +115,8 @@ describe("Upgrade2 minimal front-end flow smoke", () => {
       queryCopilot: vi.fn(),
       runInvestigation: vi.fn(),
       runSessionEnd: vi.fn(),
+      runReplyDraft: vi.fn(),
+      runReplySend: vi.fn(),
       refetch: vi.fn()
     });
 

@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import {
+  draftTicketReply,
   endSession,
   fetchAssignees,
   fetchGroundingSources,
+  fetchTicketReplyEvents,
   getTicketSessionId,
   investigateTicket,
   queryDispatchCopilot,
@@ -15,7 +17,13 @@ import {
   fetchTicketEvents,
   queryTicketCopilot,
   runTicketAction,
+  sendTicketReply,
   type GroundingSourceItem,
+  type ReplyDraftData,
+  type ReplyDraftPayload,
+  type ReplyEventItem,
+  type ReplySendData,
+  type ReplySendPayload,
   type SessionEndData,
   sortTicketEvents,
   type SimilarCaseItem,
@@ -46,6 +54,13 @@ type State = {
   sessionEnd: SessionEndData | null;
   sessionEndLoading: boolean;
   sessionEndError: string | null;
+  replyDraft: ReplyDraftData | null;
+  replyDraftLoading: boolean;
+  replyDraftError: string | null;
+  replySend: ReplySendData | null;
+  replySendLoading: boolean;
+  replySendError: string | null;
+  replyEvents: ReplyEventItem[];
   groundingSources: GroundingSourceItem[];
   similarCases: SimilarCaseItem[];
   events: TicketEventItem[];
@@ -71,6 +86,13 @@ export function useTicketDetail(ticketId: string) {
     sessionEnd: null,
     sessionEndLoading: false,
     sessionEndError: null,
+    replyDraft: null,
+    replyDraftLoading: false,
+    replyDraftError: null,
+    replySend: null,
+    replySendLoading: false,
+    replySendError: null,
+    replyEvents: [],
     groundingSources: [],
     similarCases: [],
     events: [],
@@ -80,12 +102,14 @@ export function useTicketDetail(ticketId: string) {
   async function load() {
     setState((previous) => ({ ...previous, loading: true, error: null }));
     try {
-      const [detail, assist, groundingSources, similarCases, events, assignees] = await Promise.all([
+      const [detail, assist, groundingSources, similarCases, events, replyEvents, assignees] =
+        await Promise.all([
         fetchTicketDetail(ticketId),
         fetchTicketAssist(ticketId),
         fetchGroundingSources(ticketId),
         fetchSimilarCases(ticketId),
         fetchTicketEvents(ticketId),
+        fetchTicketReplyEvents(ticketId),
         fetchAssignees()
       ]);
       setState((previous) => ({
@@ -97,6 +121,7 @@ export function useTicketDetail(ticketId: string) {
         groundingSources: groundingSources.items,
         similarCases: similarCases.items,
         events: sortTicketEvents(events.items),
+        replyEvents: replyEvents.items,
         assignees: assignees.items
       }));
     } catch (error) {
@@ -106,6 +131,18 @@ export function useTicketDetail(ticketId: string) {
         error: error instanceof Error ? error.message : "Failed to load ticket detail"
       }));
     }
+  }
+
+  async function refreshReplyArtifacts() {
+    const [events, replyEvents] = await Promise.all([
+      fetchTicketEvents(ticketId),
+      fetchTicketReplyEvents(ticketId)
+    ]);
+    setState((previous) => ({
+      ...previous,
+      events: sortTicketEvents(events.items),
+      replyEvents: replyEvents.items
+    }));
   }
 
   async function runAction(action: TicketActionType, payload: TicketActionPayload) {
@@ -253,6 +290,61 @@ export function useTicketDetail(ticketId: string) {
     }
   }
 
+  async function runReplyDraft(payload: ReplyDraftPayload) {
+    setState((previous) => ({
+      ...previous,
+      replyDraftLoading: true,
+      replyDraftError: null
+    }));
+    try {
+      const response = await draftTicketReply(ticketId, payload);
+      setState((previous) => ({
+        ...previous,
+        replyDraft: response.data,
+        replyDraftLoading: false,
+        replyDraftError: null
+      }));
+      await refreshReplyArtifacts();
+      return response.data;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to generate reply draft";
+      setState((previous) => ({
+        ...previous,
+        replyDraftLoading: false,
+        replyDraftError: message
+      }));
+      throw error instanceof Error ? error : new Error(message);
+    }
+  }
+
+  async function runReplySend(payload: ReplySendPayload) {
+    setState((previous) => ({
+      ...previous,
+      replySendLoading: true,
+      replySendError: null
+    }));
+    try {
+      const response = await sendTicketReply(ticketId, payload);
+      setState((previous) => ({
+        ...previous,
+        replySend: response.data,
+        replySendLoading: false,
+        replySendError:
+          response.data.delivery_status === "failed" ? response.data.error || "Send failed" : null
+      }));
+      await refreshReplyArtifacts();
+      return response.data;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to send reply";
+      setState((previous) => ({
+        ...previous,
+        replySendLoading: false,
+        replySendError: message
+      }));
+      throw error instanceof Error ? error : new Error(message);
+    }
+  }
+
   useEffect(() => {
     if (!ticketId) {
       return;
@@ -264,6 +356,8 @@ export function useTicketDetail(ticketId: string) {
     ...state,
     refetch: load,
     runAction,
+    runReplyDraft,
+    runReplySend,
     queryCopilot,
     runInvestigation,
     runSessionEnd

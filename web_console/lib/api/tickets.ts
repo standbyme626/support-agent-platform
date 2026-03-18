@@ -76,6 +76,28 @@ export type TicketEventsResponse = {
   items: Array<Partial<TicketEventItem> & { payload?: unknown }>;
 };
 
+export type ReplyEventItem = {
+  event_id: string;
+  event_type: string;
+  trace_id: string | null;
+  ticket_id: string | null;
+  session_id: string | null;
+  created_at: string | null;
+  source: string;
+  payload: Record<string, unknown>;
+  delivery_status?: string | null;
+  attempt?: number | null;
+  actor_id?: string | null;
+  actor_role?: string | null;
+  reply_id?: string | null;
+  idempotency_key?: string | null;
+};
+
+export type ReplyEventsResponse = {
+  request_id?: string;
+  items: Array<Partial<ReplyEventItem> & { payload?: unknown }>;
+};
+
 export type TicketAssistResponse = {
   request_id?: string;
   summary: string;
@@ -245,6 +267,57 @@ export type SessionEndResponse = {
   data: SessionEndData;
 };
 
+export type ReplyDraftPayload = {
+  actor_id: string;
+  actor_role?: string;
+  style?: string;
+  max_length?: number;
+  trace_id?: string;
+};
+
+export type ReplyDraftData = {
+  ticket_id: string;
+  session_id: string | null;
+  draft_text: string;
+  risk_flags: string[];
+  grounding: Record<string, unknown>;
+  advice_only: boolean;
+  trace_id: string;
+};
+
+export type ReplyDraftResponse = {
+  request_id?: string;
+  data: ReplyDraftData;
+};
+
+export type ReplySendPayload = {
+  actor_id: string;
+  actor_role?: string;
+  content: string;
+  idempotency_key: string;
+  trace_id?: string;
+  session_id?: string;
+  to_user_id?: string;
+  draft_source?: string;
+};
+
+export type ReplySendData = {
+  reply_id: string;
+  delivery_status: string;
+  channel: string;
+  target: { to_user_id?: string; session_id?: string };
+  trace_id: string;
+  dedup_hit: boolean;
+  attempt: number;
+  error: string | null;
+  delivery?: Record<string, unknown>;
+};
+
+export type ReplySendResponse = {
+  request_id?: string;
+  data: ReplySendData;
+};
+
 function normalizePendingApproval(item: unknown): PendingApprovalItem {
   const record =
     item && typeof item === "object" && !Array.isArray(item) ? (item as Record<string, unknown>) : {};
@@ -348,6 +421,30 @@ export function normalizeTicketEventItem(
   };
 }
 
+export function normalizeReplyEventItem(
+  item: Partial<ReplyEventItem> & { payload?: unknown },
+  fallbackTicketId: string,
+  index: number
+): ReplyEventItem {
+  const payload = toPayloadRecord(item.payload);
+  return {
+    event_id: item.event_id?.trim() || `reply_evt_${fallbackTicketId}_${index}`,
+    event_type: item.event_type?.trim() || "reply_generated",
+    trace_id: toStringOrNull(item.trace_id) ?? null,
+    ticket_id: toStringOrNull(item.ticket_id) ?? fallbackTicketId,
+    session_id: toStringOrNull(item.session_id) ?? null,
+    created_at: item.created_at ?? null,
+    source: toStringOrNull(item.source) ?? "trace",
+    payload,
+    delivery_status: toStringOrNull(item.delivery_status),
+    attempt: toNumberOrNull(item.attempt),
+    actor_id: toStringOrNull(item.actor_id),
+    actor_role: toStringOrNull(item.actor_role),
+    reply_id: toStringOrNull(item.reply_id),
+    idempotency_key: toStringOrNull(item.idempotency_key)
+  };
+}
+
 export function sortTicketEvents(items: TicketEventItem[]) {
   return [...items].sort((left, right) => {
     const tsDiff = sortTimestamp(left.created_at) - sortTimestamp(right.created_at);
@@ -367,6 +464,25 @@ export async function fetchTicketEvents(ticketId: string) {
     items: sortTicketEvents(
       response.items.map((item, index) => normalizeTicketEventItem(item, ticketId, index))
     )
+  };
+}
+
+export async function fetchTicketReplyEvents(ticketId: string) {
+  const response = await getJson<ReplyEventsResponse>(
+    `/api/tickets/${encodeURIComponent(ticketId)}/reply-events`
+  );
+  const items = response.items
+    .map((item, index) => normalizeReplyEventItem(item, ticketId, index))
+    .sort((left, right) => {
+      const tsDiff = sortTimestamp(left.created_at) - sortTimestamp(right.created_at);
+      if (tsDiff !== 0) {
+        return tsDiff;
+      }
+      return left.event_id.localeCompare(right.event_id);
+    });
+  return {
+    ...response,
+    items
   };
 }
 
@@ -563,6 +679,28 @@ export async function investigateTicket(ticketId: string, payload: TicketInvesti
       }
     }
   );
+}
+
+export async function draftTicketReply(ticketId: string, payload: ReplyDraftPayload) {
+  return getJson<ReplyDraftResponse>(`/api/v2/tickets/${encodeURIComponent(ticketId)}/reply-draft`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json"
+    }
+  });
+}
+
+export async function sendTicketReply(ticketId: string, payload: ReplySendPayload) {
+  return getJson<ReplySendResponse>(`/api/v2/tickets/${encodeURIComponent(ticketId)}/reply-send`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json"
+    }
+  });
 }
 
 export async function endSession(sessionId: string, payload: SessionEndPayload) {

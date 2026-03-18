@@ -51,6 +51,13 @@ describe("TicketDetailPage", () => {
       sessionEnd: null,
       sessionEndLoading: false,
       sessionEndError: null,
+      replyDraft: null,
+      replyDraftLoading: false,
+      replyDraftError: null,
+      replySend: null,
+      replySendLoading: false,
+      replySendError: null,
+      replyEvents: [],
       groundingSources: [],
       similarCases: [],
       events: [],
@@ -61,6 +68,8 @@ describe("TicketDetailPage", () => {
       queryCopilot: vi.fn(),
       runInvestigation: vi.fn(),
       runSessionEnd: vi.fn(),
+      runReplyDraft: vi.fn(),
+      runReplySend: vi.fn(),
       refetch: vi.fn()
     });
 
@@ -137,6 +146,13 @@ describe("TicketDetailPage", () => {
       sessionEnd: null,
       sessionEndLoading: false,
       sessionEndError: null,
+      replyDraft: null,
+      replyDraftLoading: false,
+      replyDraftError: null,
+      replySend: null,
+      replySendLoading: false,
+      replySendError: null,
+      replyEvents: [],
       groundingSources: [
         {
           source_id: "case-001",
@@ -166,6 +182,8 @@ describe("TicketDetailPage", () => {
       queryCopilot: vi.fn(),
       runInvestigation: vi.fn(),
       runSessionEnd: vi.fn(),
+      runReplyDraft: vi.fn(),
+      runReplySend: vi.fn(),
       refetch: vi.fn()
     });
 
@@ -173,6 +191,7 @@ describe("TicketDetailPage", () => {
     expect(screen.getByText("工单详情")).toBeInTheDocument();
     expect(screen.getByText("Elevator issue")).toBeInTheDocument();
     expect(screen.getAllByText("人工动作区").length).toBeGreaterThan(0);
+    expect(screen.getByText("Reply Workspace（人工接管私聊闭环）")).toBeInTheDocument();
     expect(screen.getByText("审批恢复区")).toBeInTheDocument();
     expect(screen.getByText("AI 助手区")).toBeInTheDocument();
     expect(screen.getByText("主视图区")).toBeInTheDocument();
@@ -255,6 +274,13 @@ describe("TicketDetailPage", () => {
       sessionEnd: null,
       sessionEndLoading: false,
       sessionEndError: null,
+      replyDraft: null,
+      replyDraftLoading: false,
+      replyDraftError: null,
+      replySend: null,
+      replySendLoading: false,
+      replySendError: null,
+      replyEvents: [],
       groundingSources: [],
       similarCases: [],
       events: [],
@@ -265,6 +291,8 @@ describe("TicketDetailPage", () => {
       queryCopilot: vi.fn(),
       runInvestigation: vi.fn(),
       runSessionEnd: vi.fn(),
+      runReplyDraft: vi.fn(),
+      runReplySend: vi.fn(),
       refetch: vi.fn()
     });
 
@@ -347,6 +375,13 @@ describe("TicketDetailPage", () => {
       sessionEnd: null,
       sessionEndLoading: false,
       sessionEndError: null,
+      replyDraft: null,
+      replyDraftLoading: false,
+      replyDraftError: null,
+      replySend: null,
+      replySendLoading: false,
+      replySendError: null,
+      replyEvents: [],
       groundingSources: [],
       similarCases: [],
       events: [],
@@ -357,6 +392,8 @@ describe("TicketDetailPage", () => {
       queryCopilot: vi.fn(),
       runInvestigation: vi.fn(),
       runSessionEnd: vi.fn(),
+      runReplyDraft: vi.fn(),
+      runReplySend: vi.fn(),
       refetch: vi.fn()
     });
 
@@ -385,6 +422,13 @@ describe("TicketDetailPage", () => {
       sessionEnd: null,
       sessionEndLoading: false,
       sessionEndError: null,
+      replyDraft: null,
+      replyDraftLoading: false,
+      replyDraftError: null,
+      replySend: null,
+      replySendLoading: false,
+      replySendError: null,
+      replyEvents: [],
       groundingSources: [],
       similarCases: [],
       events: [],
@@ -395,6 +439,8 @@ describe("TicketDetailPage", () => {
       queryCopilot: vi.fn(),
       runInvestigation: vi.fn(),
       runSessionEnd: vi.fn(),
+      runReplyDraft: vi.fn(),
+      runReplySend: vi.fn(),
       refetch: vi.fn()
     });
 

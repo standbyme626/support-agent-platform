@@ -36,6 +36,12 @@ TICKET_ACTION_V2_RE: Pattern[str] = re.compile(
 TICKET_INVESTIGATE_V2_RE: Pattern[str] = re.compile(
     r"^/api/v2/tickets/(?P<ticket_id>[^/]+)/investigate$"
 )
+TICKET_REPLY_SEND_V2_RE: Pattern[str] = re.compile(
+    r"^/api/v2/tickets/(?P<ticket_id>[^/]+)/reply-send$"
+)
+TICKET_REPLY_DRAFT_V2_RE: Pattern[str] = re.compile(
+    r"^/api/v2/tickets/(?P<ticket_id>[^/]+)/reply-draft$"
+)
 APPROVAL_ACTION_RE: Pattern[str] = re.compile(
     r"^/api/approvals/(?P<approval_id>[^/]+)/(approve|reject)$"
 )

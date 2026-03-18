@@ -34,7 +34,8 @@
 - 支持常见中文自然语义映射：
   - `认领工单 TCK-xxx`、`我来处理 TCK-xxx` -> `claim`
   - `已解决 TCK-xxx`、`处理完成 TCK-xxx` -> `resolve`
-  - `强制关闭 TCK-xxx`、`人工关闭 TCK-xxx` -> `operator-close`
+- 高风险命令（`/operator-close`、`/assign`、`/reassign`、`/needs-info`、`/escalate`、`/merge`、`/link`、`/state`）必须使用显式斜杠命令，并追加 `--confirm`。
+- 对高风险自然语言（如“人工关闭 TCK-xxx”）只返回可执行提示，不直接执行。
 - 当工单号无效时，不再吞异常；会返回可执行提示，并在 trace 中记录失败原因（`failure_reason/error_type/error_message`）。
 
 ## 命令总览（统一斜杠口径）
@@ -49,14 +50,26 @@
 | `/claim` | 处理群内、工单已存在 | 工程师接手工单 | `/claim TCK-123456` |
 | `/resolve` | 工程师已处理完成 | 进入“待用户确认恢复” | `/resolve TCK-123456 已修复并复测正常` |
 | `/customer-confirm` | 用户确认恢复 | 结束工单闭环 | `/customer-confirm TCK-123456 用户确认恢复` |
-| `/operator-close` | 需要人工强制关闭 | 用户失联、重复单、误报等 | `/operator-close TCK-123456 用户失联，按流程关闭` |
+| `/operator-close` | 需要人工强制关闭 | 用户失联、重复单、误报等 | `/operator-close TCK-123456 用户失联，按流程关闭 --confirm` |
 | `/end-session` | 协同侧主动结束会话上下文 | 工单处理结束后清理会话态 | `/end-session TCK-123456 manual_end_session` |
 | `/close` | 兼容命令（建议迁移到 `/customer-confirm` 或 `/operator-close`） | 老命令平滑过渡 | `/close TCK-123456 兼容关闭` |
+| `/reopen` | 已关闭工单重开 | 复发故障重新处理 | `/reopen TCK-123456 复发 --confirm` |
+| `/priority` | 调整优先级 | 升级/降级紧急度 | `/priority TCK-123456 P1` |
+| `/status` | 查询工单状态 | 处理进度查询 | `/status TCK-123456` |
+| `/list` | 查看工单列表 | 看 P1/P2、待处理等 | `/list TCK-123456 P1` |
+| `/assign` | 指派处理人 | 直接指派负责人 | `/assign TCK-123456 Yusongze --confirm` |
+| `/reassign` | 改派处理人 | 从 A 转派给 B | `/reassign TCK-123456 Yusongze --confirm` |
+| `/needs-info` | 要求补充信息 | 信息不足需补充 | `/needs-info TCK-123456 请补楼层 --confirm` |
+| `/escalate` | 升级处理 | 提升到更高支持级别 | `/escalate TCK-123456 影响面扩大 --confirm` |
+| `/link` | 关联工单 | 两单关联追踪 | `/link TCK-123456 TCK-654321 --confirm` |
+| `/merge` | 合并工单 | 重复单合并 | `/merge TCK-123456 TCK-654321 --confirm` |
+| `/state` | 修改协同状态 | 更新 handoff_state | `/state TCK-123456 waiting_internal --confirm` |
 
 补充说明：
 
 - 协同命令支持“空格变体”，如 `/ claim TCK-xxx`。
-- `resolve/operator-close` 支持中文自然语义触发（如“处理完成 TCK-xxx”“人工关闭 TCK-xxx”）。
+- `resolve` 支持中文自然语义触发（如“处理完成 TCK-xxx”）。
+- 高风险命令必须用斜杠命令 + `--confirm`，自然语言只提示不执行。
 - 会话命令也支持空格写法：`/ new ...`、`/ end`。
 - 显式 `/new` 仅切换会话模式，不会立即新建工单；需下一条消息补充故障描述后再建单。
 
@@ -113,6 +126,15 @@
 - `wecom_dispatch_blocked`
 - `wecom_dispatch_delivery`
 
+人工接管回复链路（Reply Workspace）补充事件：
+
+- `reply_draft_generated`
+- `reply_send_requested`
+- `reply_send_delivered`
+- `reply_send_failed`
+- `reply_send_retry_scheduled`
+- `reply_send_dedup_hit`
+
 并复用网关已有 outbound trace：
 
 - `egress_rendered`
@@ -139,6 +161,12 @@
 - `outbound_type=collab_dispatch` 且存在 `target_group_id`（或 session 可解析 group）时，走 `/cgi-bin/appchat/send`。
 - 其余走 `/cgi-bin/message/send`（按用户投递）。
 - 失败会进入现有 `egress_failed/egress_retry_*` 重试链路；成功追加 `egress_delivered` trace。
+
+私聊详情说明（重要）：
+
+- 系统里的“私聊详情”通过 `/cgi-bin/message/send` 投递，展示在企业微信“应用会话/应用消息”里，不是普通同事私聊窗口。
+- 若你只在“同事私聊”里搜索，可能看不到这类详情消息；请到对应应用会话里核对。
+- 若部署形态是短生命周期进程（例如一次请求一个进程），建议设置 `WECOM_GROUP_PRIVATE_DETAIL_ASYNC=0`，避免异步线程在进程退出前被回收导致详情未发出。
 
 ## 真实复测建议
 

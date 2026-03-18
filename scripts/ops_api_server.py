@@ -28,6 +28,11 @@ from app.application.intake_runtime_service import (
     run_intake_graph_v2 as run_intake_graph_v2_service,
     run_ticket_investigation_v2 as run_ticket_investigation_v2_service,
 )
+from app.application.reply_runtime_service import (
+    is_reply_event_type as is_reply_event_type_service,
+    run_reply_draft_v2 as run_reply_draft_v2_service,
+    run_reply_send_v2 as run_reply_send_v2_service,
+)
 from app.application.session_runtime_service import (
     run_session_end_v2 as run_session_end_v2_service,
     run_session_new_issue as run_session_new_issue_service,
@@ -388,6 +393,7 @@ def _reply_event_to_dict(event: dict[str, Any], *, index: int) -> dict[str, Any]
     trace_id = event.get("trace_id")
     ticket_id = event.get("ticket_id")
     session_id = event.get("session_id")
+    event_type = str(event.get("event_type") or "reply_generated")
     trace_id_text = str(trace_id) if trace_id else None
     ticket_id_text = str(ticket_id) if ticket_id else None
     session_id_text = str(session_id) if session_id else None
@@ -401,9 +407,9 @@ def _reply_event_to_dict(event: dict[str, Any], *, index: int) -> dict[str, Any]
         str(item) for item in payload.get("grounding_sources", []) if isinstance(item, str)
     ]
     fallback_key = trace_id_text or ticket_id_text or session_id_text or "unknown"
-    return {
+    item = {
         "event_id": f"reply_evt_{fallback_key}_{index}",
-        "event_type": "reply_generated",
+        "event_type": event_type,
         "trace_id": trace_id_text,
         "ticket_id": ticket_id_text,
         "session_id": session_id_text,
@@ -428,6 +434,18 @@ def _reply_event_to_dict(event: dict[str, Any], *, index: int) -> dict[str, Any]
         "grounding_sources": grounding_sources,
         "payload": payload,
     }
+    if event_type != "reply_generated":
+        item.update(
+            {
+                "reply_id": str(payload.get("reply_id") or "") or None,
+                "delivery_status": str(payload.get("delivery_status") or "") or None,
+                "idempotency_key": str(payload.get("idempotency_key") or "") or None,
+                "attempt": _coerce_int(payload.get("attempt")),
+                "actor_id": str(payload.get("actor_id") or "") or None,
+                "actor_role": str(payload.get("actor_role") or "") or None,
+            }
+        )
+    return item
 
 
 def _ticket_reply_events(runtime: OpsApiRuntime, ticket_id: str) -> list[dict[str, Any]]:
@@ -436,7 +454,7 @@ def _ticket_reply_events(runtime: OpsApiRuntime, ticket_id: str) -> list[dict[st
     for index, item in enumerate(events):
         if not isinstance(item, dict):
             continue
-        if str(item.get("event_type") or "") != "reply_generated":
+        if not is_reply_event_type_service(str(item.get("event_type") or "")):
             continue
         items.append(_reply_event_to_dict(item, index=index))
     items.sort(key=_event_sort_key)
@@ -449,7 +467,7 @@ def _session_reply_events(runtime: OpsApiRuntime, session_id: str) -> list[dict[
     for index, item in enumerate(events):
         if not isinstance(item, dict):
             continue
-        if str(item.get("event_type") or "") != "reply_generated":
+        if not is_reply_event_type_service(str(item.get("event_type") or "")):
             continue
         items.append(_reply_event_to_dict(item, index=index))
     items.sort(key=_event_sort_key)
@@ -1498,6 +1516,32 @@ def _run_ticket_investigation_v2(
     )
 
 
+def _run_reply_send_v2(
+    runtime: OpsApiRuntime,
+    *,
+    ticket_id: str,
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    return run_reply_send_v2_service(
+        runtime,
+        ticket_id=ticket_id,
+        payload=payload,
+    )
+
+
+def _run_reply_draft_v2(
+    runtime: OpsApiRuntime,
+    *,
+    ticket_id: str,
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    return run_reply_draft_v2_service(
+        runtime,
+        ticket_id=ticket_id,
+        payload=payload,
+    )
+
+
 def _build_ticket_assist_payload(runtime: OpsApiRuntime, ticket_id: str) -> dict[str, Any]:
     return build_ticket_assist_payload_service(
         runtime,
@@ -1651,6 +1695,8 @@ def handle_api_request(
             session_payload=_session_payload,
             merge_suggestion_decision=_merge_suggestion_decision,
             resolve_action=_resolve_action,
+            run_reply_send_v2=_run_reply_send_v2,
+            run_reply_draft_v2=_run_reply_draft_v2,
             run_ticket_investigation_v2=_run_ticket_investigation_v2,
             run_intake_graph_v2=_run_intake_graph_v2,
             run_session_end_v2=_run_session_end_v2,
@@ -1738,6 +1784,8 @@ def handle_api_request(
         return _error(
             req_id, code="invalid_payload", message=str(exc), status=HTTPStatus.BAD_REQUEST
         )
+    except PermissionError as exc:
+        return _error(req_id, code="forbidden", message=str(exc), status=HTTPStatus.FORBIDDEN)
     except Exception as exc:
         return _error(
             req_id,

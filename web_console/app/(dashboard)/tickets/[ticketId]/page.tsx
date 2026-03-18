@@ -3,6 +3,7 @@
 import { type FormEvent, useState } from "react";
 import { useParams } from "next/navigation";
 import { PendingApprovalList } from "@/components/hitl/pending-approval-list";
+import { ReplyWorkspace } from "@/components/tickets/reply-workspace";
 import { TicketActionsPanel, type TicketActionDraft } from "@/components/tickets/ticket-actions-panel";
 import { TicketDetailHeader } from "@/components/tickets/ticket-detail-header";
 import { TicketSummaryCard } from "@/components/tickets/ticket-summary-card";
@@ -111,6 +112,13 @@ export default function TicketDetailPage() {
     sessionEnd,
     sessionEndLoading,
     sessionEndError,
+    replyDraft,
+    replyDraftLoading,
+    replyDraftError,
+    replySend,
+    replySendLoading,
+    replySendError,
+    replyEvents,
     groundingSources,
     similarCases,
     events,
@@ -118,6 +126,8 @@ export default function TicketDetailPage() {
     actionLoading,
     actionError,
     runAction,
+    runReplyDraft,
+    runReplySend,
     queryCopilot,
     runInvestigation,
     runSessionEnd,
@@ -577,6 +587,19 @@ export default function TicketDetailPage() {
 
         <div className="detail-col">
           <p className="ops-kicker">{t("人工动作区", "Manual Actions")}</p>
+          <ReplyWorkspace
+            ticket={ticket}
+            assignees={assignees}
+            replyDraft={replyDraft}
+            replyDraftLoading={replyDraftLoading}
+            replyDraftError={replyDraftError}
+            replySend={replySend}
+            replySendLoading={replySendLoading}
+            replySendError={replySendError}
+            replyEvents={replyEvents}
+            onGenerateDraft={(payload) => runReplyDraft(payload)}
+            onSendReply={(payload) => runReplySend(payload)}
+          />
           <TicketActionsPanel
             ticket={ticket}
             assignees={assignees}

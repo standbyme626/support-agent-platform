@@ -30,7 +30,9 @@ from app.transport.http.routes import (
     TICKET_INVESTIGATE_V2_RE,
     TICKET_MERGE_SUGGESTION_RE,
     TICKET_PENDING_ACTIONS_RE,
+    TICKET_REPLY_DRAFT_V2_RE,
     TICKET_REPLY_EVENTS_RE,
+    TICKET_REPLY_SEND_V2_RE,
     TICKET_SIMILAR_RE,
     TICKET_SWITCH_ACTIVE_RE,
     TRACE_DETAIL_RE,
@@ -430,6 +432,8 @@ def try_handle_ticket_action_routes(
     session_payload: Callable[[Any, str], dict[str, Any] | None],
     merge_suggestion_decision: Callable[..., dict[str, Any]],
     resolve_action: Callable[..., dict[str, Any]],
+    run_reply_send_v2: Callable[..., dict[str, Any]],
+    run_reply_draft_v2: Callable[..., dict[str, Any]],
     run_ticket_investigation_v2: Callable[..., dict[str, Any]],
     run_intake_graph_v2: Callable[..., dict[str, Any]],
     run_session_end_v2: Callable[..., dict[str, Any]],
@@ -495,6 +499,16 @@ def try_handle_ticket_action_routes(
         action = path.rsplit("/", 1)[-1]
         updated = resolve_action(runtime, ticket_id=ticket_id, action=action, body=payload)
         return json_response(req_id, {"data": updated})
+
+    if method == "POST" and (match := TICKET_REPLY_SEND_V2_RE.match(path)):
+        ticket_id = match.group("ticket_id")
+        data = run_reply_send_v2(runtime, ticket_id=ticket_id, payload=payload)
+        return json_response(req_id, {"data": data})
+
+    if method == "POST" and (match := TICKET_REPLY_DRAFT_V2_RE.match(path)):
+        ticket_id = match.group("ticket_id")
+        data = run_reply_draft_v2(runtime, ticket_id=ticket_id, payload=payload)
+        return json_response(req_id, {"data": data})
 
     if method == "POST" and (match := TICKET_INVESTIGATE_V2_RE.match(path)):
         ticket_id = match.group("ticket_id")

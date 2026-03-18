@@ -154,6 +154,26 @@ flowchart LR
 - 页面支持：Dashboard、Tickets、Ticket Detail、Traces、Queues、KB、Channels。
 - API支持：`/api/dashboard/*`、`/api/tickets*`、`/api/traces*`、`/api/queues*`、`/api/kb*`、`/api/channels*`、`/api/openclaw*`、`/api/copilot/*`。
 
+### Upgrade 5：人工接管私聊闭环（Reply Workspace）
+
+- 前端在 Ticket Detail 新增 `Reply Workspace`：`AI 草稿 -> 人工编辑 -> 人工确认发送`。
+- 新增后端接口：
+  - `POST /api/v2/tickets/{ticketId}/reply-draft`
+  - `POST /api/v2/tickets/{ticketId}/reply-send`
+- `reply-send` 约束：
+  - `advice_only` 只用于建议，不会自动外发
+  - 必须人工确认后发送
+  - 观察者（observer）禁止发送
+  - `idempotency_key` 防重复发送
+- 发送审计与可观测：
+  - `reply_draft_generated`
+  - `reply_send_requested`
+  - `reply_send_delivered`
+  - `reply_send_failed`
+  - `reply_send_retry_scheduled`
+  - `reply_send_dedup_hit`
+- 前端可通过 `GET /api/tickets/{ticketId}/reply-events` 查看发送链路，并可 drill-down 到对应 trace。
+
 ## 四个 Agent
 
 > 这里的 “Agent” 指“具备上下文理解 + 工具编排/检索 + 输出建议 + trace可追踪”的能力单元，不是简单 if/else 函数。
@@ -427,16 +447,30 @@ export WECOM_AGENT_SECRET="$WECOM_AGENT_SECRET"
 | `/claim` | 处理群内、工单已存在 | 工程师接手工单 | `/claim TCK-123456` |
 | `/resolve` | 工程师已处理完成 | 进入"待用户确认恢复" | `/resolve TCK-123456 已修复并复测正常` |
 | `/customer-confirm` | 用户确认恢复 | 结束工单闭环 | `/customer-confirm TCK-123456` |
-| `/operator-close` | 需要人工强制关闭 | 用户失联、重复单、误报等 | `/operator-close TCK-123456 用户失联` |
+| `/operator-close` | 需要人工强制关闭 | 用户失联、重复单、误报等 | `/operator-close TCK-123456 用户失联 --confirm` |
 | `/end-session` | 协同侧主动结束会话上下文 | 工单处理结束后清理会话态 | `/end-session TCK-123456 manual_end_session` |
 | `/close` | 兼容命令 | 老命令平滑过渡 | `/close TCK-123456` |
+| `/reopen` | 已关闭工单需要重开 | 复发故障重新处理 | `/reopen TCK-123456 复发 --confirm` |
+| `/priority` | 调整优先级 | 升级/降级紧急度 | `/priority TCK-123456 P1` |
+| `/status` | 查询工单状态 | 处理进度查询 | `/status TCK-123456` |
+| `/list` | 查看工单列表 | 看 P1/P2、待处理等 | `/list TCK-123456 P1` |
+| `/assign` | 指派处理人 | 直接指派负责人 | `/assign TCK-123456 Yusongze --confirm` |
+| `/reassign` | 改派处理人 | 从 A 转派给 B | `/reassign TCK-123456 Yusongze --confirm` |
+| `/needs-info` | 要求补充信息 | 信息不足需补充 | `/needs-info TCK-123456 请补楼层 --confirm` |
+| `/escalate` | 升级处理 | 提升到更高支持级别 | `/escalate TCK-123456 影响面扩大 --confirm` |
+| `/link` | 关联工单 | 两单关联追踪 | `/link TCK-123456 TCK-654321 --confirm` |
+| `/merge` | 合并工单 | 重复单合并 | `/merge TCK-123456 TCK-654321 --confirm` |
+| `/state` | 修改协同状态 | 更新 handoff_state | `/state TCK-123456 waiting_internal --confirm` |
 
 **支持空格变体**：`/ claim TCK-xxx`、`/ resolve TCK-xxx 备注`
 
 **支持中文自然语义**：
 - `认领工单 TCK-xxx`、`我来处理 TCK-xxx` -> `claim`
 - `已解决 TCK-xxx`、`处理完成 TCK-xxx` -> `resolve`
-- `人工关闭 TCK-xxx` -> `operator-close`
+
+**高风险命令安全闸门**：
+- 以下命令必须使用显式斜杠命令，且需要追加 `--confirm` 才会执行：`/operator-close`、`/assign`、`/reassign`、`/needs-info`、`/escalate`、`/merge`、`/link`、`/state`。
+- 对于自然语言（如“人工关闭 TCK-xxx”），系统只给出可执行命令提示，不直接执行。
 
 ### WeCom 重放测试命令
 
@@ -456,6 +490,13 @@ python -m scripts.replay_gateway_event.py \
   --session-id demo-u1 \
   --text "停车场抬杆故障" \
   --trace-id trace_demo_u1
+
+# 50 组合生命周期回放（命令映射 + 安全闸门 + 状态校验）
+python -m scripts.replay_wecom_lifecycle_matrix \
+  --env dev \
+  --customer-id keguonian \
+  --operator-id Yusongze \
+  --output artifacts/real_tests/wecom_lifecycle_matrix_report.json
 ```
 
 ### WeCom Bridge 推荐启动命令
