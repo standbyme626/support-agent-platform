@@ -219,7 +219,7 @@
         },
         {
           "id": "approval-003",
-          "text": "采购合同审批",
+          "text": "合同审批流程提交",
           "expected_system": "approval",
           "expected_ticket_action": "create_ticket"
         },
@@ -411,13 +411,13 @@
         },
         {
           "id": "kb-002",
-          "text": "如何申请远程办公",
+          "text": "远程办公知识库指引",
           "expected_system": "kb",
           "expected_ticket_action": "faq_reply"
         },
         {
           "id": "kb-003",
-          "text": "公司报销流程是什么",
+          "text": "查看公司制度文档",
           "expected_system": "kb",
           "expected_ticket_action": "faq_reply"
         },
@@ -543,7 +543,7 @@
         },
         {
           "id": "project-002",
-          "text": "新项目立项申请",
+          "text": "需要启动一个新项目",
           "expected_system": "project",
           "expected_ticket_action": "create_ticket"
         },
@@ -609,13 +609,13 @@
         },
         {
           "id": "supply_chain-002",
-          "text": "采购订单到货通知",
+          "text": "仓库库存需要调整",
           "expected_system": "supply_chain",
           "expected_ticket_action": "create_ticket"
         },
         {
           "id": "supply_chain-003",
-          "text": "库存盘点结果录入",
+          "text": "仓库库存数据更新",
           "expected_system": "supply_chain",
           "expected_ticket_action": "create_ticket"
         },

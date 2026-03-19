@@ -34,6 +34,7 @@ class SupportIntakeResult:
     trace_events: list[str]
     llm_trace: dict[str, object] | None
     reply_trace: dict[str, object]
+    system: str = "ticket"
 
 
 class SupportIntakeWorkflow:
@@ -269,6 +270,132 @@ class SupportIntakeWorkflow:
         "好的",
         "可以了",
     )
+    _NATURAL_CUSTOMER_CONFIRM_STRONG_HINTS = (
+        "确认解决",
+        "确认已解决",
+        "确认恢复",
+        "确认修好",
+        "确认处理好",
+        "可以结单",
+        "可以关闭",
+    )
+    _NATURAL_COMMAND_REQUIRE_SLASH = frozenset(
+        {
+            "close",
+            "operator-close",
+            "assign",
+            "reassign",
+            "needs-info",
+            "escalate",
+            "merge",
+            "link",
+            "state",
+        }
+    )
+    _HIGH_RISK_CONFIRM_FLAG = "--confirm"
+    _COLLAB_COMMAND_USAGE_HINTS = {
+        "claim": "/claim {ticket_id}",
+        "resolve": "/resolve {ticket_id} 处理说明",
+        "customer-confirm": "/customer-confirm {ticket_id} 用户确认恢复",
+        "operator-close": "/operator-close {ticket_id} 关闭原因",
+        "end-session": "/end-session {ticket_id} manual_end_session",
+        "close": "/close {ticket_id} 兼容关闭原因",
+        "reopen": "/reopen {ticket_id} 重开原因",
+        "merge": "/merge {ticket_id} 目标工单号",
+        "link": "/link {ticket_id} 目标工单号",
+        "priority": "/priority {ticket_id} P1",
+        "status": "/status {ticket_id}",
+        "needs-info": "/needs-info {ticket_id} 请补充具体信息",
+        "escalate": "/escalate {ticket_id} 升级原因",
+        "assign": "/assign {ticket_id} 目标处理人",
+        "list": "/list {ticket_id} P1",
+        "reassign": "/reassign {ticket_id} 目标处理人",
+        "state": "/state {ticket_id} waiting_customer",
+    }
+    _SUPPORTED_SYSTEM_KEYS = frozenset(
+        {
+            "ticket",
+            "procurement",
+            "finance",
+            "approval",
+            "hr",
+            "asset",
+            "kb",
+            "crm",
+            "project",
+            "supply_chain",
+        }
+    )
+    _INTENT_SYSTEM_MAP = {
+        "billing": "finance",
+        "faq": "kb",
+    }
+    _SYSTEM_TEXT_HINTS = {
+        "ticket": (
+            "报修",
+            "工单",
+            "故障",
+            "维修",
+            "ticket",
+            "repair",
+            "空调",
+            "打印",
+            "网络",
+            "投影",
+            "门禁",
+        ),
+        "procurement": (
+            "采购",
+            "请购",
+            "购买",
+            "供应商",
+            "po",
+            "procurement",
+            "purchase",
+            "办公椅",
+        ),
+        "finance": (
+            "财务",
+            "发票",
+            "付款",
+            "报销",
+            "退款",
+            "invoice",
+            "payment",
+            "finance",
+            "扣费",
+            "对账",
+        ),
+        "approval": ("审批", "审批流", "oa", "approve", "approval", "审核", "申请"),
+        "hr": (
+            "人事",
+            "入职",
+            "离职",
+            "考勤",
+            "hr",
+            "onboarding",
+            "工资",
+            "转正",
+            "社保",
+            "手册",
+            "招聘",
+        ),
+        "asset": ("资产", "设备领用", "盘点", "折旧", "asset", "inventory", "领用", "报废", "工位"),
+        "kb": ("知识库", "文档", "sop", "faq", "kb", "knowledge", "如何", "查询", "指引", "咨询"),
+        "crm": ("客户", "线索", "商机", "客诉", "crm", "case", "投诉", "合同", "拜访"),
+        "project": ("项目", "里程碑", "排期", "project", "milestone", "立项", "迭代", "资源调配"),
+        "supply_chain": (
+            "供应链",
+            "收货",
+            "入库",
+            "出库",
+            "物流",
+            "supply",
+            "库存",
+            "订单",
+            "退货",
+        ),
+    }
 
     def __init__(
         self,
@@ -468,6 +595,7 @@ class SupportIntakeWorkflow:
     ) -> SupportIntakeResult:
         ticket_action, trace_events = self._derive_ticket_action(outcome)
         recommended_actions = [item.as_dict() for item in outcome.recommendations]
+        system_key = self._resolve_system_for_outcome(outcome=outcome)
         return SupportIntakeResult(
             ticket_id=outcome.ticket.ticket_id,
             reply_text=reply_text,
@@ -483,6 +611,7 @@ class SupportIntakeWorkflow:
             trace_events=trace_events,
             llm_trace=outcome.llm_trace,
             reply_trace=outcome.reply_trace,
+            system=system_key,
         )
 
     @staticmethod
@@ -1231,14 +1360,29 @@ class SupportIntakeWorkflow:
         if parsed is None:
             return None
         command, args, command_source = parsed
-
+        command_args = list(args)
+        confirm_flag = self._HIGH_RISK_CONFIRM_FLAG
+        has_high_risk_confirm = any(
+            str(item).strip().lower() == confirm_flag for item in command_args
+        )
+        command_args = [item for item in command_args if str(item).strip().lower() != confirm_flag]
         active_ticket_id = self._resolve_active_ticket_id(
             envelope=envelope,
             disambiguation=disambiguation,
             requested_ticket_id=existing_ticket_id,
         )
+        if (
+            command_source == "natural_language_command"
+            and command in self._NATURAL_COMMAND_REQUIRE_SLASH
+        ):
+            return self._build_collab_usage_result(
+                envelope=envelope,
+                disambiguation=disambiguation,
+                command=command,
+                fallback_ticket_id=active_ticket_id or existing_ticket_id,
+                reason="natural_language_requires_slash",
+            )
         ticket_id = active_ticket_id
-        command_args = list(args)
         if command_args and self._TICKET_ID_RE.match(command_args[0]):
             if command in {"merge", "link"}:
                 if ticket_id is None:
@@ -1249,6 +1393,28 @@ class SupportIntakeWorkflow:
                 command_args = command_args[1:]
         if ticket_id is None:
             return None
+        if command_source == "slash_command" and command in self._NATURAL_COMMAND_REQUIRE_SLASH:
+            if not has_high_risk_confirm:
+                return self._build_collab_usage_result(
+                    envelope=envelope,
+                    disambiguation=disambiguation,
+                    command=command,
+                    fallback_ticket_id=ticket_id,
+                    reason="high_risk_requires_confirm_flag",
+                )
+        if command in {"customer-confirm", "close"}:
+            ticket_snapshot = self._ticket_api.get_ticket(ticket_id)
+            if ticket_snapshot is not None and (
+                ticket_snapshot.status != "resolved"
+                and ticket_snapshot.handoff_state != "waiting_customer"
+            ):
+                return self._build_collab_usage_result(
+                    envelope=envelope,
+                    disambiguation=disambiguation,
+                    command=command,
+                    fallback_ticket_id=ticket_id,
+                    reason="customer_confirm_requires_resolved_state",
+                )
 
         actor_id = self._resolve_actor_id(envelope.metadata, session_id=envelope.session_id)
         command_line = f"/{command}"
@@ -1522,6 +1688,7 @@ class SupportIntakeWorkflow:
         disambiguation: DisambiguationResult,
         command: str,
         fallback_ticket_id: str | None,
+        reason: str | None = None,
     ) -> SupportIntakeResult:
         if self._ticket_api is None:
             raise RuntimeError("Ticket API is required for collaboration command usage handling")
@@ -1559,10 +1726,24 @@ class SupportIntakeWorkflow:
             ticket_id = ticket.ticket_id
             events = self._ticket_api.list_events(ticket.ticket_id)
         sla_result = self._build_clarification_sla(ticket, events)
-        usage_reply = (
-            f"协同命令格式不正确：/{command}。"
-            f"建议执行：/resolve {ticket_id} 或 /operator-close {ticket_id} 原因。"
-        )
+        usage_hint = self._format_collab_usage_hint(command=command, ticket_id=ticket_id)
+        if reason == "natural_language_requires_slash":
+            usage_reply = (
+                f"为避免误操作，“{str(envelope.message_text or '').strip()}”未直接执行。"
+                f"请使用显式命令：{usage_hint}。"
+            )
+        elif reason == "high_risk_requires_confirm_flag":
+            usage_reply = (
+                "这是高风险操作，为避免误操作请追加确认标记。"
+                f"建议执行：{usage_hint} {self._HIGH_RISK_CONFIRM_FLAG}。"
+            )
+        elif reason == "customer_confirm_requires_resolved_state":
+            usage_reply = (
+                f"工单 {ticket_id} 当前还未处于“待确认恢复”状态，不能直接确认关闭。"
+                f"建议先执行：{self._format_collab_usage_hint(command='resolve', ticket_id=ticket_id)}。"
+            )
+        else:
+            usage_reply = f"协同命令格式不正确：/{command}。建议执行：{usage_hint}。"
         reply_trace = {
             "provider": "fallback",
             "prompt_key": "collab_command_usage_reply",
@@ -1574,6 +1755,8 @@ class SupportIntakeWorkflow:
             "command": command,
             "ticket_id": ticket_id,
         }
+        if reason:
+            reply_trace["usage_reason"] = reason
         llm_trace: dict[str, object] = {
             "provider": "fallback",
             "model": None,
@@ -1595,7 +1778,7 @@ class SupportIntakeWorkflow:
             handoff=HandoffDecision(
                 should_handoff=False,
                 reason="collab_command_invalid",
-                payload={"command": command},
+                payload={"command": command, "usage_reason": reason},
             ),
             sla=sla_result,
             reply_text=usage_reply,
@@ -1614,10 +1797,19 @@ class SupportIntakeWorkflow:
             handoff_required=False,
             queue=ticket.queue,
             priority=ticket.priority,
-            trace_events=["collab_command_invalid"],
+            trace_events=(
+                ["collab_command_invalid", reason] if reason else ["collab_command_invalid"]
+            ),
             llm_trace=llm_trace,
             reply_trace=reply_trace,
         )
+
+    @classmethod
+    def _format_collab_usage_hint(cls, *, command: str, ticket_id: str) -> str:
+        template = cls._COLLAB_COMMAND_USAGE_HINTS.get(command)
+        if template is None:
+            return f"/resolve {ticket_id} 处理说明 或 /operator-close {ticket_id} 关闭原因"
+        return template.format(ticket_id=ticket_id)
 
     @classmethod
     def _parse_collab_command(cls, message_text: str) -> tuple[str, list[str], str] | None:
@@ -1664,8 +1856,7 @@ class SupportIntakeWorkflow:
         if any(neg in lowered for neg in negative_patterns):
             return None
 
-        short_confirmation_phrases = {"已确认", "确认", "好的", "可以了"}
-        if len(normalized) < 4 and normalized not in short_confirmation_phrases:
+        if len(normalized) < 4:
             return None
 
         ticket_match = cls._TICKET_ID_SEARCH_RE.search(normalized)
@@ -1680,6 +1871,13 @@ class SupportIntakeWorkflow:
                 keyword_matches.append((command, keyword))
 
         if keyword_matches:
+            contains_operator_close_intent = any(
+                matched_command == "operator-close" for matched_command, _ in keyword_matches
+            )
+            if contains_operator_close_intent:
+                keyword_matches = [
+                    item for item in keyword_matches if item[0] != "customer-confirm"
+                ]
             command_bias = {
                 "customer-confirm": 5,
                 "operator-close": 4,
@@ -1690,6 +1888,12 @@ class SupportIntakeWorkflow:
                 keyword_matches,
                 key=lambda item: (len(item[1]), command_bias.get(item[0], 0)),
             )
+            if command == "customer-confirm":
+                has_strong_confirmation = any(
+                    hint in normalized for hint in cls._NATURAL_CUSTOMER_CONFIRM_STRONG_HINTS
+                )
+                if not has_strong_confirmation:
+                    return None
             args: list[str] = []
             if ticket_id is not None:
                 args.append(ticket_id)
@@ -2020,6 +2224,48 @@ class SupportIntakeWorkflow:
                 return suffix
         return "support-intake"
 
+    @classmethod
+    def _normalize_system_key(cls, value: object | None) -> str | None:
+        normalized = str(value or "").strip().lower()
+        if not normalized:
+            return None
+        if normalized in cls._SUPPORTED_SYSTEM_KEYS:
+            return normalized
+        return None
+
+    @classmethod
+    def _resolve_system_for_outcome(cls, *, outcome: WorkflowOutcome) -> str:
+        ticket = outcome.ticket
+        metadata = ticket.metadata if isinstance(ticket.metadata, dict) else {}
+        for key in ("system", "system_key"):
+            candidate = cls._normalize_system_key(metadata.get(key))
+            if candidate is not None:
+                return candidate
+
+        text_candidates = [
+            ticket.latest_message,
+            outcome.summary,
+            outcome.reply_text,
+        ]
+        title_text = str(ticket.title or "").strip()
+        if title_text and title_text not in {"FAQ咨询", "问候咨询"}:
+            text_candidates.append(title_text)
+        for text in text_candidates:
+            normalized_text = str(text or "").strip().lower()
+            if not normalized_text:
+                continue
+            for system_key, hints in cls._SYSTEM_TEXT_HINTS.items():
+                if any(hint in normalized_text for hint in hints):
+                    return system_key
+
+        from_intent = cls._normalize_system_key(cls._INTENT_SYSTEM_MAP.get(outcome.intent.intent))
+        if from_intent is not None:
+            return from_intent
+
+        if str(ticket.queue or "").strip().lower() == "faq":
+            return "kb"
+        return "ticket"
+
     @staticmethod
     def _render_collab_command_reply(*, command: str, ticket: Ticket | None, actor_id: str) -> str:
         if command == "claim":
@@ -2136,6 +2382,7 @@ class SupportIntakeWorkflow:
             trace_events=self._derive_ticket_action(outcome)[1],
             llm_trace=outcome.llm_trace,
         )
+        system_key = self._resolve_system_for_outcome(outcome=outcome)
         lifecycle_stage = "awaiting_human" if outcome.handoff.should_handoff else "drafted"
         self._ticket_api.update_ticket(
             ticket_id,
@@ -2172,6 +2419,7 @@ class SupportIntakeWorkflow:
                     "reply_trace": dict(outcome.reply_trace),
                     "reply_generation_type": outcome.reply_generation_type,
                     "ai_degraded": bool(outcome.llm_trace.get("degraded")),
+                    "system": system_key,
                     HANDOFF_CONTEXT_KEY: handoff_context,
                 },
             },
