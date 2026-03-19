@@ -1,0 +1,669 @@
+{
+  "description": "十系统真实语料回放集 - 用于持续校准 system 推断（升级6）",
+  "version": "1.0.0",
+  "created_at": "2026-03-20",
+  "systems": {
+    "ticket": {
+      "system_key": "ticket",
+      "group_chat_id": "wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A",
+      "samples": [
+        {
+          "id": "ticket-001",
+          "text": "5楼会议室空调不制冷，需要维修",
+          "expected_system": "ticket",
+          "expected_ticket_action": "handoff"
+        },
+        {
+          "id": "ticket-002",
+          "text": "打印机坏了，打印不了文件",
+          "expected_system": "ticket",
+          "expected_ticket_action": "handoff"
+        },
+        {
+          "id": "ticket-003",
+          "text": "网络中断了，无法上网",
+          "expected_system": "ticket",
+          "expected_ticket_action": "handoff"
+        },
+        {
+          "id": "ticket-004",
+          "text": "投影无信号，HDMI切换无效",
+          "expected_system": "ticket",
+          "expected_ticket_action": "handoff"
+        },
+        {
+          "id": "ticket-005",
+          "text": "门禁卡刷不开门",
+          "expected_system": "ticket",
+          "expected_ticket_action": "handoff"
+        },
+        {
+          "id": "ticket-006",
+          "text": "饮水机漏水，需要处理",
+          "expected_system": "ticket",
+          "expected_ticket_action": "handoff"
+        },
+        {
+          "id": "ticket-007",
+          "text": "显示器黑屏，重启无效",
+          "expected_system": "ticket",
+          "expected_ticket_action": "handoff"
+        },
+        {
+          "id": "ticket-008",
+          "text": "会议室音响没有声音",
+          "expected_system": "ticket",
+          "expected_ticket_action": "handoff"
+        },
+        {
+          "id": "ticket-009",
+          "text": "工位上的插座松了",
+          "expected_system": "ticket",
+          "expected_ticket_action": "handoff"
+        },
+        {
+          "id": "ticket-010",
+          "text": "报修：茶水间微波炉不加热",
+          "expected_system": "ticket",
+          "expected_ticket_action": "handoff"
+        }
+      ]
+    },
+    "procurement": {
+      "system_key": "procurement",
+      "group_chat_id": "wrAEX9RgAAcu1YRglS26e-C_lKahhFLQ",
+      "samples": [
+        {
+          "id": "procurement-001",
+          "text": "申请采购2台显示器，预算已审批",
+          "expected_system": "procurement",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "procurement-002",
+          "text": "需要购买10把办公椅子",
+          "expected_system": "procurement",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "procurement-003",
+          "text": "请购键盘鼠标套装5套",
+          "expected_system": "procurement",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "procurement-004",
+          "text": "办公桌需要采购，需要和供应商对接",
+          "expected_system": "procurement",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "procurement-005",
+          "text": "请帮助采购一批文具用品",
+          "expected_system": "procurement",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "procurement-006",
+          "text": "需要采购一台打印机",
+          "expected_system": "procurement",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "procurement-007",
+          "text": "申请购买电动白板",
+          "expected_system": "procurement",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "procurement-008",
+          "text": "PO单已审批，等待供应商发货",
+          "expected_system": "procurement",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "procurement-009",
+          "text": "办公设备采购申请",
+          "expected_system": "procurement",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "procurement-010",
+          "text": "请购一台笔记本电脑，预算5000",
+          "expected_system": "procurement",
+          "expected_ticket_action": "create_ticket"
+        }
+      ]
+    },
+    "finance": {
+      "system_key": "finance",
+      "group_chat_id": "wrAEX9RgAAP7aghxPD-MU6DqIx0f0WBA",
+      "samples": [
+        {
+          "id": "finance-001",
+          "text": "发票已收但付款状态异常，请财务核对",
+          "expected_system": "finance",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "finance-002",
+          "text": "重复扣费，需要退款处理",
+          "expected_system": "finance",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "finance-003",
+          "text": "报销单审核进度查询",
+          "expected_system": "finance",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "finance-004",
+          "text": "供应商付款申请",
+          "expected_system": "finance",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "finance-005",
+          "text": "对公转账需要确认",
+          "expected_system": "finance",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "finance-006",
+          "text": "发票校验三方匹配异常",
+          "expected_system": "finance",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "finance-007",
+          "text": "月度付款计划核对",
+          "expected_system": "finance",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "finance-008",
+          "text": "应收款催收跟进",
+          "expected_system": "finance",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "finance-009",
+          "text": "请款单据审核",
+          "expected_system": "finance",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "finance-010",
+          "text": "财务付款凭证查询",
+          "expected_system": "finance",
+          "expected_ticket_action": "create_ticket"
+        }
+      ]
+    },
+    "approval": {
+      "system_key": "approval",
+      "group_chat_id": "wrAEX9RgAAPG3M8WvyVfBu56nlsWy2Pw",
+      "samples": [
+        {
+          "id": "approval-001",
+          "text": "请发起加班审批流程，今晚需要处理",
+          "expected_system": "approval",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "approval-002",
+          "text": "差旅费用审批申请",
+          "expected_system": "approval",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "approval-003",
+          "text": "采购合同审批",
+          "expected_system": "approval",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "approval-004",
+          "text": "请假申请需要主管审批",
+          "expected_system": "approval",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "approval-005",
+          "text": "预算外支出审批",
+          "expected_system": "approval",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "approval-006",
+          "text": "外出办公申请",
+          "expected_system": "approval",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "approval-007",
+          "text": "印章使用申请",
+          "expected_system": "approval",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "approval-008",
+          "text": "合同续签审批",
+          "expected_system": "approval",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "approval-009",
+          "text": "年终奖发放审批",
+          "expected_system": "approval",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "approval-010",
+          "text": "OA审批流转状态查询",
+          "expected_system": "approval",
+          "expected_ticket_action": "create_ticket"
+        }
+      ]
+    },
+    "hr": {
+      "system_key": "hr",
+      "group_chat_id": "wrAEX9RgAAKNBDfXJKMG2UkweQ4rLCog",
+      "samples": [
+        {
+          "id": "hr-001",
+          "text": "新员工入职账号开通和工牌办理",
+          "expected_system": "hr",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "hr-002",
+          "text": "员工转正流程办理",
+          "expected_system": "hr",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "hr-003",
+          "text": "离职交接手续",
+          "expected_system": "hr",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "hr-004",
+          "text": "考勤异常申诉",
+          "expected_system": "hr",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "hr-005",
+          "text": "工资条查询",
+          "expected_system": "hr",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "hr-006",
+          "text": "社保公积金转移",
+          "expected_system": "hr",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "hr-007",
+          "text": "员工手册咨询",
+          "expected_system": "hr",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "hr-008",
+          "text": "年终考核安排",
+          "expected_system": "hr",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "hr-009",
+          "text": "团建活动组织",
+          "expected_system": "hr",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "hr-010",
+          "text": "招聘需求提交",
+          "expected_system": "hr",
+          "expected_ticket_action": "create_ticket"
+        }
+      ]
+    },
+    "asset": {
+      "system_key": "asset",
+      "group_chat_id": "wrAEX9RgAAg7BHbZH-wfXUQToXEoIO9g",
+      "samples": [
+        {
+          "id": "asset-001",
+          "text": "资产盘点发现设备编号缺失，需要补录",
+          "expected_system": "asset",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "asset-002",
+          "text": "笔记本电脑领用申请",
+          "expected_system": "asset",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "asset-003",
+          "text": "资产报废申请",
+          "expected_system": "asset",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "asset-004",
+          "text": "设备维修登记",
+          "expected_system": "asset",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "asset-005",
+          "text": "资产调拨流程",
+          "expected_system": "asset",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "asset-006",
+          "text": "工位分配调整",
+          "expected_system": "asset",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "asset-007",
+          "text": "办公设备库存查询",
+          "expected_system": "asset",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "asset-008",
+          "text": "资产折旧计算",
+          "expected_system": "asset",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "asset-009",
+          "text": "手持终端领用",
+          "expected_system": "asset",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "asset-010",
+          "text": "会议室设备盘点",
+          "expected_system": "asset",
+          "expected_ticket_action": "create_ticket"
+        }
+      ]
+    },
+    "kb": {
+      "system_key": "kb",
+      "group_chat_id": "wrAEX9RgAACPv7qtmyFYQBNQ3QNGilUg",
+      "samples": [
+        {
+          "id": "kb-001",
+          "text": "知识库文档需要更新到最新版本",
+          "expected_system": "kb",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "kb-002",
+          "text": "如何申请远程办公",
+          "expected_system": "kb",
+          "expected_ticket_action": "faq_reply"
+        },
+        {
+          "id": "kb-003",
+          "text": "公司报销流程是什么",
+          "expected_system": "kb",
+          "expected_ticket_action": "faq_reply"
+        },
+        {
+          "id": "kb-004",
+          "text": "新人入职指引文档",
+          "expected_system": "kb",
+          "expected_ticket_action": "faq_reply"
+        },
+        {
+          "id": "kb-005",
+          "text": "IT设备使用规范",
+          "expected_system": "kb",
+          "expected_ticket_action": "faq_reply"
+        },
+        {
+          "id": "kb-006",
+          "text": "如何创建FAQ文章",
+          "expected_system": "kb",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "kb-007",
+          "text": "SOP文档审核发布",
+          "expected_system": "kb",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "kb-008",
+          "text": "知识库分类调整",
+          "expected_system": "kb",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "kb-009",
+          "text": "历史案例查询方法",
+          "expected_system": "kb",
+          "expected_ticket_action": "faq_reply"
+        },
+        {
+          "id": "kb-010",
+          "text": "培训资料上传知识库",
+          "expected_system": "kb",
+          "expected_ticket_action": "create_ticket"
+        }
+      ]
+    },
+    "crm": {
+      "system_key": "crm",
+      "group_chat_id": "wrAEX9RgAAi-Hhj6vz2f-dRUo5gl-aOQ",
+      "samples": [
+        {
+          "id": "crm-001",
+          "text": "CRM case 跟进，客户线索需要分派",
+          "expected_system": "crm",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "crm-002",
+          "text": "客户投诉记录",
+          "expected_system": "crm",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "crm-003",
+          "text": "商机推进状态更新",
+          "expected_system": "crm",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "crm-004",
+          "text": "客户拜访计划安排",
+          "expected_system": "crm",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "crm-005",
+          "text": "合同签署进度跟踪",
+          "expected_system": "crm",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "crm-006",
+          "text": "客户反馈汇总",
+          "expected_system": "crm",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "crm-007",
+          "text": "销售漏斗分析",
+          "expected_system": "crm",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "crm-008",
+          "text": "客户关系维护记录",
+          "expected_system": "crm",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "crm-009",
+          "text": "意向客户跟进",
+          "expected_system": "crm",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "crm-010",
+          "text": "售后服务case创建",
+          "expected_system": "crm",
+          "expected_ticket_action": "create_ticket"
+        }
+      ]
+    },
+    "project": {
+      "system_key": "project",
+      "group_chat_id": "wrAEX9RgAA6d5dHGVAYMMYdeuzVZJnbA",
+      "samples": [
+        {
+          "id": "project-001",
+          "text": "项目里程碑延期，请更新项目计划",
+          "expected_system": "project",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "project-002",
+          "text": "新项目立项申请",
+          "expected_system": "project",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "project-003",
+          "text": "项目资源调配",
+          "expected_system": "project",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "project-004",
+          "text": "项目进度汇报",
+          "expected_system": "project",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "project-005",
+          "text": "项目风险评估",
+          "expected_system": "project",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "project-006",
+          "text": "项目验收准备",
+          "expected_system": "project",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "project-007",
+          "text": "团队成员任务分配",
+          "expected_system": "project",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "project-008",
+          "text": "项目预算调整",
+          "expected_system": "project",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "project-009",
+          "text": "项目结项评审",
+          "expected_system": "project",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "project-010",
+          "text": "敏捷迭代计划会议",
+          "expected_system": "project",
+          "expected_ticket_action": "create_ticket"
+        }
+      ]
+    },
+    "supply_chain": {
+      "system_key": "supply_chain",
+      "group_chat_id": "wrAEX9RgAA5hWE3NUtXZTNYFfjc4Z-4A",
+      "samples": [
+        {
+          "id": "supply_chain-001",
+          "text": "供应链收货入库异常，需确认到货数量",
+          "expected_system": "supply_chain",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "supply_chain-002",
+          "text": "采购订单到货通知",
+          "expected_system": "supply_chain",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "supply_chain-003",
+          "text": "库存盘点结果录入",
+          "expected_system": "supply_chain",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "supply_chain-004",
+          "text": "出库单审核",
+          "expected_system": "supply_chain",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "supply_chain-005",
+          "text": "物流运输跟踪",
+          "expected_system": "supply_chain",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "supply_chain-006",
+          "text": "供应商交货期确认",
+          "expected_system": "supply_chain",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "supply_chain-007",
+          "text": "仓库库位调整",
+          "expected_system": "supply_chain",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "supply_chain-008",
+          "text": "退货处理流程",
+          "expected_system": "supply_chain",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "supply_chain-009",
+          "text": "库存预警处理",
+          "expected_system": "supply_chain",
+          "expected_ticket_action": "create_ticket"
+        },
+        {
+          "id": "supply_chain-010",
+          "text": "供应链数据对账",
+          "expected_system": "supply_chain",
+          "expected_ticket_action": "create_ticket"
+        }
+      ]
+    }
+  },
+  "total_samples": 100,
+  "systems_count": 10
+}

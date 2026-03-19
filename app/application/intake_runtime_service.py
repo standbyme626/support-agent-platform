@@ -98,6 +98,7 @@ def run_intake_graph_v2(
             "user_id": str(payload.get("user_id") or ""),
             "channel": str(payload.get("channel") or "ops-api"),
             "intent": "session_control",
+            "system": "ticket",
             "decision": {
                 "route": session_control.action,
                 "high_risk_action_executed": False,
@@ -140,6 +141,7 @@ def run_intake_graph_v2(
             {
                 "session_id": session_id,
                 "intent": control_result.get("intent"),
+                "system": "ticket",
                 "route": session_control.action,
                 "advice_only": True,
                 "high_risk_action_executed": False,
@@ -150,14 +152,17 @@ def run_intake_graph_v2(
             ticket_id=str(metadata.get("ticket_id") or "").strip() or None,
             session_id=session_id,
         )
-        runtime_graph, runtime_current_node, runtime_path, runtime_state = extract_runtime_trace_fields(
-            control_result,
-            default_graph="intake_graph_v1",
+        runtime_graph, runtime_current_node, runtime_path, runtime_state = (
+            extract_runtime_trace_fields(
+                control_result,
+                default_graph="intake_graph_v1",
+            )
         )
         return {
             "result": control_result,
             "advice_only": True,
             "high_risk_action_executed": False,
+            "system": "ticket",
             "runtime_graph": runtime_graph,
             "runtime_current_node": runtime_current_node,
             "runtime_path": runtime_path,
@@ -189,11 +194,13 @@ def run_intake_graph_v2(
     safety = safety_payload if isinstance(safety_payload, dict) else {}
     advice_only = bool(safety.get("advice_only", True))
     high_risk_action_executed = bool(decision.get("high_risk_action_executed", False))
+    system = str(result.get("system") or "ticket").strip().lower()
     runtime.trace_logger.log(
         "intake_run_v2",
         {
             "session_id": session_id,
             "intent": result.get("intent"),
+            "system": system,
             "route": decision.get("route"),
             "advice_only": advice_only,
             "high_risk_action_executed": high_risk_action_executed,
@@ -210,6 +217,7 @@ def run_intake_graph_v2(
         "result": result,
         "advice_only": advice_only,
         "high_risk_action_executed": high_risk_action_executed,
+        "system": system,
         "runtime_graph": runtime_graph,
         "runtime_current_node": runtime_current_node,
         "runtime_path": runtime_path,
@@ -238,7 +246,9 @@ def run_ticket_investigation_v2(
     ).strip()
     if not question:
         raise ValueError("question is required")
-    trace_id = str(payload.get("trace_id") or ticket_trace_id_getter(ticket) or new_trace_id()).strip()
+    trace_id = str(
+        payload.get("trace_id") or ticket_trace_id_getter(ticket) or new_trace_id()
+    ).strip()
     investigation = run_ticket_investigation(
         runtime.investigation_agent,
         ticket_id=ticket_id,
@@ -258,7 +268,9 @@ def run_ticket_investigation_v2(
         investigation["safety"] = safety
         advice_only = True
     high_risk_actions_payload = safety.get("high_risk_actions_executed")
-    high_risk_actions = high_risk_actions_payload if isinstance(high_risk_actions_payload, list) else []
+    high_risk_actions = (
+        high_risk_actions_payload if isinstance(high_risk_actions_payload, list) else []
+    )
     runtime.trace_logger.log(
         "ticket_investigation_v2",
         {
