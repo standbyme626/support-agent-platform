@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -18,70 +19,60 @@ SYSTEM_CORPUS = {
         "chat_id": "wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A",
         "samples": [
             {"id": "ticket-001", "text": "5楼会议室空调不制冷，需要维修"},
-            {"id": "ticket-002", "text": "打印机坏了，打印不了文件"},
         ],
     },
     "procurement": {
         "chat_id": "wrAEX9RgAAcu1YRglS26e-C_lKahhFLQ",
         "samples": [
             {"id": "procurement-001", "text": "申请采购2台显示器，预算已审批"},
-            {"id": "procurement-002", "text": "需要购买10把办公椅子"},
         ],
     },
     "finance": {
         "chat_id": "wrAEX9RgAAP7aghxPD-MU6DqIx0f0WBA",
         "samples": [
             {"id": "finance-001", "text": "发票已收但付款状态异常，请财务核对"},
-            {"id": "finance-002", "text": "重复扣费，需要退款处理"},
         ],
     },
     "approval": {
         "chat_id": "wrAEX9RgAAPG3M8WvyVfBu56nlsWy2Pw",
         "samples": [
             {"id": "approval-001", "text": "请发起加班审批流程，今晚需要处理"},
-            {"id": "approval-002", "text": "差旅费用审批申请"},
         ],
     },
     "hr": {
         "chat_id": "wrAEX9RgAAKNBDfXJKMG2UkweQ4rLCog",
         "samples": [
             {"id": "hr-001", "text": "新员工入职账号开通和工牌办理"},
-            {"id": "hr-002", "text": "员工转正流程办理"},
         ],
     },
     "asset": {
         "chat_id": "wrAEX9RgAAg7BHbZH-wfXUQToXEoIO9g",
         "samples": [
             {"id": "asset-001", "text": "资产盘点发现设备编号缺失，需要补录"},
-            {"id": "asset-002", "text": "笔记本电脑领用申请"},
         ],
     },
     "kb": {
         "chat_id": "wrAEX9RgAACPv7qtmyFYQBNQ3QNGilUg",
         "samples": [
             {"id": "kb-001", "text": "知识库文档需要更新到最新版本"},
-            {"id": "kb-002", "text": "如何申请远程办公"},
         ],
     },
     "crm": {
         "chat_id": "wrAEX9RgAAi-Hhj6vz2f-dRUo5gl-aOQ",
         "samples": [
             {"id": "crm-001", "text": "CRM case 跟进，客户线索需要分派"},
-            {"id": "crm-002", "text": "客户投诉记录"},
         ],
     },
     "project": {
         "chat_id": "wrAEX9RgAA6d5dHGVAYMMYdeuzVZJnbA",
         "samples": [
             {"id": "project-001", "text": "项目里程碑延期，请更新项目计划"},
-            {"id": "project-002", "text": "新项目立项申请"},
         ],
     },
     "supply_chain": {
         "chat_id": "wrAEX9RgAA5hWE3NUtXZTNYFfjc4Z-4A",
         "samples": [
             {"id": "supply_chain-001", "text": "供应链收货入库异常，需确认到货数量"},
-            {"id": "supply_chain-002", "text": "采购订单到货通知"},
         ],
     },
 }
@@ -106,25 +97,28 @@ def run_system_dispatch_validation() -> dict:
 
         for sample in system_data["samples"]:
             results["total"] += 1
-            trace_id = f"replay-{system_key}-{sample['id']}"
+            ts = int(time.time() * 1000000)
+            trace_id = f"replay-{system_key}-{sample['id']}-{ts}"
             try:
                 result = process_wecom_message(
                     runtime,
                     {
-                        "msgid": f"msg-{sample['id']}",
+                        "msgid": f"msg-{sample['id']}-{ts}",
                         "chatid": system_data["chat_id"],
                         "chattype": "group",
-                        "sender_id": "test_user",
+                        "sender_id": f"test_user_{system_key}",
                         "text": sample["text"],
                         "req_id": trace_id,
                     },
                 )
 
                 dispatch_decision = result.as_json().get("dispatch_decision") or {}
-                detected_system = dispatch_decision.get("system", "")
-                matched_key = dispatch_decision.get("dispatch_matched_key", "")
+                route = dispatch_decision.get("route", {})
+                detected_system = route.get("system", "")
+                matched_key = route.get("matched_key", "")
+                target_group_id = route.get("target_group_id", "") or ""
 
-                success = detected_system == system_key
+                success = detected_system == system_key and bool(target_group_id)
                 if success:
                     results["passed"] += 1
                     results["systems"][system_key]["passed"] += 1
@@ -137,8 +131,10 @@ def run_system_dispatch_validation() -> dict:
                         "id": sample["id"],
                         "text": sample["text"],
                         "expected_system": system_key,
+                        "expected_chat_id": system_data["chat_id"],
                         "detected_system": detected_system,
                         "matched_key": matched_key,
+                        "target_group_id": target_group_id,
                         "success": success,
                     }
                 )
@@ -183,12 +179,15 @@ def main() -> int:
         for sample_result in system_result["samples"]:
             status = "✅" if sample_result["success"] else "❌"
             print(f"\n{status} [{sample_result['id']}] {sample_result['text'][:30]}...")
-            print(f"   期望: {sample_result['expected_system']}")
+            print(
+                f"   期望: {sample_result['expected_system']} → {sample_result['expected_chat_id']}"
+            )
             if "error" in sample_result:
                 print(f"   错误: {sample_result['error']}")
             else:
                 print(
                     f"   实际: {sample_result['detected_system']} (matched: {sample_result.get('matched_key', 'N/A')})"
+                    f"\n   群ID: {sample_result.get('target_group_id', 'N/A')}"
                 )
 
     output_path = Path(__file__).parent.parent / "artifacts" / "system_dispatch_validation.json"

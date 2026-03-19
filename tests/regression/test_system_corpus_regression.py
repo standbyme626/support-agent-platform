@@ -383,3 +383,174 @@ class TestSystemCorpusEndToEnd:
         result = workflow.run(envelope)
 
         assert result.system == "kb", f"Expected system=kb, got {result.system}"
+
+    def test_asset_dispatch(
+        self,
+        tmp_path: Path,
+        system_corpus: dict,
+    ) -> None:
+        from core.handoff_manager import HandoffManager
+        from core.intent_router import IntentRouter
+        from core.recommended_actions_engine import RecommendedActionsEngine
+        from core.retriever import Retriever
+        from core.sla_engine import SlaEngine
+        from core.summary_engine import SummaryEngine
+        from core.ticket_api import TicketAPI
+        from core.tool_router import ToolRouter
+        from core.workflow_engine import WorkflowEngine
+        from storage.models import InboundEnvelope
+        from storage.ticket_repository import TicketRepository
+        from workflows.case_collab_workflow import CaseCollabWorkflow
+        from workflows.support_intake_workflow import SupportIntakeWorkflow
+
+        repo = TicketRepository(tmp_path / "tickets.db")
+        repo.apply_migrations()
+        ticket_api = TicketAPI(repo)
+
+        tool_router = ToolRouter(
+            ticket_api=ticket_api,
+            retriever=Retriever(Path(__file__).resolve().parents[2] / "seed_data"),
+        )
+        policy_path = (
+            Path(__file__).resolve().parents[2]
+            / "seed_data"
+            / "sla_rules"
+            / "default_sla_rules.json"
+        )
+        engine = WorkflowEngine(
+            ticket_api=ticket_api,
+            intent_router=IntentRouter(),
+            tool_router=tool_router,
+            summary_engine=SummaryEngine(),
+            handoff_manager=HandoffManager.from_file(policy_path),
+            sla_engine=SlaEngine.from_file(policy_path),
+            recommendation_engine=RecommendedActionsEngine(),
+        )
+        workflow = SupportIntakeWorkflow(
+            engine, case_collab_workflow=CaseCollabWorkflow(ticket_api)
+        )
+
+        sample = system_corpus["systems"]["asset"]["samples"][0]
+        envelope = InboundEnvelope(
+            channel="wecom",
+            session_id=f"test-{sample['id']}",
+            message_text=sample["text"],
+            metadata={"sender_id": "test_user"},
+        )
+        result = workflow.run(envelope)
+
+        assert result.system == "asset", f"Expected system=asset, got {result.system}"
+
+    def test_approval_dispatch(
+        self,
+        tmp_path: Path,
+        system_corpus: dict,
+    ) -> None:
+        from core.handoff_manager import HandoffManager
+        from core.intent_router import IntentRouter
+        from core.recommended_actions_engine import RecommendedActionsEngine
+        from core.retriever import Retriever
+        from core.sla_engine import SlaEngine
+        from core.summary_engine import SummaryEngine
+        from core.ticket_api import TicketAPI
+        from core.tool_router import ToolRouter
+        from core.workflow_engine import WorkflowEngine
+        from storage.models import InboundEnvelope
+        from storage.ticket_repository import TicketRepository
+        from workflows.case_collab_workflow import CaseCollabWorkflow
+        from workflows.support_intake_workflow import SupportIntakeWorkflow
+
+        repo = TicketRepository(tmp_path / "tickets.db")
+        repo.apply_migrations()
+        ticket_api = TicketAPI(repo)
+
+        tool_router = ToolRouter(
+            ticket_api=ticket_api,
+            retriever=Retriever(Path(__file__).resolve().parents[2] / "seed_data"),
+        )
+        policy_path = (
+            Path(__file__).resolve().parents[2]
+            / "seed_data"
+            / "sla_rules"
+            / "default_sla_rules.json"
+        )
+        engine = WorkflowEngine(
+            ticket_api=ticket_api,
+            intent_router=IntentRouter(),
+            tool_router=tool_router,
+            summary_engine=SummaryEngine(),
+            handoff_manager=HandoffManager.from_file(policy_path),
+            sla_engine=SlaEngine.from_file(policy_path),
+            recommendation_engine=RecommendedActionsEngine(),
+        )
+        workflow = SupportIntakeWorkflow(
+            engine, case_collab_workflow=CaseCollabWorkflow(ticket_api)
+        )
+
+        sample = system_corpus["systems"]["approval"]["samples"][0]
+        envelope = InboundEnvelope(
+            channel="wecom",
+            session_id=f"test-{sample['id']}",
+            message_text=sample["text"],
+            metadata={"sender_id": "test_user"},
+        )
+        result = workflow.run(envelope)
+
+        assert result.system == "approval", f"Expected system=approval, got {result.system}"
+
+    def test_hr_dispatch(
+        self,
+        tmp_path: Path,
+        system_corpus: dict,
+    ) -> None:
+        from core.handoff_manager import HandoffManager
+        from core.intent_router import IntentRouter
+        from core.recommended_actions_engine import RecommendedActionsEngine
+        from core.retriever import Retriever
+        from core.sla_engine import SlaEngine
+        from core.summary_engine import SummaryEngine
+        from core.ticket_api import TicketAPI
+        from core.tool_router import ToolRouter
+        from core.workflow_engine import WorkflowEngine
+        from storage.models import InboundEnvelope
+        from storage.ticket_repository import TicketRepository
+        from workflows.case_collab_workflow import CaseCollabWorkflow
+        from workflows.support_intake_workflow import SupportIntakeWorkflow
+
+        repo = TicketRepository(tmp_path / "tickets.db")
+        repo.apply_migrations()
+        ticket_api = TicketAPI(repo)
+
+        tool_router = ToolRouter(
+            ticket_api=ticket_api,
+            retriever=Retriever(Path(__file__).resolve().parents[2] / "seed_data"),
+        )
+        policy_path = (
+            Path(__file__).resolve().parents[2]
+            / "seed_data"
+            / "sla_rules"
+            / "default_sla_rules.json"
+        )
+        engine = WorkflowEngine(
+            ticket_api=ticket_api,
+            intent_router=IntentRouter(),
+            tool_router=tool_router,
+            summary_engine=SummaryEngine(),
+            handoff_manager=HandoffManager.from_file(policy_path),
+            sla_engine=SlaEngine.from_file(policy_path),
+            recommendation_engine=RecommendedActionsEngine(),
+        )
+        workflow = SupportIntakeWorkflow(
+            engine, case_collab_workflow=CaseCollabWorkflow(ticket_api)
+        )
+
+        sample = system_corpus["systems"]["hr"]["samples"][0]
+        envelope = InboundEnvelope(
+            channel="wecom",
+            session_id=f"test-{sample['id']}",
+            message_text=sample["text"],
+            metadata={"sender_id": "test_user"},
+        )
+        result = workflow.run(envelope)
+
+        assert result.system == "hr", f"Expected system=hr, got {result.system}"
