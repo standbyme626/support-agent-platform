@@ -27,6 +27,8 @@ from storage.models import InboundEnvelope
 from storage.ticket_repository import TicketRepository
 from workflows.case_collab_workflow import CaseCollabWorkflow
 from workflows.support_intake_workflow import SupportIntakeWorkflow
+from app.application.systems import SystemRuntimeRouter
+from app.domain.systems import register_all_systems
 
 
 @dataclass(frozen=True)
@@ -34,6 +36,7 @@ class AcceptanceRuntime:
     gateway: OpenClawGateway
     intake_workflow: SupportIntakeWorkflow
     trace_logger: JsonTraceLogger
+    system_router: Any = None
 
 
 def _seed_root() -> Path:
@@ -82,10 +85,14 @@ def build_runtime(environment: str | None) -> AcceptanceRuntime:
         case_collab_workflow=CaseCollabWorkflow(ticket_api),
         ticket_api=ticket_api,
     )
+    system_registry = register_all_systems()
+    system_router = SystemRuntimeRouter(system_registry)
+
     return AcceptanceRuntime(
         gateway=gateway,
         intake_workflow=intake_workflow,
         trace_logger=bindings.trace_logger,
+        system_router=system_router,
     )
 
 

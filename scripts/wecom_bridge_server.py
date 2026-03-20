@@ -64,6 +64,27 @@ _PRIVATE_DETAIL_SUPPRESS_PHRASES: tuple[str, ...] = (
     "本次会话已结束",
 )
 
+# 群ID -> 系统映射 (升级6: 单群模式)
+GROUP_CHAT_TO_SYSTEM: dict[str, str] = {
+    "wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A": "ticket",  # 工单群
+    "wrAEX9RgAAcu1YRglS26e-C_lKahhFLQ": "procurement",  # 采购群
+    "wrAEX9RgAAP7aghxPD-MU6DqIx0f0WBA": "finance",  # 财务群
+    "wrAEX9RgAAPG3M8WvyVfBu56nlsWy2Pw": "approval",  # 审批群
+    "wrAEX9RgAAKNBDfXJKMG2UkweQ4rLCog": "hr",  # HR群
+    "wrAEX9RgAAg7BHbZH-wfXUQToXEoIO9g": "asset",  # 资产群
+    "wrAEX9RgAACPv7qtmyFYQBNQ3QNGilUg": "kb",  # 知识库群
+    "wrAEX9RgAAi-Hhj6vz2f-dRUo5gl-aOQ": "crm",  # CRM群
+    "wrAEX9RgAA6d5dHGVAYMMYdeuzVZJnbA": "project",  # 项目群
+    "wrAEX9RgAA5hWE3NUtXZTNYFfjc4Z-4A": "supply_chain",  # 供应链群
+}
+
+
+def _get_system_from_chat_id(chat_id: str | None) -> str | None:
+    """根据群ID获取对应的系统"""
+    if not chat_id:
+        return None
+    return GROUP_CHAT_TO_SYSTEM.get(chat_id, None)
+
 
 @dataclass(frozen=True)
 class BridgeResult:
@@ -105,6 +126,9 @@ class _RuntimeLike(Protocol):
 
     @property
     def intake_workflow(self) -> _IntakeLike: ...
+
+    @property
+    def system_router(self) -> Any: ...
 
 
 def process_wecom_message(runtime: _RuntimeLike, payload: dict[str, Any]) -> BridgeResult:
@@ -217,14 +241,46 @@ def process_wecom_message(runtime: _RuntimeLike, payload: dict[str, Any]) -> Bri
     priority = str(getattr(intake, "priority", "") or "").strip()
     collab_push = getattr(intake, "collab_push", None)
     inbox = str(envelope.metadata.get("inbox") or "wecom.default").strip()
-    system_key = str(
-        getattr(intake, "system", "")
-        or getattr(intake, "system_key", "")
-        or envelope.metadata.get("system")
-        or envelope.metadata.get("system_key")
-        or ""
-    ).strip().lower()
-    reply_text = str(getattr(intake, "reply_text", "") or "")
+    system_key = (
+        str(
+            getattr(intake, "system", "")
+            or getattr(intake, "system_key", "")
+            or envelope.metadata.get("system")
+            or envelope.metadata.get("system_key")
+            or ""
+        )
+        .strip()
+        .lower()
+    )
+
+    # 根据群ID确定系统 (升级6: 单群模式)
+    system_router = getattr(runtime, "system_router", None)
+    chat_based_system = _get_system_from_chat_id(chat_id)
+    system_result: dict[str, Any] | None = None
+
+    if chat_based_system and chat_based_system != "ticket" and system_router is not None:
+        # 使用群ID路由到对应系统
+        payload = {
+            "source_text": text,
+            "operator_id": sender_id,
+            "chat_id": chat_id,
+        }
+        system_result = system_router.route_create(chat_based_system, payload, req_id)
+        if system_result and system_result.get("ok"):
+            entity_id = system_result.get("entity_id", "")
+            status = system_result.get("status", "")
+            summary = system_result.get("summary", "")
+            reply_text = f"已创建 {chat_based_system} 记录 {entity_id}，状态：{status}"
+            if summary:
+                reply_text += f"\n{summary}"
+        elif system_result:
+            error_msg = system_result.get("error", {}).get("message", "创建失败")
+            reply_text = f"创建 {chat_based_system} 记录失败：{error_msg}"
+        else:
+            reply_text = str(getattr(intake, "reply_text", "") or "")
+    else:
+        # 工单系统或未知群，使用原intake流程
+        reply_text = str(getattr(intake, "reply_text", "") or "")
     user_receipt_body = reply_text
     private_detail_body = ""
     user_receipt_session_id = envelope.session_id
@@ -668,7 +724,10 @@ def _resolve_collab_message(
     else:
         reported_at = time.strftime("%Y-%m-%d %H:%M")
     normalized_action = str(ticket_action or "").strip()
-    if normalized_action in {"create_ticket", "handoff", "conservative_ticket"} and not has_existing_ticket_context:
+    if (
+        normalized_action in {"create_ticket", "handoff", "conservative_ticket"}
+        and not has_existing_ticket_context
+    ):
         detail_line = compact_detail or "（未提供问题描述）"
         return (
             f"新工单 {ticket_label} 已创建\n"
