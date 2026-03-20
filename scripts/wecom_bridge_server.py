@@ -232,55 +232,65 @@ def process_wecom_message(runtime: _RuntimeLike, payload: dict[str, Any]) -> Bri
         message_text=str(inbound_payload.get("message_text") or text),
         metadata=dict(inbound_payload.get("metadata") or {}),
     )
-    existing_ticket_id = str(envelope.metadata.get("ticket_id") or "").strip() or None
-    has_existing_ticket_context = existing_ticket_id is not None
-    intake = runtime.intake_workflow.run(envelope, existing_ticket_id=existing_ticket_id)
-    ticket_id = str(getattr(intake, "ticket_id", "") or "").strip() or None
-    ticket_action = str(getattr(intake, "ticket_action", "") or "").strip() or None
-    queue = str(getattr(intake, "queue", "") or "").strip()
-    priority = str(getattr(intake, "priority", "") or "").strip()
-    collab_push = getattr(intake, "collab_push", None)
-    inbox = str(envelope.metadata.get("inbox") or "wecom.default").strip()
-    system_key = (
-        str(
-            getattr(intake, "system", "")
-            or getattr(intake, "system_key", "")
-            or envelope.metadata.get("system")
-            or envelope.metadata.get("system_key")
-            or ""
-        )
-        .strip()
-        .lower()
-    )
-
-    # 根据群ID确定系统 (升级6: 单群模式)
+    # 根据群ID确定系统 (升级6: 单群模式) - 优先判断
     system_router = getattr(runtime, "system_router", None)
     chat_based_system = _get_system_from_chat_id(chat_id)
     system_result: dict[str, Any] | None = None
 
+    # 如果是L2-L10系统，跳过工单创建
     if chat_based_system and chat_based_system != "ticket" and system_router is not None:
-        # 使用群ID路由到对应系统
-        payload = {
-            "source_text": text,
-            "operator_id": sender_id,
-            "chat_id": chat_id,
-        }
-        system_result = system_router.route_create(chat_based_system, payload, req_id)
-        if system_result and system_result.get("ok"):
-            entity_id = system_result.get("entity_id", "")
-            status = system_result.get("status", "")
-            summary = system_result.get("summary", "")
-            reply_text = f"已创建 {chat_based_system} 记录 {entity_id}，状态：{status}"
-            if summary:
-                reply_text += f"\n{summary}"
-        elif system_result:
-            error_msg = system_result.get("error", {}).get("message", "创建失败")
-            reply_text = f"创建 {chat_based_system} 记录失败：{error_msg}"
-        else:
-            reply_text = str(getattr(intake, "reply_text", "") or "")
+        system_result = system_router.route_create(
+            chat_based_system,
+            {
+                "source_text": text,
+                "operator_id": sender_id,
+                "chat_id": chat_id,
+            },
+            req_id,
+        )
+        intake = None
+        has_existing_ticket_context = False
+        ticket_id = None
+        ticket_action = None
+        queue = ""
+        priority = ""
+        collab_push = None
+        inbox = str(envelope.metadata.get("inbox") or "wecom.default").strip()
+        system_key = chat_based_system
     else:
-        # 工单系统或未知群，使用原intake流程
-        reply_text = str(getattr(intake, "reply_text", "") or "")
+        existing_ticket_id = str(envelope.metadata.get("ticket_id") or "").strip() or None
+        has_existing_ticket_context = existing_ticket_id is not None
+        intake = runtime.intake_workflow.run(envelope, existing_ticket_id=existing_ticket_id)
+        ticket_id = str(getattr(intake, "ticket_id", "") or "").strip() or None
+        ticket_action = str(getattr(intake, "ticket_action", "") or "").strip() or None
+        queue = str(getattr(intake, "queue", "") or "").strip()
+        priority = str(getattr(intake, "priority", "") or "").strip()
+        collab_push = getattr(intake, "collab_push", None)
+        inbox = str(envelope.metadata.get("inbox") or "wecom.default").strip()
+        system_key = (
+            str(
+                getattr(intake, "system", "")
+                or getattr(intake, "system_key", "")
+                or envelope.metadata.get("system")
+                or envelope.metadata.get("system_key")
+                or ""
+            )
+            .strip()
+            .lower()
+        )
+    # 构建回复文本
+    if system_result and system_result.get("ok"):
+        entity_id = system_result.get("entity_id", "")
+        status = system_result.get("status", "")
+        summary = system_result.get("summary", "")
+        reply_text = f"已创建 {chat_based_system} 记录 {entity_id}，状态：{status}"
+        if summary:
+            reply_text += f"\n{summary}"
+    elif system_result:
+        error_msg = system_result.get("error", {}).get("message", "创建失败")
+        reply_text = f"创建 {chat_based_system} 记录失败：{error_msg}"
+    else:
+        reply_text = str(getattr(intake, "reply_text", "") or "") if intake else ""
     user_receipt_body = reply_text
     private_detail_body = ""
     user_receipt_session_id = envelope.session_id

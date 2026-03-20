@@ -25,8 +25,8 @@ export function useSystemsSummary() {
       setState({
         loading: false,
         error: null,
-        data: response.data?.systems || [],
-        totalSystems: response.data?.total_systems || 0,
+        data: response.systems || [],
+        totalSystems: response.total_systems || 0,
       });
     } catch (error) {
       setState({
