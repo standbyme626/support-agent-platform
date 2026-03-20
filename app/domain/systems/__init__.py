@@ -30,6 +30,11 @@ def register_all_systems(registry: SystemRegistry | None = None) -> SystemRegist
     registry.register(_create_finance_system())
     registry.register(_create_approval_system())
     registry.register(_create_hr_system())
+    registry.register(_create_asset_system())
+    registry.register(_create_kb_system())
+    registry.register(_create_crm_system())
+    registry.register(_create_project_system())
+    registry.register(_create_supply_chain_system())
 
     return registry
 
@@ -77,6 +82,51 @@ def _create_hr_system() -> BaseSystem:
     repo = HrRepository(Path("storage/systems.db"))
     repo.apply_migrations()
     return HrSystem(repo)
+
+
+def _create_asset_system() -> BaseSystem:
+    from app.domain.systems.asset import AssetSystem
+    from storage.systems_repository import AssetRepository
+
+    repo = AssetRepository(Path("storage/systems.db"))
+    repo.apply_migrations()
+    return AssetSystem(repo)
+
+
+def _create_kb_system() -> BaseSystem:
+    from app.domain.systems.kb import KbSystem
+    from storage.systems_repository import KbRepository
+
+    repo = KbRepository(Path("storage/systems.db"))
+    repo.apply_migrations()
+    return KbSystem(repo)
+
+
+def _create_crm_system() -> BaseSystem:
+    from app.domain.systems.crm import CrmSystem
+    from storage.systems_repository import CrmRepository
+
+    repo = CrmRepository(Path("storage/systems.db"))
+    repo.apply_migrations()
+    return CrmSystem(repo)
+
+
+def _create_project_system() -> BaseSystem:
+    from app.domain.systems.project import ProjectSystem
+    from storage.systems_repository import ProjectRepository
+
+    repo = ProjectRepository(Path("storage/systems.db"))
+    repo.apply_migrations()
+    return ProjectSystem(repo)
+
+
+def _create_supply_chain_system() -> BaseSystem:
+    from app.domain.systems.supply_chain import SupplyChainSystem
+    from storage.systems_repository import SupplyChainRepository
+
+    repo = SupplyChainRepository(Path("storage/systems.db"))
+    repo.apply_migrations()
+    return SupplyChainSystem(repo)
 
 
 __all__ = [

@@ -424,3 +424,462 @@ class HrRepository(SystemRepository):
                 result["devices"] = json.loads(result.pop("devices_json"))
             results.append(result)
         return results, total
+
+
+class AssetRepository(SystemRepository):
+    def create(self, data: dict[str, Any]) -> dict[str, Any]:
+        conn = self.get_connection()
+        now = datetime.now(UTC).isoformat()
+        entity_id = data.get("id") or f"ASSET-{uuid.uuid4().hex[:8].upper()}"
+
+        conn.execute(
+            """INSERT INTO assets 
+               (id, status, asset_tag, name, category, model, serial_number, 
+                location, assigned_to, purchase_date, warranty_expires, value, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                entity_id,
+                "inventory",
+                data.get("asset_tag"),
+                data.get("name"),
+                data.get("category"),
+                data.get("model"),
+                data.get("serial_number"),
+                data.get("location"),
+                data.get("assigned_to"),
+                data.get("purchase_date"),
+                data.get("warranty_expires"),
+                data.get("value"),
+                now,
+                now,
+            ),
+        )
+        conn.commit()
+        return self.get(entity_id)
+
+    def get(self, entity_id: str) -> dict[str, Any] | None:
+        conn = self.get_connection()
+        cursor = conn.execute("SELECT * FROM assets WHERE id = ?", (entity_id,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+    def update(self, entity_id: str, data: dict[str, Any]) -> dict[str, Any] | None:
+        conn = self.get_connection()
+        now = datetime.now(UTC).isoformat()
+
+        set_clauses = ["updated_at = ?"]
+        values = [now]
+
+        for key, value in data.items():
+            if key not in ("id", "created_at"):
+                set_clauses.append(f"{key} = ?")
+                values.append(value)
+
+        values.append(entity_id)
+        conn.execute(f"UPDATE assets SET {', '.join(set_clauses)} WHERE id = ?", values)
+        conn.commit()
+        return self.get(entity_id)
+
+    def list(
+        self,
+        filters: dict[str, Any] | None = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[list[dict[str, Any]], int]:
+        conn = self.get_connection()
+        filters = filters or {}
+
+        where_clauses = []
+        values = []
+        for key, value in filters.items():
+            where_clauses.append(f"{key} = ?")
+            values.append(value)
+
+        where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+
+        cursor = conn.execute(f"SELECT COUNT(*) FROM assets {where_sql}", values)
+        total = cursor.fetchone()[0]
+
+        offset = (page - 1) * page_size
+        cursor = conn.execute(
+            f"SELECT * FROM assets {where_sql} LIMIT ? OFFSET ?", values + [page_size, offset]
+        )
+        return [dict(row) for row in cursor.fetchall()], total
+
+
+class KbRepository(SystemRepository):
+    def create(self, data: dict[str, Any]) -> dict[str, Any]:
+        conn = self.get_connection()
+        now = datetime.now(UTC).isoformat()
+        entity_id = data.get("id") or f"KB-{uuid.uuid4().hex[:8].upper()}"
+
+        tags = json.dumps(data.get("tags", []))
+
+        conn.execute(
+            """INSERT INTO kb_articles 
+               (id, status, title, content, category, tags_json, author_id, 
+                version, views, helpful, not_helpful, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                entity_id,
+                "draft",
+                data.get("title"),
+                data.get("content"),
+                data.get("category"),
+                tags,
+                data.get("author_id"),
+                1,
+                0,
+                0,
+                0,
+                now,
+                now,
+            ),
+        )
+        conn.commit()
+        return self.get(entity_id)
+
+    def get(self, entity_id: str) -> dict[str, Any] | None:
+        conn = self.get_connection()
+        cursor = conn.execute("SELECT * FROM kb_articles WHERE id = ?", (entity_id,))
+        row = cursor.fetchone()
+        if row:
+            result = dict(row)
+            if "tags_json" in result:
+                result["tags"] = json.loads(result.pop("tags_json"))
+            return result
+        return None
+
+    def update(self, entity_id: str, data: dict[str, Any]) -> dict[str, Any] | None:
+        conn = self.get_connection()
+        now = datetime.now(UTC).isoformat()
+
+        set_clauses = ["updated_at = ?"]
+        values = [now]
+
+        for key, value in data.items():
+            if key not in ("id", "created_at", "tags"):
+                set_clauses.append(f"{key} = ?")
+                values.append(value)
+
+        if "tags" in data:
+            set_clauses.append("tags_json = ?")
+            values.append(json.dumps(data["tags"]))
+
+        values.append(entity_id)
+        conn.execute(f"UPDATE kb_articles SET {', '.join(set_clauses)} WHERE id = ?", values)
+        conn.commit()
+        return self.get(entity_id)
+
+    def list(
+        self,
+        filters: dict[str, Any] | None = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[list[dict[str, Any]], int]:
+        conn = self.get_connection()
+        filters = filters or {}
+
+        where_clauses = []
+        values = []
+        for key, value in filters.items():
+            where_clauses.append(f"{key} = ?")
+            values.append(value)
+
+        where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+
+        cursor = conn.execute(f"SELECT COUNT(*) FROM kb_articles {where_sql}", values)
+        total = cursor.fetchone()[0]
+
+        offset = (page - 1) * page_size
+        cursor = conn.execute(
+            f"SELECT * FROM kb_articles {where_sql} LIMIT ? OFFSET ?", values + [page_size, offset]
+        )
+        results = []
+        for row in cursor.fetchall():
+            result = dict(row)
+            if "tags_json" in result:
+                result["tags"] = json.loads(result.pop("tags_json"))
+            results.append(result)
+        return results, total
+
+
+class CrmRepository(SystemRepository):
+    def create(self, data: dict[str, Any]) -> dict[str, Any]:
+        conn = self.get_connection()
+        now = datetime.now(UTC).isoformat()
+        entity_id = data.get("id") or f"CRM-{uuid.uuid4().hex[:8].upper()}"
+
+        conn.execute(
+            """INSERT INTO crm_cases 
+               (id, status, case_type, customer_id, customer_name, contact_email, 
+                contact_phone, subject, description, priority, assigned_to, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                entity_id,
+                "new",
+                data.get("case_type"),
+                data.get("customer_id"),
+                data.get("customer_name"),
+                data.get("contact_email"),
+                data.get("contact_phone"),
+                data.get("subject"),
+                data.get("description"),
+                data.get("priority", "medium"),
+                data.get("assigned_to"),
+                now,
+                now,
+            ),
+        )
+        conn.commit()
+        return self.get(entity_id)
+
+    def get(self, entity_id: str) -> dict[str, Any] | None:
+        conn = self.get_connection()
+        cursor = conn.execute("SELECT * FROM crm_cases WHERE id = ?", (entity_id,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+    def update(self, entity_id: str, data: dict[str, Any]) -> dict[str, Any] | None:
+        conn = self.get_connection()
+        now = datetime.now(UTC).isoformat()
+
+        set_clauses = ["updated_at = ?"]
+        values = [now]
+
+        for key, value in data.items():
+            if key not in ("id", "created_at"):
+                set_clauses.append(f"{key} = ?")
+                values.append(value)
+
+        values.append(entity_id)
+        conn.execute(f"UPDATE crm_cases SET {', '.join(set_clauses)} WHERE id = ?", values)
+        conn.commit()
+        return self.get(entity_id)
+
+    def list(
+        self,
+        filters: dict[str, Any] | None = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[list[dict[str, Any]], int]:
+        conn = self.get_connection()
+        filters = filters or {}
+
+        where_clauses = []
+        values = []
+        for key, value in filters.items():
+            where_clauses.append(f"{key} = ?")
+            values.append(value)
+
+        where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+
+        cursor = conn.execute(f"SELECT COUNT(*) FROM crm_cases {where_sql}", values)
+        total = cursor.fetchone()[0]
+
+        offset = (page - 1) * page_size
+        cursor = conn.execute(
+            f"SELECT * FROM crm_cases {where_sql} LIMIT ? OFFSET ?", values + [page_size, offset]
+        )
+        return [dict(row) for row in cursor.fetchall()], total
+
+
+class ProjectRepository(SystemRepository):
+    def create(self, data: dict[str, Any]) -> dict[str, Any]:
+        conn = self.get_connection()
+        now = datetime.now(UTC).isoformat()
+        entity_id = data.get("id") or f"PRJ-{uuid.uuid4().hex[:8].upper()}"
+
+        milestones = json.dumps(data.get("milestones", []))
+        resources = json.dumps(data.get("resources", []))
+
+        conn.execute(
+            """INSERT INTO projects 
+               (id, status, name, description, owner_id, start_date, end_date, 
+                milestones_json, resources_json, budget, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                entity_id,
+                "planning",
+                data.get("name"),
+                data.get("description"),
+                data.get("owner_id"),
+                data.get("start_date"),
+                data.get("end_date"),
+                milestones,
+                resources,
+                data.get("budget"),
+                now,
+                now,
+            ),
+        )
+        conn.commit()
+        return self.get(entity_id)
+
+    def get(self, entity_id: str) -> dict[str, Any] | None:
+        conn = self.get_connection()
+        cursor = conn.execute("SELECT * FROM projects WHERE id = ?", (entity_id,))
+        row = cursor.fetchone()
+        if row:
+            result = dict(row)
+            if "milestones_json" in result:
+                result["milestones"] = json.loads(result.pop("milestones_json"))
+            if "resources_json" in result:
+                result["resources"] = json.loads(result.pop("resources_json"))
+            return result
+        return None
+
+    def update(self, entity_id: str, data: dict[str, Any]) -> dict[str, Any] | None:
+        conn = self.get_connection()
+        now = datetime.now(UTC).isoformat()
+
+        set_clauses = ["updated_at = ?"]
+        values = [now]
+
+        for key, value in data.items():
+            if key not in ("id", "created_at", "milestones", "resources"):
+                set_clauses.append(f"{key} = ?")
+                values.append(value)
+
+        if "milestones" in data:
+            set_clauses.append("milestones_json = ?")
+            values.append(json.dumps(data["milestones"]))
+        if "resources" in data:
+            set_clauses.append("resources_json = ?")
+            values.append(json.dumps(data["resources"]))
+
+        values.append(entity_id)
+        conn.execute(f"UPDATE projects SET {', '.join(set_clauses)} WHERE id = ?", values)
+        conn.commit()
+        return self.get(entity_id)
+
+    def list(
+        self,
+        filters: dict[str, Any] | None = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[list[dict[str, Any]], int]:
+        conn = self.get_connection()
+        filters = filters or {}
+
+        where_clauses = []
+        values = []
+        for key, value in filters.items():
+            where_clauses.append(f"{key} = ?")
+            values.append(value)
+
+        where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+
+        cursor = conn.execute(f"SELECT COUNT(*) FROM projects {where_sql}", values)
+        total = cursor.fetchone()[0]
+
+        offset = (page - 1) * page_size
+        cursor = conn.execute(
+            f"SELECT * FROM projects {where_sql} LIMIT ? OFFSET ?", values + [page_size, offset]
+        )
+        results = []
+        for row in cursor.fetchall():
+            result = dict(row)
+            if "milestones_json" in result:
+                result["milestones"] = json.loads(result.pop("milestones_json"))
+            if "resources_json" in result:
+                result["resources"] = json.loads(result.pop("resources_json"))
+            results.append(result)
+        return results, total
+
+
+class SupplyChainRepository(SystemRepository):
+    def create(self, data: dict[str, Any]) -> dict[str, Any]:
+        conn = self.get_connection()
+        now = datetime.now(UTC).isoformat()
+        entity_id = data.get("id") or f"SC-{uuid.uuid4().hex[:8].upper()}"
+
+        items = json.dumps(data.get("items", []))
+
+        conn.execute(
+            """INSERT INTO supply_chain_orders 
+               (id, status, order_type, supplier_id, items_json, total_amount, 
+                expected_delivery, notes, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                entity_id,
+                "pending",
+                data.get("order_type"),
+                data.get("supplier_id"),
+                items,
+                data.get("total_amount"),
+                data.get("expected_delivery"),
+                data.get("notes"),
+                now,
+                now,
+            ),
+        )
+        conn.commit()
+        return self.get(entity_id)
+
+    def get(self, entity_id: str) -> dict[str, Any] | None:
+        conn = self.get_connection()
+        cursor = conn.execute("SELECT * FROM supply_chain_orders WHERE id = ?", (entity_id,))
+        row = cursor.fetchone()
+        if row:
+            result = dict(row)
+            if "items_json" in result:
+                result["items"] = json.loads(result.pop("items_json"))
+            return result
+        return None
+
+    def update(self, entity_id: str, data: dict[str, Any]) -> dict[str, Any] | None:
+        conn = self.get_connection()
+        now = datetime.now(UTC).isoformat()
+
+        set_clauses = ["updated_at = ?"]
+        values = [now]
+
+        for key, value in data.items():
+            if key not in ("id", "created_at", "items"):
+                set_clauses.append(f"{key} = ?")
+                values.append(value)
+
+        if "items" in data:
+            set_clauses.append("items_json = ?")
+            values.append(json.dumps(data["items"]))
+
+        values.append(entity_id)
+        conn.execute(
+            f"UPDATE supply_chain_orders SET {', '.join(set_clauses)} WHERE id = ?", values
+        )
+        conn.commit()
+        return self.get(entity_id)
+
+    def list(
+        self,
+        filters: dict[str, Any] | None = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[list[dict[str, Any]], int]:
+        conn = self.get_connection()
+        filters = filters or {}
+
+        where_clauses = []
+        values = []
+        for key, value in filters.items():
+            where_clauses.append(f"{key} = ?")
+            values.append(value)
+
+        where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+
+        cursor = conn.execute(f"SELECT COUNT(*) FROM supply_chain_orders {where_sql}", values)
+        total = cursor.fetchone()[0]
+
+        offset = (page - 1) * page_size
+        cursor = conn.execute(
+            f"SELECT * FROM supply_chain_orders {where_sql} LIMIT ? OFFSET ?",
+            values + [page_size, offset],
+        )
+        results = []
+        for row in cursor.fetchall():
+            result = dict(row)
+            if "items_json" in result:
+                result["items"] = json.loads(result.pop("items_json"))
+            results.append(result)
+        return results, total
