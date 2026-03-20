@@ -45,26 +45,38 @@ def _create_ticket_system() -> BaseSystem:
 
 def _create_procurement_system() -> BaseSystem:
     from app.domain.systems.procurement import ProcurementSystem
+    from storage.systems_repository import ProcurementRepository
 
-    return ProcurementSystem()
+    repo = ProcurementRepository(Path("storage/systems.db"))
+    repo.apply_migrations()
+    return ProcurementSystem(repo)
 
 
 def _create_finance_system() -> BaseSystem:
     from app.domain.systems.finance import FinanceSystem
+    from storage.systems_repository import FinanceRepository
 
-    return FinanceSystem()
+    repo = FinanceRepository(Path("storage/systems.db"))
+    repo.apply_migrations()
+    return FinanceSystem(repo)
 
 
 def _create_approval_system() -> BaseSystem:
     from app.domain.systems.approval import ApprovalSystem
+    from storage.systems_repository import ApprovalRepository
 
-    return ApprovalSystem()
+    repo = ApprovalRepository(Path("storage/systems.db"))
+    repo.apply_migrations()
+    return ApprovalSystem(repo)
 
 
 def _create_hr_system() -> BaseSystem:
     from app.domain.systems.hr import HrSystem
+    from storage.systems_repository import HrRepository
 
-    return HrSystem()
+    repo = HrRepository(Path("storage/systems.db"))
+    repo.apply_migrations()
+    return HrSystem(repo)
 
 
 __all__ = [

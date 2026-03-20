@@ -2,9 +2,13 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
-from typing import Any
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from app.domain.systems.base import BaseSystem, SystemAction
+
+if TYPE_CHECKING:
+    from storage.systems_repository import ApprovalRepository
 
 
 APPROVAL_LIFECYCLE = (
@@ -51,8 +55,13 @@ APPROVAL_ACTIONS = {
 
 
 class ApprovalSystem(BaseSystem):
-    def __init__(self) -> None:
-        self._entities: dict[str, dict[str, Any]] = {}
+    def __init__(self, repo: "ApprovalRepository | None" = None) -> None:
+        if repo is None:
+            from storage.systems_repository import ApprovalRepository
+
+            repo = ApprovalRepository(Path("storage/systems.db"))
+            repo.apply_migrations()
+        self._repo = repo
         self._events: list[dict[str, Any]] = []
 
     @property
@@ -80,39 +89,20 @@ class ApprovalSystem(BaseSystem):
         return APPROVAL_ACTIONS
 
     def create(self, payload: dict[str, Any]) -> dict[str, Any]:
-        now = datetime.now(UTC).isoformat()
-        entity_id = (
-            f"{self.id_prefix}{datetime.now(UTC).strftime('%Y')}-{uuid.uuid4().hex[:8].upper()}"
-        )
-        entity = {
-            "id": entity_id,
-            "system": self.system_key,
-            "entity_type": self.entity_type,
-            "status": "submitted",
-            "request_type": payload.get("request_type"),
-            "requester_id": payload.get("requester_id"),
-            "title": payload.get("title"),
-            "content": payload.get("content"),
-            "attachments": payload.get("attachments", []),
-            "approver_chain": payload.get("approver_chain", []),
-            "created_at": now,
-            "updated_at": now,
-        }
-        self._entities[entity_id] = entity
-        self._add_event(entity_id, "created", {}, now)
+        entity = self._repo.create(payload)
         return {
             "ok": True,
             "system": self.system_key,
             "entity_type": self.entity_type,
-            "entity_id": entity_id,
-            "status": "submitted",
-            "created_at": now,
-            "updated_at": now,
+            "entity_id": entity["id"],
+            "status": entity["status"],
+            "created_at": entity["created_at"],
+            "updated_at": entity["updated_at"],
             "data": entity,
         }
 
     def get(self, entity_id: str) -> dict[str, Any] | None:
-        return self._entities.get(entity_id)
+        return self._repo.get(entity_id)
 
     def list(
         self,
@@ -120,17 +110,12 @@ class ApprovalSystem(BaseSystem):
         page: int = 1,
         page_size: int = 20,
     ) -> dict[str, Any]:
-        filters = filters or {}
-        results = list(self._entities.values())
-        if "status" in filters:
-            results = [e for e in results if e["status"] == filters["status"]]
-        total = len(results)
-        offset = (page - 1) * page_size
+        items, total = self._repo.list(filters, page, page_size)
         return {
             "ok": True,
             "system": self.system_key,
             "entity_type": self.entity_type,
-            "items": results[offset : offset + page_size],
+            "items": items,
             "pagination": {"page": page, "page_size": page_size, "total": total},
         }
 
@@ -143,7 +128,7 @@ class ApprovalSystem(BaseSystem):
         trace_id: str,
     ) -> dict[str, Any]:
         now = datetime.now(UTC).isoformat()
-        entity = self._entities.get(entity_id)
+        entity = self._repo.get(entity_id)
 
         if entity is None:
             return {
@@ -186,7 +171,7 @@ class ApprovalSystem(BaseSystem):
                 "trace_id": trace_id,
             }
 
-        entity.update({"status": next_status, "updated_at": now})
+        updated = self._repo.update(entity_id, {"status": next_status})
         self._add_event(entity_id, action, payload, now)
 
         return {
@@ -197,7 +182,7 @@ class ApprovalSystem(BaseSystem):
             "status": next_status,
             "updated_at": now,
             "trace_id": trace_id,
-            "data": entity,
+            "data": updated,
         }
 
     def _add_event(

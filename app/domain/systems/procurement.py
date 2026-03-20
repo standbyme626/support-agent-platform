@@ -2,9 +2,13 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
-from typing import Any
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from app.domain.systems.base import BaseSystem, SystemAction
+
+if TYPE_CHECKING:
+    from storage.systems_repository import ProcurementRepository
 
 
 PROCUREMENT_LIFECYCLE = (
@@ -64,8 +68,13 @@ PROCUREMENT_ACTIONS = {
 
 
 class ProcurementSystem(BaseSystem):
-    def __init__(self) -> None:
-        self._entities: dict[str, dict[str, Any]] = {}
+    def __init__(self, repo: "ProcurementRepository | None" = None) -> None:
+        if repo is None:
+            from storage.systems_repository import ProcurementRepository
+
+            repo = ProcurementRepository(Path("storage/systems.db"))
+            repo.apply_migrations()
+        self._repo = repo
         self._events: list[dict[str, Any]] = []
 
     @property
@@ -94,44 +103,20 @@ class ProcurementSystem(BaseSystem):
 
     def create(self, payload: dict[str, Any]) -> dict[str, Any]:
         now = datetime.now(UTC).isoformat()
-        entity_id = (
-            f"{self.id_prefix}{datetime.now(UTC).strftime('%Y')}-{uuid.uuid4().hex[:8].upper()}"
-        )
-        entity = {
-            "id": entity_id,
-            "system": self.system_key,
-            "entity_type": self.entity_type,
-            "status": "draft",
-            "requester_id": payload.get("requester_id"),
-            "item_name": payload.get("item_name"),
-            "category": payload.get("category"),
-            "quantity": payload.get("quantity"),
-            "budget": payload.get("budget"),
-            "business_reason": payload.get("business_reason"),
-            "urgency": payload.get("urgency", "normal"),
-            "approver_id": None,
-            "supplier_id": None,
-            "po_no": None,
-            "received_qty": None,
-            "invoice_ref": None,
-            "created_at": now,
-            "updated_at": now,
-        }
-        self._entities[entity_id] = entity
-        self._add_event(entity_id, "created", {}, now)
+        entity = self._repo.create(payload)
         return {
             "ok": True,
             "system": self.system_key,
             "entity_type": self.entity_type,
-            "entity_id": entity_id,
-            "status": "draft",
-            "created_at": now,
-            "updated_at": now,
+            "entity_id": entity["id"],
+            "status": entity["status"],
+            "created_at": entity["created_at"],
+            "updated_at": entity["updated_at"],
             "data": entity,
         }
 
     def get(self, entity_id: str) -> dict[str, Any] | None:
-        return self._entities.get(entity_id)
+        return self._repo.get(entity_id)
 
     def list(
         self,
@@ -139,18 +124,7 @@ class ProcurementSystem(BaseSystem):
         page: int = 1,
         page_size: int = 20,
     ) -> dict[str, Any]:
-        filters = filters or {}
-        results = list(self._entities.values())
-
-        if "status" in filters:
-            results = [e for e in results if e["status"] == filters["status"]]
-        if "requester_id" in filters:
-            results = [e for e in results if e.get("requester_id") == filters["requester_id"]]
-
-        total = len(results)
-        offset = (page - 1) * page_size
-        items = results[offset : offset + page_size]
-
+        items, total = self._repo.list(filters, page, page_size)
         return {
             "ok": True,
             "system": self.system_key,
@@ -168,7 +142,7 @@ class ProcurementSystem(BaseSystem):
         trace_id: str,
     ) -> dict[str, Any]:
         now = datetime.now(UTC).isoformat()
-        entity = self._entities.get(entity_id)
+        entity = self._repo.get(entity_id)
 
         if entity is None:
             return {
@@ -211,7 +185,7 @@ class ProcurementSystem(BaseSystem):
                 "trace_id": trace_id,
             }
 
-        update_data: dict[str, Any] = {"status": next_status, "updated_at": now}
+        update_data: dict[str, Any] = {"status": next_status}
         if action == "approve":
             update_data["approver_id"] = payload.get("approver_id")
         elif action == "reject":
@@ -224,7 +198,7 @@ class ProcurementSystem(BaseSystem):
         elif action == "invoice":
             update_data["invoice_ref"] = payload.get("invoice_ref")
 
-        entity.update(update_data)
+        updated = self._repo.update(entity_id, update_data)
         self._add_event(entity_id, action, payload, now)
 
         return {
@@ -235,7 +209,7 @@ class ProcurementSystem(BaseSystem):
             "status": next_status,
             "updated_at": now,
             "trace_id": trace_id,
-            "data": entity,
+            "data": updated,
         }
 
     def _add_event(
