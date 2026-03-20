@@ -36,7 +36,7 @@ def create_router(registry: SystemRegistry | None = None) -> APIRouter:
 
     router = SystemRuntimeRouter(registry)
     intent_router = SystemIntentRouter()
-    systems_router = APIRouter(prefix="/api", tags=["Systems"])
+    systems_router = APIRouter(prefix="/api/systems", tags=["Systems"])
 
     @systems_router.post("/{system}/create")
     def create_entity(
@@ -49,19 +49,10 @@ def create_router(registry: SystemRegistry | None = None) -> APIRouter:
             raise HTTPException(status_code=400, detail=result)
         return result
 
-    @systems_router.get("/{system}/{entity_id}")
-    def get_entity(
-        system: str,
-        entity_id: str,
-    ) -> dict[str, Any]:
+    @systems_router.get("/summary")
+    def get_systems_summary() -> dict[str, Any]:
         trace_id = str(uuid.uuid4())
-        result = router.route_get(system, entity_id, trace_id)
-        if not result.get("ok"):
-            error_code = result.get("error", {}).get("code")
-            if error_code == "entity_not_found":
-                raise HTTPException(status_code=404, detail=result)
-            raise HTTPException(status_code=400, detail=result)
-        return result
+        return router.route_summary(trace_id)
 
     @systems_router.get("/{system}")
     def list_entities(
@@ -107,10 +98,5 @@ def create_router(registry: SystemRegistry | None = None) -> APIRouter:
             confidence=confidence,
             fields=fields,
         )
-
-    @systems_router.get("/summary")
-    def get_systems_summary() -> dict[str, Any]:
-        trace_id = str(uuid.uuid4())
-        return router.route_summary(trace_id)
 
     return systems_router, intent_router_api

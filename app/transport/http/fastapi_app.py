@@ -6,20 +6,20 @@ from typing import Any, AsyncIterator
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
+from app.domain.systems import register_all_systems
 from app.transport.http.api import api_router
 from app.transport.http.systems.routes import create_router
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    from app.domain.systems import register_all_systems
-
-    registry = register_all_systems()
-    app.state.registry = registry
-    yield
-
-
 def create_app(runtime: Any | None = None) -> FastAPI:
+    from app.domain.systems import SystemRegistry
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        registry = register_all_systems()
+        app.state.registry = registry
+        yield
+
     app = FastAPI(
         title="Support Agent Platform API",
         description="Workflow-first support ticket platform with ten-system integration",
@@ -41,7 +41,8 @@ def create_app(runtime: Any | None = None) -> FastAPI:
         )
 
     app.include_router(api_router)
-    systems_router, intent_router = create_router()
+    registry = register_all_systems()
+    systems_router, intent_router = create_router(registry)
     app.include_router(systems_router)
     app.include_router(intent_router)
 
