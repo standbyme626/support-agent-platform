@@ -12,6 +12,10 @@ from app.transport.http.systems.routes import create_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    from app.domain.systems import register_all_systems
+
+    registry = register_all_systems()
+    app.state.registry = registry
     yield
 
 
