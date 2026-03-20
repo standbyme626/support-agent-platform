@@ -108,4 +108,9 @@ def create_router(registry: SystemRegistry | None = None) -> APIRouter:
             fields=fields,
         )
 
+    @systems_router.get("/summary")
+    def get_systems_summary() -> dict[str, Any]:
+        trace_id = str(uuid.uuid4())
+        return router.route_summary(trace_id)
+
     return systems_router, intent_router_api

@@ -113,3 +113,42 @@ class SystemRuntimeRouter:
             ).as_dict()
 
         return system.execute_action(entity_id, action, operator_id, payload, trace_id)
+
+    def route_summary(self, trace_id: str) -> dict[str, Any]:
+        systems = []
+        for system_key in self._registry.list_systems():
+            system = self._registry.get(system_key)
+            if system:
+                try:
+                    items, total = system.list(None, 1, 1)
+                    systems.append(
+                        {
+                            "system": system_key,
+                            "entity_type": system.entity_type,
+                            "id_prefix": system.id_prefix,
+                            "lifecycle": list(system.lifecycle),
+                            "total_entities": total,
+                            "actions": list(system.actions.keys())
+                            if hasattr(system, "actions")
+                            else [],
+                        }
+                    )
+                except Exception:
+                    systems.append(
+                        {
+                            "system": system_key,
+                            "entity_type": system.entity_type,
+                            "id_prefix": system.id_prefix,
+                            "lifecycle": list(system.lifecycle),
+                            "total_entities": 0,
+                            "actions": [],
+                            "error": "failed to load",
+                        }
+                    )
+
+        return {
+            "ok": True,
+            "total_systems": len(systems),
+            "systems": systems,
+            "trace_id": trace_id,
+        }
