@@ -1,0 +1,16 @@
+{
+  "description": "十系统测试数据种子文件",
+  "version": "1.0.0",
+  "systems": {
+    "ticket": { "entities": [], "events": [] },
+    "procurement": { "entities": [], "events": [] },
+    "finance": { "entities": [], "events": [] },
+    "approval": { "entities": [], "events": [] },
+    "hr": { "entities": [], "events": [] },
+    "asset": { "entities": [], "events": [] },
+    "kb": { "entities": [], "events": [] },
+    "crm": { "entities": [], "events": [] },
+    "project": { "entities": [], "events": [] },
+    "supply_chain": { "entities": [], "events": [] }
+  }
+}
