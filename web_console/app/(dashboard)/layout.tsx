@@ -13,6 +13,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           <nav>
             <a href="/">{t("总览", "Dashboard")}</a>
             <a href="/tickets">{t("工单", "Tickets")}</a>
+            <a href="/systems">{t("系统", "Systems")}</a>
             <a href="/traces">{t("链路", "Traces")}</a>
             <a href="/queues">{t("队列", "Queues")}</a>
             <a href="/kb/faq">{t("知识库", "Knowledge Base")}</a>
