@@ -9,6 +9,11 @@
 
 一个把"多渠道报修入口、工单流转、协同处理、运营工作台、AI辅助"收敛到同一套 ticket core 的内部支持平台。
 
+## 相关文档
+
+- `ARCHITECTURE.md`：当前已落地架构说明
+- `docs/project-review-refactor-plan.md`：全项目评审与分阶段重构路线图
+
 ## 解决的业务痛点
 
 这个系统针对以下高频痛点设计：
@@ -174,6 +179,28 @@ flowchart LR
   - `reply_send_dedup_hit`
 - 前端可通过 `GET /api/tickets/{ticketId}/reply-events` 查看发送链路，并可 drill-down 到对应 trace。
 
+### Upgrade 6：十系统统一协议层（FastAPI + 十系统集成）
+
+- 目标：建立统一 AI 协同层，十系统统一接口风格
+- 新增目录：
+  - `app/domain/systems/` - 基类、错误、结果、注册、状态迁移引擎
+  - `app/application/systems/` - 运行时路由、意图路由
+  - `app/transport/http/systems/` - FastAPI 路由和处理器
+  - `storage/systems/` - 仓储基类和实现
+- 新增 API（FastAPI）：
+  - `GET /api/health` - 健康检查
+  - `GET /api/systems` - 列出所有系统
+  - `POST /api/{system}/create` - 创建系统实体
+  - `GET /api/{system}/{entity_id}` - 查询实体
+  - `GET /api/{system}` - 列表查询
+  - `POST /api/{system}/{entity_id}/{action}` - 执行动作
+  - `POST /api/route` - 意图路由
+- 启动命令：
+  ```bash
+  uvicorn app.transport.http.fastapi_app:app --reload --port 18083
+  ```
+- 访问 http://localhost:18083/docs 查看 OpenAPI 文档
+
 ## 四个 Agent
 
 > 这里的 “Agent” 指“具备上下文理解 + 工具编排/检索 + 输出建议 + trace可追踪”的能力单元，不是简单 if/else 函数。
@@ -215,7 +242,8 @@ flowchart LR
 ### 后端
 
 - Python 3.11+（已接入）
-- API层：`http.server` + `ThreadingHTTPServer`（已接入，当前不是 FastAPI）
+- API层：`http.server` + `ThreadingHTTPServer`（已接入）
+- FastAPI层：十系统统一协议层（`app/transport/http/fastapi_app.py`）
 - 配置：TOML + `.env` + secrets loader（已接入）
 - 存储：SQLite + repository/migrations（已接入）
 
@@ -262,6 +290,21 @@ python -m scripts.ops_api_server --env dev --host 127.0.0.1 --port 18082
 # 开发调试可加热重载（代码变更自动重启）
 # python -m scripts.ops_api_server --env dev --host 127.0.0.1 --port 18082 --reload
 ```
+
+### 2.1) FastAPI 服务（十系统统一协议层）
+
+```bash
+# 安装 FastAPI 依赖
+pip install fastapi uvicorn[standard]
+
+# 启动 FastAPI 开发服务器
+uvicorn app.transport.http.fastapi_app:app --reload --port 18083
+
+# 或者直接运行
+python -c "from app.transport.http.fastapi_app import app; import uvicorn; uvicorn.run(app, host='127.0.0.1', port=18083)"
+```
+
+访问 http://localhost:18083/docs 查看自动生成的 OpenAPI 文档。
 
 ### 3) 启动企业微信 bridge（可选）
 
@@ -403,7 +446,7 @@ curl -I http://127.0.0.1:3000
 
 ```bash
 # 派发目标配置（必填）
-export WECOM_DISPATCH_TARGETS_JSON='{"inbox:wecom.default":"group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:u_dispatch_bot"}'
+export WECOM_DISPATCH_TARGETS_JSON='{"system:ticket":"group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:u_dispatch_bot","inbox:wecom.default":"group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:u_dispatch_bot","default":"group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:u_dispatch_bot"}'
 
 # 自动派发开关（默认开启；设为 0/false/off 可关闭）
 export WECOM_DISPATCH_AUTO_ENABLED=1
@@ -427,16 +470,24 @@ export WECOM_AGENT_SECRET="$WECOM_AGENT_SECRET"
 ### WeCom 派发目标映射（Target Mapping）
 
 `WECOM_DISPATCH_TARGETS_JSON` 支持的键优先级：
-1. `queue:<queue_name>`
-2. `inbox:<inbox_name>`
-3. `<queue_name>`
-4. `<inbox_name>`
-5. `default`
+1. `system:<system_key>`
+2. `<system_key>`
+3. `queue:<queue_name>`
+4. `inbox:<inbox_name>`
+5. `<queue_name>`
+6. `<inbox_name>`
+7. `default`
+
+`system_key` 当前支持：`ticket` / `procurement` / `finance` / `approval` / `hr` / `asset` / `kb` / `crm` / `project` / `supply_chain`。
 
 值写法：
 - `group:<group_id>:user:<actor_id>`（完整 session_id）
 - `group:<group_id>`（自动补 `:user:u_dispatch_bot`）
 - `<group_id>`（纯群 ID，自动补前缀）
+
+路由可观测约定：
+- `wecom_dispatch_decision` / `wecom_dispatch_delivery` trace 事件会写入 `system` 和 `matched_key`。
+- `user_receipt` / `collab_dispatch` / `private_detail` outbound metadata 会写入 `system` 与 `dispatch_matched_key`。
 
 ### 企业微信协同命令
 
