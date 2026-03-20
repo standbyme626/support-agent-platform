@@ -334,7 +334,7 @@ class HrRepository(SystemRepository):
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 entity_id,
-                "submitted",
+                "preboarding",
                 data.get("candidate_name"),
                 data.get("department"),
                 data.get("position"),
@@ -439,7 +439,7 @@ class AssetRepository(SystemRepository):
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 entity_id,
-                "inventory",
+                "requested",
                 data.get("asset_tag"),
                 data.get("name"),
                 data.get("category"),
@@ -700,7 +700,7 @@ class ProjectRepository(SystemRepository):
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 entity_id,
-                "planning",
+                "requested",
                 data.get("name"),
                 data.get("description"),
                 data.get("owner_id"),
