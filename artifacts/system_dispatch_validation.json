@@ -1,0 +1,167 @@
+{
+  "total": 10,
+  "passed": 10,
+  "failed": 0,
+  "systems": {
+    "ticket": {
+      "samples": [
+        {
+          "id": "ticket-001",
+          "text": "5楼会议室空调不制冷，需要维修",
+          "expected_system": "ticket",
+          "expected_chat_id": "wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A",
+          "detected_system": "ticket",
+          "matched_key": "inbox:wecom.default",
+          "target_group_id": "wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A",
+          "success": true
+        }
+      ],
+      "passed": 1,
+      "failed": 0
+    },
+    "procurement": {
+      "samples": [
+        {
+          "id": "procurement-001",
+          "text": "申请采购2台显示器，预算已审批",
+          "expected_system": "procurement",
+          "expected_chat_id": "wrAEX9RgAAcu1YRglS26e-C_lKahhFLQ",
+          "detected_system": "procurement",
+          "matched_key": "procurement",
+          "target_group_id": "wrAEX9RgAAcu1YRglS26e-C_lKahhFLQ",
+          "success": true
+        }
+      ],
+      "passed": 1,
+      "failed": 0
+    },
+    "finance": {
+      "samples": [
+        {
+          "id": "finance-001",
+          "text": "发票已收但付款状态异常，请财务核对",
+          "expected_system": "finance",
+          "expected_chat_id": "wrAEX9RgAAP7aghxPD-MU6DqIx0f0WBA",
+          "detected_system": "finance",
+          "matched_key": "finance",
+          "target_group_id": "wrAEX9RgAAP7aghxPD-MU6DqIx0f0WBA",
+          "success": true
+        }
+      ],
+      "passed": 1,
+      "failed": 0
+    },
+    "approval": {
+      "samples": [
+        {
+          "id": "approval-001",
+          "text": "请发起加班审批流程，今晚需要处理",
+          "expected_system": "approval",
+          "expected_chat_id": "wrAEX9RgAAPG3M8WvyVfBu56nlsWy2Pw",
+          "detected_system": "approval",
+          "matched_key": "approval",
+          "target_group_id": "wrAEX9RgAAPG3M8WvyVfBu56nlsWy2Pw",
+          "success": true
+        }
+      ],
+      "passed": 1,
+      "failed": 0
+    },
+    "hr": {
+      "samples": [
+        {
+          "id": "hr-001",
+          "text": "新员工入职账号开通和工牌办理",
+          "expected_system": "hr",
+          "expected_chat_id": "wrAEX9RgAAKNBDfXJKMG2UkweQ4rLCog",
+          "detected_system": "hr",
+          "matched_key": "hr",
+          "target_group_id": "wrAEX9RgAAKNBDfXJKMG2UkweQ4rLCog",
+          "success": true
+        }
+      ],
+      "passed": 1,
+      "failed": 0
+    },
+    "asset": {
+      "samples": [
+        {
+          "id": "asset-001",
+          "text": "资产盘点发现设备编号缺失，需要补录",
+          "expected_system": "asset",
+          "expected_chat_id": "wrAEX9RgAAg7BHbZH-wwQToXEoIO9g",
+          "detected_system": "asset",
+          "matched_key": "asset",
+          "target_group_id": "wrAEX9RgAAg7BHbZH-wfXUQToXEoIO9g",
+          "success": true
+        }
+      ],
+      "passed": 1,
+      "failed": 0
+    },
+    "kb": {
+      "samples": [
+        {
+          "id": "kb-001",
+          "text": "知识库文档需要更新到最新版本",
+          "expected_system": "kb",
+          "expected_chat_id": "wrAEX9RgAACPv7qtmyFYQBNQ3QNGilUg",
+          "detected_system": "kb",
+          "matched_key": "kb",
+          "target_group_id": "wrAEX9RgAACPv7qtmyFYQBNQ3QNGilUg",
+          "success": true
+        }
+      ],
+      "passed": 1,
+      "failed": 0
+    },
+    "crm": {
+      "samples": [
+        {
+          "id": "crm-001",
+          "text": "CRM case 跟进，客户线索需要分派",
+          "expected_system": "crm",
+          "expected_chat_id": "wrAEX9RgAAi-Hhj6vz2f-dRUo5gl-aOQ",
+          "detected_system": "crm",
+          "matched_key": "crm",
+          "target_group_id": "wrAEX9RgAAi-Hhj6vz2f-dRUo5gl-aOQ",
+          "success": true
+        }
+      ],
+      "passed": 1,
+      "failed": 0
+    },
+    "project": {
+      "samples": [
+        {
+          "id": "project-001",
+          "text": "项目里程碑延期，请更新项目计划",
+          "expected_system": "project",
+          "expected_chat_id": "wrAEX9RgAA6d5dHGVAYMMYdeuzVZJnbA",
+          "detected_system": "project",
+          "matched_key": "project",
+          "target_group_id": "wrAEX9RgAA6d5dHGVAYMMYdeuzVZJnbA",
+          "success": true
+        }
+      ],
+      "passed": 1,
+      "failed": 0
+    },
+    "supply_chain": {
+      "samples": [
+        {
+          "id": "supply_chain-001",
+          "text": "供应链收货入库异常，需确认到货数量",
+          "expected_system": "supply_chain",
+          "expected_chat_id": "wrAEX9RgAA5hWE3NUtXZTNYFfjc4Z-4A",
+          "detected_system": "supply_chain",
+          "matched_key": "supply_chain",
+          "target_group_id": "wrAEX9RgAA5hWE3NUtXZTNYFfjc4Z-4A",
+          "success": true
+        }
+      ],
+      "passed": 1,
+      "failed": 0
+    }
+  }
+}

@@ -12,14 +12,22 @@ if TYPE_CHECKING:
 
 
 HR_LIFECYCLE = (
+    "preboarding",
     "submitted",
     "pending_approval",
     "profile_created",
     "provisioning",
+    "active",
     "completed",
 )
 
 HR_ACTIONS = {
+    "send_offer": SystemAction(
+        name="send_offer",
+        allowed_from=frozenset({"preboarding"}),
+        to_status="submitted",
+        required_fields=("candidate_name", "position"),
+    ),
     "submit": SystemAction(
         name="submit",
         allowed_from=frozenset({"submitted"}),
@@ -38,15 +46,15 @@ HR_ACTIONS = {
         to_status="provisioning",
         required_fields=("employee_id",),
     ),
-    "provision": SystemAction(
-        name="provision",
+    "activate": SystemAction(
+        name="activate",
         allowed_from=frozenset({"provisioning"}),
-        to_status="provisioning",
+        to_status="active",
         required_fields=(),
     ),
     "complete": SystemAction(
         name="complete",
-        allowed_from=frozenset({"provisioning"}),
+        allowed_from=frozenset({"active"}),
         to_status="completed",
         required_fields=("checklist_passed",),
     ),

@@ -177,4 +177,21 @@ describe("TicketActionsPanel", () => {
     expect(screen.getByLabelText("备注 / 处理说明")).toHaveValue("Dispatch onsite\nVisit within 2h");
     expect(onAction).not.toHaveBeenCalled();
   });
+
+  it("renders transition controls as non-submit buttons", () => {
+    render(
+      <TicketActionsPanel
+        ticket={baseTicket}
+        assignees={["u_ops_01", "u_ops_02"]}
+        loadingAction={null}
+        actionError={null}
+        onAction={vi.fn()}
+      />
+    );
+
+    for (const label of ["认领", "改派", "升级", "解决", "客户确认", "运营关闭"]) {
+      const button = screen.getByRole("button", { name: label });
+      expect(button).toHaveAttribute("type", "button");
+    }
+  });
 });

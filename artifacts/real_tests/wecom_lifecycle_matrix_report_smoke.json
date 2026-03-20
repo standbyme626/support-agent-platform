@@ -1,0 +1,34 @@
+{
+  "generated_at": "2026-03-18T08:33:19.659849+00:00",
+  "environment": "dev",
+  "customer_id": "keguonian",
+  "operator_id": "Yusongze",
+  "customer_id_mode": "real",
+  "private_detail_mode": "sync",
+  "private_detail_async_effective": false,
+  "selected_case_ids": [
+    "C01"
+  ],
+  "repair_chat_id": "wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ",
+  "ops_chat_id": "wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A",
+  "total": 1,
+  "passed": 1,
+  "failed": 0,
+  "results": [
+    {
+      "index": 1,
+      "case_id": "C01",
+      "ticket_id": "TCK-5AABBF2071",
+      "target_ticket_id": null,
+      "actor": "operator",
+      "message": "/claim TCK-5AABBF2071",
+      "expected_action": "collab_claim",
+      "actual_action": "collab_claim",
+      "expected_usage_reason": null,
+      "actual_usage_reason": null,
+      "trace_id": "lifecycle-20260318083301-c01-run",
+      "passed": true,
+      "failures": []
+    }
+  ]
+}

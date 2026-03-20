@@ -376,19 +376,32 @@ class WorkflowEngine:
         ticket_candidates = self._ticket_candidates_from_metadata(envelope.metadata)
         explicit_ticket_id = self._extract_ticket_id_from_text(envelope.message_text)
         if explicit_ticket_id and explicit_ticket_id in ticket_candidates:
-            return explicit_ticket_id
+            return self._pick_non_closed_ticket_id([explicit_ticket_id])
 
         normalized_requested = str(requested_ticket_id or "").strip() or None
         if normalized_requested:
-            return normalized_requested
+            return self._pick_non_closed_ticket_id([normalized_requested])
 
         if self._is_progress_query_text(envelope.message_text):
             active_ticket_id = str(envelope.metadata.get("active_ticket_id") or "").strip() or None
             if active_ticket_id:
-                return active_ticket_id
+                return self._pick_non_closed_ticket_id([active_ticket_id])
 
         if ticket_candidates:
-            return ticket_candidates[0]
+            return self._pick_non_closed_ticket_id(ticket_candidates)
+        return None
+
+    def _pick_non_closed_ticket_id(self, ticket_ids: list[str]) -> str | None:
+        for ticket_id in ticket_ids:
+            normalized = str(ticket_id or "").strip()
+            if not normalized:
+                continue
+            ticket = self._ticket_api.get_ticket(normalized)
+            if ticket is None:
+                continue
+            if ticket.status == "closed":
+                continue
+            return normalized
         return None
 
     def _log(
@@ -429,6 +442,16 @@ class WorkflowEngine:
                         content=str(item.get("content", "")),
                         tags=[str(tag) for tag in item.get("tags", [])],
                         score=float(item.get("score", 0.0)),
+                        updated_at=(
+                            str(item.get("updated_at")).strip()
+                            if item.get("updated_at") is not None
+                            else None
+                        ),
+                        metadata=(
+                            dict(item.get("metadata"))
+                            if isinstance(item.get("metadata"), dict)
+                            else {}
+                        ),
                     )
                 )
         return docs

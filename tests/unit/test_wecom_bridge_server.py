@@ -42,6 +42,7 @@ class _DummyIntakeResult:
     ticket_id: str
     ticket_action: str
     queue: str = "support"
+    system: str = ""
     priority: str = "P3"
     collab_push: dict[str, Any] | None = None
 
@@ -124,7 +125,8 @@ def test_process_wecom_message_group_uses_composed_session_id() -> None:
 
     assert result.handled is True
     assert result.status == "ok"
-    assert result.reply_text == "已为你创建工单 TICKET-101"
+    assert "工单 TICKET-101 已创建" in result.reply_text
+    assert "详细处理说明已私发给你" in result.reply_text
     assert result.ticket_id == "TICKET-101"
     assert runtime.intake_workflow.calls == 1
     assert runtime.intake_workflow.existing_ticket_ids[-1] is None
@@ -219,7 +221,8 @@ def test_process_wecom_message_accepts_nested_wecom_fields() -> None:
 
     assert result.handled is True
     assert result.status == "ok"
-    assert result.reply_text == "已识别嵌套字段"
+    assert "工单 TICKET-303 已创建" in result.reply_text
+    assert "详细处理说明已私发给你" in result.reply_text
     assert runtime.intake_workflow.calls == 1
     assert runtime.gateway.calls[0][1]["FromUserName"] == "user_nested"
     assert runtime.gateway.calls[0][1]["Content"] == "@智慧工单机器人 \\new"
@@ -389,12 +392,59 @@ def test_process_wecom_message_accepts_sender_user_id_and_chat_id_variants() -> 
 
     assert result.handled is True
     assert result.status == "ok"
-    assert result.reply_text == "已处理 sender/chat 变体字段"
+    assert "工单 TICKET-401 已创建" in result.reply_text
+    assert "详细处理说明已私发给你" in result.reply_text
     assert runtime.intake_workflow.calls == 1
     assert runtime.gateway.calls[0][1]["FromUserName"] == "user_sender_variant"
     assert (
         runtime.gateway.calls[0][1]["session_id"]
         == "group:group-variant:user:user_sender_variant"
+    )
+
+
+def test_process_wecom_message_accepts_sender_sender_id_user_id_variant() -> None:
+    runtime = _DummyRuntime(
+        gateway=_DummyGateway(
+            {
+                "status": "ok",
+                "inbound": {
+                    "channel": "wecom",
+                    "session_id": "group:group-sender-id:user:user_sender_nested",
+                    "message_text": "@智慧工单机器人 \\new",
+                    "metadata": {"inbox": "wecom.default"},
+                },
+            }
+        ),
+        intake_workflow=_DummyIntakeWorkflow(
+            _DummyIntakeResult(
+                reply_text="已处理 sender.sender_id.user_id 变体字段",
+                ticket_id="TICKET-402",
+                ticket_action="create_ticket",
+            )
+        ),
+    )
+
+    result = process_wecom_message(
+        runtime,
+        {
+            "msgid": "mid-variant-2",
+            "chatid": "group-sender-id",
+            "chattype": "group",
+            "sender": {"sender_id": {"user_id": "user_sender_nested"}},
+            "text": "@智慧工单机器人 \\new",
+            "req_id": "req-variant-2",
+        },
+    )
+
+    assert result.handled is True
+    assert result.status == "ok"
+    assert "工单 TICKET-402 已创建" in result.reply_text
+    assert "详细处理说明已私发给你" in result.reply_text
+    assert runtime.intake_workflow.calls == 1
+    assert runtime.gateway.calls[0][1]["FromUserName"] == "user_sender_nested"
+    assert (
+        runtime.gateway.calls[0][1]["session_id"]
+        == "group:group-sender-id:user:user_sender_nested"
     )
 
 
@@ -519,6 +569,188 @@ def test_process_wecom_message_accepts_plain_group_id_dispatch_target() -> None:
     assert collab_dispatch_calls[0]["session_id"] == "group:ops-room:user:u_dispatch_bot"
 
 
+def test_process_wecom_message_prefers_system_mapping_over_inbox_mapping() -> None:
+    runtime = _DummyRuntime(
+        gateway=_DummyGateway(
+            {
+                "status": "ok",
+                "inbound": {
+                    "channel": "wecom",
+                    "session_id": "group:repair-room:user:u_customer",
+                    "message_text": "帮我创建采购申请",
+                    "metadata": {"inbox": "wecom.default"},
+                },
+            }
+        ),
+        intake_workflow=_DummyIntakeWorkflow(
+            _DummyIntakeResult(
+                reply_text="采购申请已受理。",
+                ticket_id="PR-2026-0001",
+                ticket_action="create_ticket",
+                queue="human-handoff",
+                system="procurement",
+                priority="P2",
+            )
+        ),
+    )
+
+    result = process_wecom_message(
+        runtime,
+        {
+            "msgid": "mid-system-target-1",
+            "chatid": "repair-room",
+            "chattype": "group",
+            "sender_id": "u_customer",
+            "text": "帮我创建采购申请",
+            "req_id": "trace-system-target-1",
+            "dispatch_targets": {
+                "system:procurement": "group:proc-room",
+                "inbox:wecom.default": "group:ops-room",
+            },
+        },
+    )
+
+    assert result.status == "ok"
+    assert result.delivery_status == "dispatched"
+    assert result.collab_target is not None
+    assert result.collab_target["source"] == "mapping:system:procurement"
+    assert result.collab_target["matched_key"] == "system:procurement"
+    assert result.dispatch_decision is not None
+    assert result.dispatch_decision["route"]["system"] == "procurement"
+    assert result.dispatch_decision["route"]["matched_key"] == "system:procurement"
+
+    user_receipt_calls = [
+        item
+        for item in runtime.gateway.outbound_calls
+        if str(item.get("metadata", {}).get("outbound_type") or "") == "user_receipt"
+    ]
+    assert user_receipt_calls
+    assert user_receipt_calls[0]["metadata"]["system"] == "procurement"
+
+    collab_dispatch_calls = [
+        item
+        for item in runtime.gateway.outbound_calls
+        if str(item.get("metadata", {}).get("outbound_type") or "") == "collab_dispatch"
+    ]
+    assert len(collab_dispatch_calls) == 1
+    assert collab_dispatch_calls[0]["session_id"] == "group:proc-room:user:u_dispatch_bot"
+    assert collab_dispatch_calls[0]["metadata"]["system"] == "procurement"
+    assert collab_dispatch_calls[0]["metadata"]["dispatch_matched_key"] == "system:procurement"
+
+
+def test_process_wecom_message_falls_back_to_queue_then_inbox_mapping() -> None:
+    runtime = _DummyRuntime(
+        gateway=_DummyGateway(
+            {
+                "status": "ok",
+                "inbound": {
+                    "channel": "wecom",
+                    "session_id": "group:repair-room:user:u_customer",
+                    "message_text": "设备故障，尽快处理",
+                    "metadata": {"inbox": "wecom.default"},
+                },
+            }
+        ),
+        intake_workflow=_DummyIntakeWorkflow(
+            _DummyIntakeResult(
+                reply_text="已创建工单，等待分派。",
+                ticket_id="TCK-QUEUE-001",
+                ticket_action="create_ticket",
+                queue="human-handoff",
+                priority="P2",
+            )
+        ),
+    )
+
+    result = process_wecom_message(
+        runtime,
+        {
+            "msgid": "mid-queue-fallback-1",
+            "chatid": "repair-room",
+            "chattype": "group",
+            "sender_id": "u_customer",
+            "text": "设备故障，尽快处理",
+            "req_id": "trace-queue-fallback-1",
+            "dispatch_targets": {
+                "queue:human-handoff": "group:queue-room",
+                "inbox:wecom.default": "group:inbox-room",
+            },
+        },
+    )
+
+    assert result.status == "ok"
+    assert result.delivery_status == "dispatched"
+    assert result.collab_target is not None
+    assert result.collab_target["source"] == "mapping:queue:human-handoff"
+    assert result.collab_target["matched_key"] == "queue:human-handoff"
+    assert result.dispatch_decision is not None
+    assert result.dispatch_decision["route"]["matched_key"] == "queue:human-handoff"
+
+    collab_dispatch_calls = [
+        item
+        for item in runtime.gateway.outbound_calls
+        if str(item.get("metadata", {}).get("outbound_type") or "") == "collab_dispatch"
+    ]
+    assert len(collab_dispatch_calls) == 1
+    assert collab_dispatch_calls[0]["session_id"] == "group:queue-room:user:u_dispatch_bot"
+
+
+def test_process_wecom_message_falls_back_to_default_mapping() -> None:
+    runtime = _DummyRuntime(
+        gateway=_DummyGateway(
+            {
+                "status": "ok",
+                "inbound": {
+                    "channel": "wecom",
+                    "session_id": "group:repair-room:user:u_customer",
+                    "message_text": "请帮我处理一下",
+                    "metadata": {"inbox": "wecom.default"},
+                },
+            }
+        ),
+        intake_workflow=_DummyIntakeWorkflow(
+            _DummyIntakeResult(
+                reply_text="已受理。",
+                ticket_id="TCK-DEFAULT-001",
+                ticket_action="create_ticket",
+                queue="support",
+                priority="P3",
+            )
+        ),
+    )
+
+    result = process_wecom_message(
+        runtime,
+        {
+            "msgid": "mid-default-fallback-1",
+            "chatid": "repair-room",
+            "chattype": "group",
+            "sender_id": "u_customer",
+            "text": "请帮我处理一下",
+            "req_id": "trace-default-fallback-1",
+            "dispatch_targets": {
+                "default": "group:default-room",
+            },
+        },
+    )
+
+    assert result.status == "ok"
+    assert result.delivery_status == "dispatched"
+    assert result.collab_target is not None
+    assert result.collab_target["source"] == "mapping:default"
+    assert result.collab_target["matched_key"] == "default"
+    assert result.dispatch_decision is not None
+    assert result.dispatch_decision["route"]["matched_key"] == "default"
+
+    collab_dispatch_calls = [
+        item
+        for item in runtime.gateway.outbound_calls
+        if str(item.get("metadata", {}).get("outbound_type") or "") == "collab_dispatch"
+    ]
+    assert len(collab_dispatch_calls) == 1
+    assert collab_dispatch_calls[0]["session_id"] == "group:default-room:user:u_dispatch_bot"
+
+
 def test_process_wecom_message_collab_push_dispatch_includes_ticket_detail() -> None:
     runtime = _DummyRuntime(
         gateway=_DummyGateway(
@@ -572,7 +804,7 @@ def test_process_wecom_message_collab_push_dispatch_includes_ticket_detail() -> 
     collab_body = str(collab_dispatch_calls[0]["body"])
     assert collab_body.startswith("新工单 TCK-DETAIL-001 已创建")
     assert "优先级：普通（P3）" in collab_body
-    assert "\n工单详情：" in collab_body
+    assert "工单详情：" in collab_body
     assert "工单详情：d栋厕所漏水" in collab_body
     assert "[new-ticket]" not in collab_body
     assert "commands:" not in collab_body
@@ -626,7 +858,7 @@ def test_process_wecom_message_dispatch_without_collab_push_uses_inbound_text_as
     assert len(collab_dispatch_calls) == 1
     collab_body = str(collab_dispatch_calls[0]["body"])
     assert collab_body.startswith("新工单 TCK-DETAIL-FALLBACK-001 已创建")
-    assert "\n工单详情：" in collab_body
+    assert "工单详情：" in collab_body
     assert "D栋厕所漏水，二楼女厕门口持续渗水" in collab_body
 
 
@@ -982,3 +1214,82 @@ def test_process_wecom_message_group_private_detail_binds_dm_ticket_context(
     assert ticket_api.bind_calls[0]["session_id"] == "dm:u_customer"
     assert ticket_api.bind_calls[0]["ticket_id"] == "TCK-FAST-BIND-001"
     assert ticket_api.bind_calls[0]["metadata"].get("source_session_id") == "group:repair-room:user:u_customer"
+
+
+def test_process_wecom_message_private_detail_retries_until_success(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    class _FlakyPrivateDetailGateway(_DummyGateway):
+        def __init__(self, response: dict[str, Any]) -> None:
+            super().__init__(response)
+            self.private_detail_attempts = 0
+
+        def send_outbound(
+            self, *, channel: str, session_id: str, body: str, metadata: dict[str, Any]
+        ) -> dict[str, Any]:
+            payload = {
+                "channel": channel,
+                "session_id": session_id,
+                "body": body,
+                "metadata": dict(metadata),
+            }
+            self.outbound_calls.append(payload)
+            if str(metadata.get("outbound_type") or "") != "private_detail":
+                return {"status": "ok"}
+            self.private_detail_attempts += 1
+            if self.private_detail_attempts < 3:
+                raise RuntimeError("temporary private detail failure")
+            return {"status": "ok"}
+
+    monkeypatch.setenv("WECOM_GROUP_PRIVATE_DETAIL_ASYNC", "0")
+    monkeypatch.setenv("WECOM_GROUP_PRIVATE_DETAIL_RETRY_ATTEMPTS", "3")
+    monkeypatch.setenv("WECOM_GROUP_PRIVATE_DETAIL_RETRY_DELAY_MS", "1")
+    runtime = _DummyRuntime(
+        gateway=_FlakyPrivateDetailGateway(
+            {
+                "status": "ok",
+                "inbound": {
+                    "channel": "wecom",
+                    "session_id": "group:repair-room:user:u_customer_retry",
+                    "message_text": "请尽快安排处理",
+                    "metadata": {"inbox": "wecom.default"},
+                },
+            }
+        ),
+        intake_workflow=_DummyIntakeWorkflow(
+            _DummyIntakeResult(
+                reply_text=(
+                    "您好，收到您反馈的问题。"
+                    "我们已升级人工处理并安排处理人员跟进，"
+                    "详细说明会私发给您，请留意。"
+                ),
+                ticket_id="TCK-FAST-RETRY-001",
+                ticket_action="handoff",
+                queue="human-handoff",
+                priority="P2",
+            )
+        ),
+    )
+
+    result = process_wecom_message(
+        runtime,
+        {
+            "msgid": "mid-fast-retry-1",
+            "chatid": "repair-room",
+            "chattype": "group",
+            "sender_id": "u_customer_retry",
+            "text": "请尽快安排处理",
+            "req_id": "trace-fast-retry-1",
+            "dispatch_targets": {"inbox:wecom.default": "group:ops-room:user:u_dispatch_bot"},
+        },
+    )
+
+    assert result.status == "ok"
+    private_calls = [
+        item
+        for item in runtime.gateway.outbound_calls
+        if str(item.get("metadata", {}).get("outbound_type") or "") == "private_detail"
+    ]
+    assert runtime.gateway.private_detail_attempts == 3
+    assert len(private_calls) == 3
+    assert private_calls[-1]["session_id"] == "dm:u_customer_retry"

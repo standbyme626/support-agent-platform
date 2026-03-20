@@ -8,6 +8,7 @@ from core.trace_logger import JsonTraceLogger
 from scripts.deploy_release import deploy_release
 from scripts.gateway_status import collect_status
 from scripts.healthcheck import run_healthcheck
+from scripts.replay_wecom_lifecycle_matrix import _build_cases
 from scripts.replay_gateway_event import replay_event
 from scripts.rollback_release import rollback_release
 from scripts.trace_debug import debug_trace
@@ -86,3 +87,10 @@ def test_release_scripts_deploy_verify_rollback_chain(
     )
     assert verify_after_rollback["status"] == "failed"
     assert "active_release_missing" in verify_after_rollback["errors"]
+
+
+def test_wecom_lifecycle_matrix_cases_cover_50_combinations() -> None:
+    cases = _build_cases()
+    assert len(cases) == 50
+    case_ids = {item.case_id for item in cases}
+    assert len(case_ids) == 50

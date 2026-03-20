@@ -34,6 +34,10 @@ describe("TicketsPage", () => {
   });
 
   it("renders table and filter controls", () => {
+    const longMessage = "cannot open gate and customer is waiting for a callback ".repeat(8);
+    const normalizedMessage = longMessage.replace(/\s+/g, " ").trim();
+    const expectedPreview = `${normalizedMessage.slice(0, 177)}...`;
+
     mockUseTickets.mockReturnValue({
       loading: false,
       error: null,
@@ -41,7 +45,7 @@ describe("TicketsPage", () => {
         {
           ticket_id: "t-1",
           title: "Gate issue",
-          latest_message: "cannot open",
+          latest_message: longMessage,
           status: "open",
           priority: "P1",
           queue: "support",
@@ -76,6 +80,8 @@ describe("TicketsPage", () => {
     expect(screen.getByRole("button", { name: "refresh_tickets" })).toBeInTheDocument();
     expect(screen.getByLabelText("小区")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Gate issue" })).toBeInTheDocument();
+    expect(screen.getByText(expectedPreview)).toBeInTheDocument();
+    expect(screen.queryByText(normalizedMessage)).not.toBeInTheDocument();
   });
 
   it("renders error state", () => {

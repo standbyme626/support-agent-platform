@@ -358,7 +358,13 @@ export async function fetchTickets(query: TicketQuery) {
 }
 
 export async function fetchAssignees() {
-  return getJson<AssigneeResponse>("/api/agents/assignees");
+  const response = await getJson<AssigneeResponse>("/api/agents/assignees");
+  return {
+    ...response,
+    items: Array.isArray(response.items)
+      ? response.items.map((item) => String(item)).filter((item) => item.trim().length > 0)
+      : []
+  };
 }
 
 export async function fetchTicketDetail(ticketId: string) {
@@ -487,17 +493,34 @@ export async function fetchTicketReplyEvents(ticketId: string) {
 }
 
 export async function fetchTicketAssist(ticketId: string) {
-  return getJson<TicketAssistResponse>(`/api/tickets/${encodeURIComponent(ticketId)}/assist`);
+  const response = await getJson<TicketAssistResponse>(`/api/tickets/${encodeURIComponent(ticketId)}/assist`);
+  return normalizeTicketAssistResponse(response);
 }
 
 export async function fetchSimilarCases(ticketId: string) {
-  return getJson<SimilarCasesResponse>(`/api/tickets/${encodeURIComponent(ticketId)}/similar-cases`);
+  const response = await getJson<SimilarCasesResponse>(`/api/tickets/${encodeURIComponent(ticketId)}/similar-cases`);
+  return {
+    ...response,
+    items: Array.isArray(response.items)
+      ? response.items
+          .filter((item) => item && typeof item === "object" && !Array.isArray(item))
+          .map((item) => item as SimilarCaseItem)
+      : []
+  };
 }
 
 export async function fetchGroundingSources(ticketId: string) {
-  return getJson<GroundingSourcesResponse>(
+  const response = await getJson<GroundingSourcesResponse>(
     `/api/tickets/${encodeURIComponent(ticketId)}/grounding-sources`
   );
+  return {
+    ...response,
+    items: Array.isArray(response.items)
+      ? response.items
+          .filter((item) => item && typeof item === "object" && !Array.isArray(item))
+          .map((item) => item as GroundingSourceItem)
+      : []
+  };
 }
 
 export async function runTicketAction(
@@ -549,9 +572,10 @@ export async function fetchTicketPendingActions(ticketId: string) {
   const response = await getJson<TicketPendingActionsResponse>(
     `/api/tickets/${encodeURIComponent(ticketId)}/pending-actions`
   );
+  const items = Array.isArray(response.items) ? response.items : [];
   return {
     ...response,
-    items: response.items.map((item) => normalizePendingApproval(item))
+    items: items.map((item) => normalizePendingApproval(item))
   };
 }
 
@@ -742,4 +766,35 @@ export function isAdviceOnlyResponse(
     return value.advice_only;
   }
   return fallback;
+}
+
+function normalizeTicketAssistResponse(raw: TicketAssistResponse): TicketAssistResponse {
+  const record = toRecord(raw);
+  const recommendedActions = Array.isArray(record.recommended_actions)
+    ? record.recommended_actions
+        .filter((item: unknown) => item && typeof item === "object" && !Array.isArray(item))
+        .map((item: unknown) => item as Record<string, unknown>)
+    : [];
+  const groundingSources = Array.isArray(record.grounding_sources)
+    ? record.grounding_sources
+        .filter((item: unknown) => item && typeof item === "object" && !Array.isArray(item))
+        .map((item: unknown) => item as GroundingSourceItem)
+    : [];
+  const riskFlags = Array.isArray(record.risk_flags)
+    ? record.risk_flags.map((item: unknown) => String(item)).filter((item) => item.length > 0)
+    : [];
+  const latestMessages = Array.isArray(record.latest_messages)
+    ? record.latest_messages.map((item: unknown) => String(item)).filter((item) => item.length > 0)
+    : [];
+
+  return {
+    request_id: toStringOrNull(record.request_id) ?? undefined,
+    summary: toStringOrNull(record.summary) ?? "",
+    recommended_actions: recommendedActions,
+    grounding_sources: groundingSources,
+    risk_flags: riskFlags,
+    latest_messages: latestMessages,
+    provider: toStringOrNull(record.provider) ?? "agent",
+    prompt_version: toStringOrNull(record.prompt_version) ?? "-"
+  };
 }

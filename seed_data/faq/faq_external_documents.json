@@ -1,0 +1,1782 @@
+[
+  {
+    "doc_id": "faq_ext_00001",
+    "source_type": "faq",
+    "title": "FAQ: How can I create an account?",
+    "content": "Q: How can I create an account?\nA: To create an account, click on the 'Sign Up' button on the top right corner of our website and follow the instructions to complete the registration process.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00002",
+    "source_type": "faq",
+    "title": "FAQ: What payment methods do you accept?",
+    "content": "Q: What payment methods do you accept?\nA: We accept major credit cards, debit cards, and PayPal as payment methods for online orders.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00003",
+    "source_type": "faq",
+    "title": "FAQ: How can I track my order?",
+    "content": "Q: How can I track my order?\nA: You can track your order by logging into your account and navigating to the 'Order History' section. There, you will find the tracking information for your shipment.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00004",
+    "source_type": "faq",
+    "title": "FAQ: What is your return policy?",
+    "content": "Q: What is your return policy?\nA: Our return policy allows you to return products within 30 days of purchase for a full refund, provided they are in their original condition and packaging. Please refer to our Returns page for detailed instructions.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00005",
+    "source_type": "faq",
+    "title": "FAQ: Can I cancel my order?",
+    "content": "Q: Can I cancel my order?\nA: You can cancel your order if it has not been shipped yet. Please contact our customer support team with your order details, and we will assist you with the cancellation process.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00006",
+    "source_type": "faq",
+    "title": "FAQ: How long does shipping take?",
+    "content": "Q: How long does shipping take?\nA: Shipping times vary depending on the destination and the shipping method chosen. Standard shipping usually takes 3-5 business days, while express shipping can take 1-2 business days.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00007",
+    "source_type": "faq",
+    "title": "FAQ: Do you offer international shipping?",
+    "content": "Q: Do you offer international shipping?\nA: Yes, we offer international shipping to select countries. The availability and shipping costs will be calculated during the checkout process based on your location.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00008",
+    "source_type": "faq",
+    "title": "FAQ: What should I do if my package is lost or damaged?",
+    "content": "Q: What should I do if my package is lost or damaged?\nA: If your package is lost or damaged during transit, please contact our customer support team immediately. We will initiate an investigation and take the necessary steps to resolve the issue.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00009",
+    "source_type": "faq",
+    "title": "FAQ: Can I change my shipping address after placing an order?",
+    "content": "Q: Can I change my shipping address after placing an order?\nA: If you need to change your shipping address, please contact our customer support team as soon as possible. We will do our best to update the address if the order has not been shipped yet.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00010",
+    "source_type": "faq",
+    "title": "FAQ: How can I contact customer support?",
+    "content": "Q: How can I contact customer support?\nA: You can contact our customer support team by phone at [phone number] or by email at [email address]. Our team is available [working hours] to assist you with any inquiries or issues you may have.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00011",
+    "source_type": "faq",
+    "title": "FAQ: Do you offer gift wrapping services?",
+    "content": "Q: Do you offer gift wrapping services?\nA: Yes, we offer gift wrapping services for an additional fee. During the checkout process, you can select the option to add gift wrapping to your order.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00012",
+    "source_type": "faq",
+    "title": "FAQ: What is your price matching policy?",
+    "content": "Q: What is your price matching policy?\nA: We have a price matching policy where we will match the price of an identical product found on a competitor's website. Please contact our customer support team with the details of the product and the competitor's offer.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00013",
+    "source_type": "faq",
+    "title": "FAQ: Can I order by phone?",
+    "content": "Q: Can I order by phone?\nA: Unfortunately, we do not accept orders over the phone. Please place your order through our website for a smooth and secure transaction.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00014",
+    "source_type": "faq",
+    "title": "FAQ: Are my personal and payment details secure?",
+    "content": "Q: Are my personal and payment details secure?\nA: Yes, we take the security of your personal and payment details seriously. We use industry-standard encryption and follow strict security protocols to ensure your information is protected.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00015",
+    "source_type": "faq",
+    "title": "FAQ: What is your price adjustment policy?",
+    "content": "Q: What is your price adjustment policy?\nA: If a product you purchased goes on sale within 7 days of your purchase, we offer a one-time price adjustment. Please contact our customer support team with your order details to request the adjustment.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00016",
+    "source_type": "faq",
+    "title": "FAQ: Do you have a loyalty program?",
+    "content": "Q: Do you have a loyalty program?\nA: Yes, we have a loyalty program where you can earn points for every purchase. These points can be redeemed for discounts on future orders. Please visit our website to learn more and join the program.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00017",
+    "source_type": "faq",
+    "title": "FAQ: Can I order without creating an account?",
+    "content": "Q: Can I order without creating an account?\nA: Yes, you can place an order as a guest without creating an account. However, creating an account offers benefits such as order tracking and easier future purchases.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00018",
+    "source_type": "faq",
+    "title": "FAQ: Do you offer bulk or wholesale discounts?",
+    "content": "Q: Do you offer bulk or wholesale discounts?\nA: Yes, we offer bulk or wholesale discounts for certain products. Please contact our customer support team or visit our Wholesale page for more information and to discuss your specific requirements.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00019",
+    "source_type": "faq",
+    "title": "FAQ: Can I change or cancel an item in my order?",
+    "content": "Q: Can I change or cancel an item in my order?\nA: If you need to change or cancel an item in your order, please contact our customer support team as soon as possible. We will assist you with the necessary steps.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00020",
+    "source_type": "faq",
+    "title": "FAQ: How can I leave a product review?",
+    "content": "Q: How can I leave a product review?\nA: To leave a product review, navigate to the product page on our website and click on the 'Write a Review' button. You can share your feedback and rating based on your experience with the product.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00021",
+    "source_type": "faq",
+    "title": "FAQ: Can I use multiple promo codes on a single order?",
+    "content": "Q: Can I use multiple promo codes on a single order?\nA: Usually, only one promo code can be applied per order. During the checkout process, enter the promo code in the designated field to apply the discount to your order.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00022",
+    "source_type": "faq",
+    "title": "FAQ: What should I do if I receive the wrong item?",
+    "content": "Q: What should I do if I receive the wrong item?\nA: If you receive the wrong item in your order, please contact our customer support team immediately. We will arrange for the correct item to be shipped to you and assist with returning the wrong item.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00023",
+    "source_type": "faq",
+    "title": "FAQ: Do you offer expedited shipping?",
+    "content": "Q: Do you offer expedited shipping?\nA: Yes, we offer expedited shipping options for faster delivery. During the checkout process, you can select the desired expedited shipping method.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00024",
+    "source_type": "faq",
+    "title": "FAQ: Can I order a product that is out of stock?",
+    "content": "Q: Can I order a product that is out of stock?\nA: If a product is currently out of stock, you will usually see an option to sign up for product notifications. This way, you will be alerted when the product becomes available again.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00025",
+    "source_type": "faq",
+    "title": "FAQ: What is your email newsletter about?",
+    "content": "Q: What is your email newsletter about?\nA: Our email newsletter provides updates on new product releases, exclusive offers, and helpful tips related to our products. You can subscribe to our newsletter on our website.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00026",
+    "source_type": "faq",
+    "title": "FAQ: Can I return a product if I changed my mind?",
+    "content": "Q: Can I return a product if I changed my mind?\nA: Yes, you can return a product if you changed your mind. Please ensure the product is in its original condition and packaging, and refer to our return policy for instructions.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00027",
+    "source_type": "faq",
+    "title": "FAQ: Do you offer live chat support?",
+    "content": "Q: Do you offer live chat support?\nA: Yes, we offer live chat support on our website during our business hours. Look for the chat icon in the bottom right corner to initiate a chat with our customer support team.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00028",
+    "source_type": "faq",
+    "title": "FAQ: Can I order a product as a gift?",
+    "content": "Q: Can I order a product as a gift?\nA: Yes, you can order a product as a gift and have it shipped directly to the recipient. During the checkout process, you can enter the recipient's shipping address.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00029",
+    "source_type": "faq",
+    "title": "FAQ: What should I do if my discount code is not working?",
+    "content": "Q: What should I do if my discount code is not working?\nA: If your discount code is not working, please double-check the terms and conditions associated with the code. If the issue persists, contact our customer support team for assistance.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00030",
+    "source_type": "faq",
+    "title": "FAQ: Can I return a product if it was a final sale item?",
+    "content": "Q: Can I return a product if it was a final sale item?\nA: Final sale items are usually non-returnable and non-refundable. Please review the product description or contact our customer support team to confirm the return eligibility for specific items.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00031",
+    "source_type": "faq",
+    "title": "FAQ: Do you offer installation services for your products?",
+    "content": "Q: Do you offer installation services for your products?\nA: Installation services are available for select products. Please check the product description or contact our customer support team for more information and to request installation services.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00032",
+    "source_type": "faq",
+    "title": "FAQ: Can I order a product that is discontinued?",
+    "content": "Q: Can I order a product that is discontinued?\nA: Discontinued products are no longer available for purchase. We recommend exploring alternative products on our website.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00033",
+    "source_type": "faq",
+    "title": "FAQ: Can I return a product without a receipt?",
+    "content": "Q: Can I return a product without a receipt?\nA: A receipt or proof of purchase is usually required for returns. Please refer to our return policy or contact our customer support team for assistance.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00034",
+    "source_type": "faq",
+    "title": "FAQ: Can I order a product for delivery to a different country?",
+    "content": "Q: Can I order a product for delivery to a different country?\nA: Yes, we offer international shipping to select countries. Please review the available shipping destinations during checkout or contact our customer support for assistance.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00035",
+    "source_type": "faq",
+    "title": "FAQ: Can I add a gift message to my order?",
+    "content": "Q: Can I add a gift message to my order?\nA: Yes, you can add a gift message during the checkout process. There is usually a section where you can enter your personalized message.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00036",
+    "source_type": "faq",
+    "title": "FAQ: Can I request a product demonstration before making a purchase?",
+    "content": "Q: Can I request a product demonstration before making a purchase?\nA: We do not currently offer product demonstrations before purchase. However, you can find detailed product descriptions, specifications, and customer reviews on our website.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00037",
+    "source_type": "faq",
+    "title": "FAQ: Can I order a product that is listed as 'coming soon'?",
+    "content": "Q: Can I order a product that is listed as 'coming soon'?\nA: Products listed as 'coming soon' are not available for immediate purchase. Please sign up for notifications to be informed when the product becomes available.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00038",
+    "source_type": "faq",
+    "title": "FAQ: Can I request an invoice for my order?",
+    "content": "Q: Can I request an invoice for my order?\nA: Yes, an invoice is usually [REDACTED_TICKET_ID] with your order. If you require a separate invoice, please contact our customer support team with your order details.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00039",
+    "source_type": "faq",
+    "title": "FAQ: Can I order a product that is labeled as 'limited edition'?",
+    "content": "Q: Can I order a product that is labeled as 'limited edition'?\nA: 'Limited edition' products may have restricted availability. We recommend placing an order as soon as possible to secure your item.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00040",
+    "source_type": "faq",
+    "title": "FAQ: Can I return a product if I no longer have the original packaging?",
+    "content": "Q: Can I return a product if I no longer have the original packaging?\nA: While returning a product in its original packaging is preferred, you can still initiate a return without it. Contact our customer support team for guidance in such cases.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00041",
+    "source_type": "faq",
+    "title": "FAQ: Can I request a product that is currently out of stock to be reserved for me?",
+    "content": "Q: Can I request a product that is currently out of stock to be reserved for me?\nA: We do not offer reservations for out-of-stock products. However, you can sign up for product notifications to be alerted when it becomes available again.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00042",
+    "source_type": "faq",
+    "title": "FAQ: Can I order a product that is listed as 'pre-order' with other in-stock items?",
+    "content": "Q: Can I order a product that is listed as 'pre-order' with other in-stock items?\nA: Yes, you can place an order with a mix of pre-order and in-stock items. However, please note that the entire order will be shipped once all items are available.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00043",
+    "source_type": "faq",
+    "title": "FAQ: Can I return a product if it was damaged during shipping?",
+    "content": "Q: Can I return a product if it was damaged during shipping?\nA: If your product was damaged during shipping, please contact our customer support team immediately. We will guide you through the return and replacement process.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00044",
+    "source_type": "faq",
+    "title": "FAQ: Can I request a product that is out of stock to be restocked?",
+    "content": "Q: Can I request a product that is out of stock to be restocked?\nA: We strive to restock popular products whenever possible. Please sign up for product notifications to be informed when the item becomes available again.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00045",
+    "source_type": "faq",
+    "title": "FAQ: Can I order a product if it is listed as 'backordered'?",
+    "content": "Q: Can I order a product if it is listed as 'backordered'?\nA: Products listed as 'backordered' are temporarily out of stock but can still be [REDACTED_TICKET_ID]. Your order will be fulfilled once the product is restocked.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00046",
+    "source_type": "faq",
+    "title": "FAQ: Can I return a product if it was purchased during a sale or with a discount?",
+    "content": "Q: Can I return a product if it was purchased during a sale or with a discount?\nA: Yes, you can return a product purchased during a sale or with a discount. The refund will be processed based on the amount paid after the discount.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00047",
+    "source_type": "faq",
+    "title": "FAQ: Can I request a product repair or replacement if it is damaged?",
+    "content": "Q: Can I request a product repair or replacement if it is damaged?\nA: If you receive a damaged product, please contact our customer support team immediately. We will assist you with the necessary steps for repair or replacement.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00048",
+    "source_type": "faq",
+    "title": "FAQ: Can I order a product if it is listed as 'out of stock' but available for pre-order?",
+    "content": "Q: Can I order a product if it is listed as 'out of stock' but available for pre-order?\nA: If a product is available for pre-order, you can place an order to secure your item. The product will be shipped once it becomes available.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00049",
+    "source_type": "faq",
+    "title": "FAQ: Can I return a product if it was purchased as a gift?",
+    "content": "Q: Can I return a product if it was purchased as a gift?\nA: Yes, you can return a product purchased as a gift. However, refunds will typically be issued to the original payment method used for the purchase.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00050",
+    "source_type": "faq",
+    "title": "FAQ: Can I request a product if it is listed as 'discontinued'?",
+    "content": "Q: Can I request a product if it is listed as 'discontinued'?\nA: Unfortunately, if a product is listed as 'discontinued,' it is no longer available for purchase. We recommend exploring alternative products on our website.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00051",
+    "source_type": "faq",
+    "title": "FAQ: Can I order a product if it is listed as 'sold out'?",
+    "content": "Q: Can I order a product if it is listed as 'sold out'?\nA: If a product is listed as 'sold out,' it is currently unavailable for purchase. Please check back later or sign up for notifications when it becomes available again.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00052",
+    "source_type": "faq",
+    "title": "FAQ: Can I return a product if it was purchased with a gift card?",
+    "content": "Q: Can I return a product if it was purchased with a gift card?\nA: Yes, you can return a product purchased with a gift card. The refund will be issued in the form of store credit or a new gift card.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00053",
+    "source_type": "faq",
+    "title": "FAQ: Can I request a product if it is not currently available in my size?",
+    "content": "Q: Can I request a product if it is not currently available in my size?\nA: If a product is not available in your size, it may be temporarily out of stock. Please check back later or sign up for size notifications.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00054",
+    "source_type": "faq",
+    "title": "FAQ: Can I order a product if it is listed as 'coming soon' but available for pre-order?",
+    "content": "Q: Can I order a product if it is listed as 'coming soon' but available for pre-order?\nA: If a product is listed as 'coming soon' and available for pre-order, you can place an order to secure your item before it becomes available.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00055",
+    "source_type": "faq",
+    "title": "FAQ: Can I return a product if it was purchased with a discount code?",
+    "content": "Q: Can I return a product if it was purchased with a discount code?\nA: Yes, you can return a product purchased with a discount code. The refund will be processed based on the amount paid after the discount.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00056",
+    "source_type": "faq",
+    "title": "FAQ: Can I request a custom order or personalized product?",
+    "content": "Q: Can I request a custom order or personalized product?\nA: We do not currently offer custom orders or personalized products. Please explore the available products on our website.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00057",
+    "source_type": "faq",
+    "title": "FAQ: Can I order a product if it is listed as 'temporarily unavailable'?",
+    "content": "Q: Can I order a product if it is listed as 'temporarily unavailable'?\nA: If a product is listed as 'temporarily unavailable,' it is out of stock but may be restocked in the future. Please check back later or sign up for notifications.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00058",
+    "source_type": "faq",
+    "title": "FAQ: Can I return a product if it was damaged due to improper use?",
+    "content": "Q: Can I return a product if it was damaged due to improper use?\nA: Our return policy generally covers products that are defective or damaged upon arrival. Damage due to improper use may not be eligible for a return. Please contact our customer support team for assistance.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00059",
+    "source_type": "faq",
+    "title": "FAQ: Can I request a product if it is listed as 'coming soon' but not available for pre-order?",
+    "content": "Q: Can I request a product if it is listed as 'coming soon' but not available for pre-order?\nA: If a product is listed as 'coming soon' but not available for pre-order, you will need to wait until it is officially released and becomes available for purchase.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00060",
+    "source_type": "faq",
+    "title": "FAQ: Can I order a product if it is listed as 'on hold'?",
+    "content": "Q: Can I order a product if it is listed as 'on hold'?\nA: If a product is listed as 'on hold,' it is temporarily unavailable for purchase. Please check back later or sign up for notifications when it becomes available.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00061",
+    "source_type": "faq",
+    "title": "FAQ: Can I return a product if I no longer have the original receipt?",
+    "content": "Q: Can I return a product if I no longer have the original receipt?\nA: While a receipt is preferred for returns, we may be able to assist you without it. Please contact our customer support team for further guidance.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00062",
+    "source_type": "faq",
+    "title": "FAQ: Can I request a product that is listed as 'limited edition' to be restocked?",
+    "content": "Q: Can I request a product that is listed as 'limited edition' to be restocked?\nA: Once a limited edition product is sold out, it may not be restocked. Limited edition items are available for a limited time only, so we recommend purchasing them while they are available.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00063",
+    "source_type": "faq",
+    "title": "FAQ: Can I order a product if it is listed as 'discontinued' but still visible on the website?",
+    "content": "Q: Can I order a product if it is listed as 'discontinued' but still visible on the website?\nA: If a product is listed as 'discontinued' but still visible on the website, it may be an error. Please contact our customer support team for clarification.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00064",
+    "source_type": "faq",
+    "title": "FAQ: Can I return a product if it was a clearance or final sale item?",
+    "content": "Q: Can I return a product if it was a clearance or final sale item?\nA: Clearance or final sale items are typically non-returnable and non-refundable. Please review the product description or contact our customer support team for more information.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00065",
+    "source_type": "faq",
+    "title": "FAQ: Can I request a product if it is not listed on your website?",
+    "content": "Q: Can I request a product if it is not listed on your website?\nA: If a product is not listed on our website, it may not be available for purchase. We recommend exploring the available products or contacting our customer support team for further assistance.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00066",
+    "source_type": "faq",
+    "title": "FAQ: Can I order a product if it is listed as 'out of stock' but available for backorder?",
+    "content": "Q: Can I order a product if it is listed as 'out of stock' but available for backorder?\nA: If a product is listed as 'out of stock' but available for backorder, you can place an order to secure your item. The product will be shipped once it becomes available.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00067",
+    "source_type": "faq",
+    "title": "FAQ: Can I return a product if it was purchased as part of a bundle or set?",
+    "content": "Q: Can I return a product if it was purchased as part of a bundle or set?\nA: If a product was purchased as part of a bundle or set, the return policy may vary. Please refer to the specific terms and conditions or contact our customer support team for further guidance.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00068",
+    "source_type": "faq",
+    "title": "FAQ: Can I request a product that is listed as 'out of stock' to be restocked?",
+    "content": "Q: Can I request a product that is listed as 'out of stock' to be restocked?\nA: We aim to restock popular products whenever possible. Please sign up for product notifications to be alerted when the item becomes available again.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00069",
+    "source_type": "faq",
+    "title": "FAQ: Can I order a product if it is listed as 'coming soon' and available for pre-order?",
+    "content": "Q: Can I order a product if it is listed as 'coming soon' and available for pre-order?\nA: If a product is listed as 'coming soon' and available for pre-order, you can place an order to secure your item before it becomes available.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00070",
+    "source_type": "faq",
+    "title": "FAQ: Can I return a product if it was damaged due to mishandling during shipping?",
+    "content": "Q: Can I return a product if it was damaged due to mishandling during shipping?\nA: If your product was damaged due to mishandling during shipping, please contact our customer support team immediately. We will assist you with the necessary steps for return and replacement.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00071",
+    "source_type": "faq",
+    "title": "FAQ: Can I request a product that is listed as 'out of stock' to be reserved for me?",
+    "content": "Q: Can I request a product that is listed as 'out of stock' to be reserved for me?\nA: We do not offer reservations for out-of-stock products. However, you can sign up for product notifications to be alerted when the item becomes available again.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00072",
+    "source_type": "faq",
+    "title": "FAQ: Can I order a product if it is listed as 'pre-order' but available for backorder?",
+    "content": "Q: Can I order a product if it is listed as 'pre-order' but available for backorder?\nA: If a product is listed as 'pre-order' and available for backorder, you can place an order to secure your item. The product will be shipped once it becomes available.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00073",
+    "source_type": "faq",
+    "title": "FAQ: Can I return a product if it was purchased with store credit?",
+    "content": "Q: Can I return a product if it was purchased with store credit?\nA: Yes, you can return a product purchased with store credit. The refund will be issued in the form of store credit, which you can use for future purchases.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00074",
+    "source_type": "faq",
+    "title": "FAQ: Can I request a product that is currently out of stock to be restocked?",
+    "content": "Q: Can I request a product that is currently out of stock to be restocked?\nA: We strive to restock popular products whenever possible. Please sign up for product notifications to be informed when the item becomes available again.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00075",
+    "source_type": "faq",
+    "title": "FAQ: Can I order a product if it is listed as 'sold out' but available for pre-order?",
+    "content": "Q: Can I order a product if it is listed as 'sold out' but available for pre-order?\nA: If a product is listed as 'sold out' but available for pre-order, you can place an order to secure your item. The product will be shipped once it becomes available.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00076",
+    "source_type": "faq",
+    "title": "FAQ: Can I return a product if it was purchased with a promotional gift card?",
+    "content": "Q: Can I return a product if it was purchased with a promotional gift card?\nA: Yes, you can return a product purchased with a promotional gift card. The refund will be issued in the form of store credit or a new gift card.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00077",
+    "source_type": "faq",
+    "title": "FAQ: Can I request a product if it is not currently available in my preferred color?",
+    "content": "Q: Can I request a product if it is not currently available in my preferred color?\nA: If a product is not available in your preferred color, it may be temporarily out of stock. Please check back later or sign up for color notifications.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00078",
+    "source_type": "faq",
+    "title": "FAQ: Can I order a product if it is listed as 'coming soon' and not available for pre-order?",
+    "content": "Q: Can I order a product if it is listed as 'coming soon' and not available for pre-order?\nA: If a product is listed as 'coming soon' but not available for pre-order, you will need to wait until it is officially released and becomes available for purchase.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00079",
+    "source_type": "faq",
+    "title": "FAQ: Can I return a product if it was purchased during a promotional event?",
+    "content": "Q: Can I return a product if it was purchased during a promotional event?\nA: Yes, you can return a product purchased during a promotional event. The refund will be processed based on the amount paid after any applicable discounts.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00080",
+    "source_type": "faq",
+    "title": "FAQ: How can I reset my password?",
+    "content": "Q: How can I reset my password?\nA: To reset your password, click on the 'Forgot Password' link on the login page and follow the instructions to reset your password.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00081",
+    "source_type": "faq",
+    "title": "FAQ: How do I update my account information?",
+    "content": "Q: How do I update my account information?\nA: To update your account information, log in to your account, navigate to the 'Account Settings' section, and make the necessary changes.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00082",
+    "source_type": "faq",
+    "title": "FAQ: What is your privacy policy?",
+    "content": "Q: What is your privacy policy?\nA: Our privacy policy outlines how we collect, use, and protect your personal information. Please visit our Privacy Policy page for detailed information.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00083",
+    "source_type": "faq",
+    "title": "FAQ: Can I change my order after it has been placed?",
+    "content": "Q: Can I change my order after it has been placed?\nA: If you need to change your order, please contact our customer support team as soon as possible. We will do our best to accommodate your request if the order has not been processed yet.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00084",
+    "source_type": "faq",
+    "title": "FAQ: How do I unsubscribe from your newsletter?",
+    "content": "Q: How do I unsubscribe from your newsletter?\nA: To unsubscribe from our newsletter, click on the 'Unsubscribe' link at the bottom of any of our newsletter emails or update your preferences in your account settings.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00085",
+    "source_type": "faq",
+    "title": "FAQ: What are your business hours?",
+    "content": "Q: What are your business hours?\nA: Our business hours are [working hours]. During these hours, our customer support team is available to assist you with any inquiries or issues.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00086",
+    "source_type": "faq",
+    "title": "FAQ: Do you offer a satisfaction guarantee?",
+    "content": "Q: Do you offer a satisfaction guarantee?\nA: Yes, we offer a satisfaction guarantee on our products. If you are not satisfied with your purchase, please contact our customer support team for assistance.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00087",
+    "source_type": "faq",
+    "title": "FAQ: How can I apply for a job at your company?",
+    "content": "Q: How can I apply for a job at your company?\nA: To apply for a job at our company, visit our Careers page, where you can find current job openings and submit your application.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00088",
+    "source_type": "faq",
+    "title": "FAQ: What is the warranty on your products?",
+    "content": "Q: What is the warranty on your products?\nA: The warranty on our products varies by item. Please refer to the product page for specific warranty information or contact our customer support team.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  },
+  {
+    "doc_id": "faq_ext_00089",
+    "source_type": "faq",
+    "title": "FAQ: Can I request a refund if the price drops after my purchase?",
+    "content": "Q: Can I request a refund if the price drops after my purchase?\nA: If the price of a product drops within 7 days of your purchase, you may be eligible for a price adjustment. Please contact our customer support team with your order details.",
+    "tags": [
+      "external",
+      "faq",
+      "general"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "external_public"
+    }
+  }
+]

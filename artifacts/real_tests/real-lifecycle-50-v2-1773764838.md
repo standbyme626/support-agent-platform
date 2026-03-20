@@ -1,0 +1,65 @@
+# Real Lifecycle 50 Matrix - real-lifecycle-50-v2-1773764838
+
+- Generated: 2026-03-17T16:32:02.955757+00:00
+- Total: 50
+- Passed: 46
+- Failed: 4
+- Tickets: {'t1': 'TCK-8F4899A13E', 't2': 'TCK-97851050B1', 't3': 'TCK-D3EC877D94', 't4': 'TCK-26F327B5F2'}
+
+## Failures
+- [16] state_in_progress | action=collab_command_failed | reasons=ticket_action=collab_command_failed expected=collab_state
+- [21] reopen_natural | action=collab_command_failed | reasons=ticket_action=collab_command_failed expected=collab_reopen
+- [38] link_slash | action=collab_command_invalid | reasons=ticket_action=collab_command_invalid expected=collab_link
+- [41] merge_slash | action=collab_command_invalid | reasons=ticket_action=collab_command_invalid expected=collab_merge
+
+## Step Results
+- [01] create_issue_1 | status=ok | action=handoff | ticket=TCK-8F4899A13E | ok=True
+- [02] claim_slash | status=ok | action=collab_claim | ticket=TCK-8F4899A13E | ok=True
+- [03] claim_natural | status=ok | action=collab_claim | ticket=TCK-8F4899A13E | ok=True
+- [04] status_slash | status=ok | action=collab_status | ticket=TCK-8F4899A13E | ok=True
+- [05] status_natural | status=ok | action=collab_status | ticket=TCK-8F4899A13E | ok=True
+- [06] priority_slash | status=ok | action=collab_priority | ticket=TCK-8F4899A13E | ok=True
+- [07] priority_natural | status=ok | action=collab_priority | ticket=TCK-8F4899A13E | ok=True
+- [08] needs_info_slash | status=ok | action=collab_needs_info | ticket=TCK-8F4899A13E | ok=True
+- [09] needs_info_natural | status=ok | action=collab_needs_info | ticket=TCK-8F4899A13E | ok=True
+- [10] customer_supplement | status=ok | action=handoff | ticket=TCK-8F4899A13E | ok=True
+- [11] assign_slash | status=ok | action=collab_assign | ticket=TCK-8F4899A13E | ok=True
+- [12] assign_natural | status=ok | action=collab_assign | ticket=TCK-8F4899A13E | ok=True
+- [13] reassign_slash | status=ok | action=collab_reassign | ticket=TCK-8F4899A13E | ok=True
+- [14] escalate_slash | status=ok | action=collab_escalate | ticket=TCK-8F4899A13E | ok=True
+- [15] escalate_natural | status=ok | action=collab_escalate | ticket=TCK-8F4899A13E | ok=True
+- [16] state_in_progress | status=ok | action=collab_command_failed | ticket=TCK-8F4899A13E | ok=False
+- [17] state_waiting_customer | status=ok | action=collab_state | ticket=TCK-8F4899A13E | ok=True
+- [18] resolve_slash | status=ok | action=collab_resolve | ticket=TCK-8F4899A13E | ok=True
+- [19] customer_confirm_natural | status=ok | action=collab_customer_confirm | ticket=TCK-8F4899A13E | ok=True
+- [20] reopen_slash | status=ok | action=collab_reopen | ticket=TCK-8F4899A13E | ok=True
+- [21] reopen_natural | status=ok | action=collab_command_failed | ticket=TCK-8F4899A13E | ok=False
+- [22] resolve_slash_2 | status=ok | action=collab_resolve | ticket=TCK-8F4899A13E | ok=True
+- [23] customer_confirm_slash | status=ok | action=collab_customer_confirm | ticket=TCK-8F4899A13E | ok=True
+- [24] reopen_before_close_compat | status=ok | action=collab_reopen | ticket=TCK-8F4899A13E | ok=True
+- [25] close_compat_slash | status=ok | action=collab_close_compat | ticket=TCK-8F4899A13E | ok=True
+- [26] end_session_slash | status=ok | action=collab_end_session | ticket=TCK-8F4899A13E | ok=True
+- [27] list_slash | status=ok | action=list_tickets | ticket=None | ok=True
+- [28] list_natural | status=ok | action=list_tickets | ticket=None | ok=True
+- [29] list_p1_natural | status=ok | action=list_tickets | ticket=None | ok=True
+- [30] list_pending_natural | status=ok | action=list_tickets | ticket=None | ok=True
+- [31] customer_session_state | status=ok | action=collab_command_invalid | ticket=TCK-8F4899A13E | ok=True
+- [32] customer_new_mode | status=ok | action=new_issue_mode | ticket=TCK-8F4899A13E | ok=True
+- [33] create_issue_2 | status=ok | action=handoff | ticket=TCK-97851050B1 | ok=True
+- [34] customer_end_mode | status=ok | action=session_end | ticket=TCK-97851050B1 | ok=True
+- [35] create_issue_3 | status=ok | action=handoff | ticket=TCK-D3EC877D94 | ok=True
+- [36] view_ticket_detail | status=ok | action=view_ticket_detail | ticket=TCK-D3EC877D94 | ok=True
+- [37] set_active_t2 | status=ok | action=collab_status | ticket=TCK-97851050B1 | ok=True
+- [38] link_slash | status=ok | action=collab_command_invalid | ticket=TCK-D3EC877D94 | ok=False
+- [39] link_natural | status=ok | action=collab_link | ticket=TCK-97851050B1 | ok=True
+- [40] set_active_t3 | status=ok | action=collab_status | ticket=TCK-D3EC877D94 | ok=True
+- [41] merge_slash | status=ok | action=collab_command_invalid | ticket=TCK-97851050B1 | ok=False
+- [42] customer_new_mode_2 | status=ok | action=new_issue_mode | ticket=TCK-D3EC877D94 | ok=True
+- [43] create_issue_4 | status=ok | action=create_ticket | ticket=TCK-26F327B5F2 | ok=True
+- [44] claim_t4 | status=ok | action=collab_claim | ticket=TCK-26F327B5F2 | ok=True
+- [45] resolve_natural | status=ok | action=collab_resolve | ticket=TCK-26F327B5F2 | ok=True
+- [46] customer_confirm_short | status=ok | action=collab_customer_confirm | ticket=TCK-26F327B5F2 | ok=True
+- [47] reopen_t4 | status=ok | action=collab_reopen | ticket=TCK-26F327B5F2 | ok=True
+- [48] operator_close_natural | status=ok | action=collab_operator_close | ticket=TCK-26F327B5F2 | ok=True
+- [49] english_assign | status=ok | action=collab_command_failed | ticket=TCK-26F327B5F2 | ok=True
+- [50] english_priority | status=ok | action=collab_command_failed | ticket=TCK-26F327B5F2 | ok=True

@@ -14,6 +14,7 @@ KB_LIFECYCLE = (
     "draft",
     "review",
     "published",
+    "expiring",
     "archived",
 )
 
@@ -36,9 +37,15 @@ KB_ACTIONS = {
         to_status="draft",
         required_fields=("reject_reason",),
     ),
+    "expire": SystemAction(
+        name="expire",
+        allowed_from=frozenset({"published"}),
+        to_status="expiring",
+        required_fields=(),
+    ),
     "archive": SystemAction(
         name="archive",
-        allowed_from=frozenset({"published"}),
+        allowed_from=frozenset({"published", "expiring"}),
         to_status="archived",
         required_fields=("archive_reason",),
     ),

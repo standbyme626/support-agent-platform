@@ -134,6 +134,7 @@ def test_support_intake_repair_creates_ticket_and_pushes_collab(tmp_path: Path) 
     assert "/resolve" in result.collab_push["message"]
     assert result.ticket_action == "create_ticket"
     assert result.queue == "support"
+    assert result.system == "ticket"
     assert result.priority in {"P1", "P2", "P3", "P4"}
     assert result.recommended_actions
     assert "evidence" in result.recommended_actions[0]
@@ -143,6 +144,49 @@ def test_support_intake_repair_creates_ticket_and_pushes_collab(tmp_path: Path) 
     assert "ticket_classified" in event_types
     assert "ticket_context_retrieved" in event_types
     assert "ticket_draft_generated" in event_types
+
+
+def test_support_intake_outputs_explicit_procurement_system(tmp_path: Path) -> None:
+    workflow, _ = _build_intake_workflow(tmp_path)
+    result = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-procurement-system",
+            message_text="申请采购2台显示器，预算已审批",
+            metadata={"thread_id": "thread-procurement-system"},
+        )
+    )
+
+    assert result.ticket_id is not None
+    assert result.ticket_action in {"create_ticket", "handoff", "conservative_ticket"}
+    assert result.system == "procurement"
+
+
+def test_support_intake_outputs_explicit_system_for_ten_domains(tmp_path: Path) -> None:
+    workflow, _ = _build_intake_workflow(tmp_path)
+    scenarios = [
+        ("空调故障报修，三楼会议室温度过高", "ticket"),
+        ("申请采购2台显示器，预算已审批", "procurement"),
+        ("发票已收但付款状态异常，请财务核对", "finance"),
+        ("请发起加班审批流程，今晚需要处理", "approval"),
+        ("新员工入职账号开通和工牌办理", "hr"),
+        ("资产盘点发现设备编号缺失，需要补录", "asset"),
+        ("知识库文档需要更新到最新版本", "kb"),
+        ("CRM case 跟进，客户线索需要分派", "crm"),
+        ("项目里程碑延期，请更新项目计划", "project"),
+        ("供应链收货入库异常，需确认到货数量", "supply_chain"),
+    ]
+
+    for index, (message_text, expected_system) in enumerate(scenarios, start=1):
+        result = workflow.run(
+            InboundEnvelope(
+                channel="wecom",
+                session_id=f"session-system-domain-{index}",
+                message_text=message_text,
+                metadata={"thread_id": f"thread-system-domain-{index}"},
+            )
+        )
+        assert result.system == expected_system
 
 
 def test_support_intake_progress_query_updates_existing_ticket(tmp_path: Path) -> None:
@@ -842,7 +886,7 @@ def test_support_intake_link_and_merge_accept_explicit_source_ticket_without_act
         InboundEnvelope(
             channel="wecom",
             session_id="session-collab-link-explicit",
-            message_text=f"/link {source.ticket_id} {target.ticket_id}",
+            message_text=f"/link {source.ticket_id} {target.ticket_id} --confirm",
             metadata={
                 "thread_id": "thread-collab-link-explicit",
                 "actor_id": "u_ops_link",
@@ -858,7 +902,7 @@ def test_support_intake_link_and_merge_accept_explicit_source_ticket_without_act
         InboundEnvelope(
             channel="wecom",
             session_id="session-collab-link-explicit",
-            message_text=f"/merge {source.ticket_id} {target.ticket_id}",
+            message_text=f"/merge {source.ticket_id} {target.ticket_id} --confirm",
             metadata={
                 "thread_id": "thread-collab-link-explicit",
                 "actor_id": "u_ops_link",
@@ -914,7 +958,7 @@ def test_support_intake_link_and_merge_single_target_use_active_session_context(
         InboundEnvelope(
             channel="wecom",
             session_id=ops_session_id,
-            message_text=f"/link {target.ticket_id}",
+            message_text=f"/link {target.ticket_id} --confirm",
             metadata=ops_metadata,
         )
     )
@@ -939,7 +983,7 @@ def test_support_intake_link_and_merge_single_target_use_active_session_context(
         InboundEnvelope(
             channel="wecom",
             session_id=ops_session_id,
-            message_text=f"/merge {source.ticket_id}",
+            message_text=f"/merge {source.ticket_id} --confirm",
             metadata=ops_metadata,
         )
     )
@@ -1011,10 +1055,12 @@ def test_support_intake_collab_command_variants_are_normalized(
             metadata=base_metadata | {"actor_id": "u_ops_b"},
         )
     )
-    assert closed_natural.ticket_action == "collab_operator_close"
-    assert closed_natural.reply_text == f"已强制关闭 {seed.ticket_id}，原因已记录。"
-    closed_ticket = ticket_api.require_ticket(seed.ticket_id)
-    assert closed_ticket.status == "closed"
+    assert closed_natural.ticket_action == "collab_command_invalid"
+    assert "请使用显式命令" in closed_natural.reply_text
+    assert f"/operator-close {seed.ticket_id}" in closed_natural.reply_text
+    assert closed_natural.reply_trace["usage_reason"] == "natural_language_requires_slash"
+    guarded_ticket = ticket_api.require_ticket(seed.ticket_id)
+    assert guarded_ticket.status == "resolved"
 
 
 def test_support_intake_collab_reassign_command_is_available_from_slash_entry(
@@ -1034,7 +1080,7 @@ def test_support_intake_collab_reassign_command_is_available_from_slash_entry(
         InboundEnvelope(
             channel="wecom",
             session_id="session-collab-reassign-entry",
-            message_text=f"/reassign {seed.ticket_id} u_ops_b",
+            message_text=f"/reassign {seed.ticket_id} u_ops_b --confirm",
             metadata={
                 "thread_id": "thread-collab-reassign-entry",
                 "ticket_id": seed.ticket_id,
@@ -1070,7 +1116,7 @@ def test_support_intake_collab_state_command_is_available_from_slash_entry(
         InboundEnvelope(
             channel="wecom",
             session_id="session-collab-state-entry",
-            message_text=f"/state {seed.ticket_id} waiting_internal",
+            message_text=f"/state {seed.ticket_id} waiting_internal --confirm",
             metadata={
                 "thread_id": "thread-collab-state-entry",
                 "ticket_id": seed.ticket_id,
@@ -1174,6 +1220,73 @@ def test_support_intake_priority_urgent_phrases_map_to_priority_command(
     assert ticket_api.require_ticket(seed.ticket_id).priority == "P2"
 
 
+def test_support_intake_natural_high_risk_command_requires_explicit_slash(
+    tmp_path: Path,
+) -> None:
+    workflow, ticket_api, session_mapper = _build_intake_workflow_with_session_mapper(tmp_path)
+    seed = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-collab-natural-high-risk",
+            message_text="会议室中控失灵，无法切换信号源。",
+            metadata={"thread_id": "thread-collab-natural-high-risk"},
+        )
+    )
+    session_context = session_mapper.get_session_context("session-collab-natural-high-risk")
+    guarded = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-collab-natural-high-risk",
+            message_text=f"人工关闭 {seed.ticket_id} 用户离线，电话确认恢复",
+            metadata={
+                "thread_id": "thread-collab-natural-high-risk",
+                "ticket_id": seed.ticket_id,
+                "active_ticket_id": seed.ticket_id,
+                "session_context": session_context,
+                "actor_id": "u_ops_guarded",
+            },
+        )
+    )
+    assert guarded.ticket_action == "collab_command_invalid"
+    assert "请使用显式命令" in guarded.reply_text
+    assert f"/operator-close {seed.ticket_id}" in guarded.reply_text
+    assert guarded.reply_trace["usage_reason"] == "natural_language_requires_slash"
+    assert ticket_api.require_ticket(seed.ticket_id).status != "closed"
+
+
+def test_support_intake_customer_confirm_requires_resolved_or_waiting_customer(
+    tmp_path: Path,
+) -> None:
+    workflow, ticket_api, session_mapper = _build_intake_workflow_with_session_mapper(tmp_path)
+    seed = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-customer-confirm-guard",
+            message_text="门禁无法识别工牌，前台进出受阻。",
+            metadata={"thread_id": "thread-customer-confirm-guard"},
+        )
+    )
+    session_context = session_mapper.get_session_context("session-customer-confirm-guard")
+    guarded = workflow.run(
+        InboundEnvelope(
+            channel="wecom",
+            session_id="session-customer-confirm-guard",
+            message_text=f"/customer-confirm {seed.ticket_id} 用户口头确认",
+            metadata={
+                "thread_id": "thread-customer-confirm-guard",
+                "ticket_id": seed.ticket_id,
+                "active_ticket_id": seed.ticket_id,
+                "session_context": session_context,
+            },
+        )
+    )
+    assert guarded.ticket_action == "collab_command_invalid"
+    assert "不能直接确认关闭" in guarded.reply_text
+    assert guarded.reply_trace["usage_reason"] == "customer_confirm_requires_resolved_state"
+    ticket = ticket_api.require_ticket(seed.ticket_id)
+    assert ticket.status != "closed"
+
+
 def test_support_intake_collab_command_invalid_ticket_returns_actionable_feedback(
     tmp_path: Path,
 ) -> None:
@@ -1249,7 +1362,7 @@ def test_support_intake_collab_command_on_closed_ticket_returns_controlled_error
         InboundEnvelope(
             channel="wecom",
             session_id="group:ops-room:user:Yusongze",
-            message_text=f"/assign {seeded.ticket_id} Yusongze",
+            message_text=f"/assign {seeded.ticket_id} Yusongze --confirm",
             metadata={
                 "thread_id": "thread-collab-command-closed-ticket",
                 "actor_id": "Yusongze",
@@ -1420,7 +1533,7 @@ def test_support_intake_operator_close_and_advice_only_terminal_phrase(
         InboundEnvelope(
             channel="wecom",
             session_id="session-operator-close-flow",
-            message_text=f"/operator-close {seed.ticket_id} 用户离线，电话确认恢复",
+            message_text=f"/operator-close {seed.ticket_id} 用户离线，电话确认恢复 --confirm",
             metadata={
                 "thread_id": "thread-operator-close-flow",
                 "ticket_id": seed.ticket_id,
@@ -1539,7 +1652,9 @@ def test_support_intake_collab_command_cross_group_sync_notifications(
         InboundEnvelope(
             channel="wecom",
             session_id=ops_session_id,
-            message_text=f"/operator-close {forced_close_seed.ticket_id} 用户离线，电话确认恢复",
+            message_text=(
+                f"/operator-close {forced_close_seed.ticket_id} 用户离线，电话确认恢复 --confirm"
+            ),
             metadata={
                 "thread_id": "thread-ops-room",
                 "ticket_id": forced_close_seed.ticket_id,

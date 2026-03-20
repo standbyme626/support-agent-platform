@@ -35,19 +35,34 @@ class NormalizedDocument:
             content=self.content,
             tags=list(self.tags),
             score=score,
+            updated_at=self.updated_at,
+            metadata=dict(self.metadata),
         )
 
 
 def load_normalized_documents(seed_root: Path) -> list[NormalizedDocument]:
-    seed_files: list[tuple[Path, str]] = [
-        (seed_root / "faq" / "faq_documents.json", "faq"),
-        (seed_root / "sop" / "sop_documents.json", "sop"),
-        (seed_root / "historical_cases" / "history_documents.json", "history_case"),
+    source_dirs: list[tuple[str, str, str]] = [
+        ("faq", "faq_documents.json", "faq"),
+        ("sop", "sop_documents.json", "sop"),
+        ("historical_cases", "history_documents.json", "history_case"),
     ]
     docs: list[NormalizedDocument] = []
-    for path, fallback_source in seed_files:
-        docs.extend(_load_file(path, fallback_source=fallback_source))
+    for source_dir, primary_file, fallback_source in source_dirs:
+        for path in _discover_seed_files(seed_root / source_dir, primary_file=primary_file):
+            docs.extend(_load_file(path, fallback_source=fallback_source))
     return docs
+
+
+def _discover_seed_files(source_dir: Path, *, primary_file: str) -> list[Path]:
+    if not source_dir.exists():
+        return []
+    candidates = [path for path in source_dir.glob("*.json") if path.is_file()]
+    if not candidates:
+        return []
+    return sorted(
+        candidates,
+        key=lambda path: (0 if path.name == primary_file else 1, path.name),
+    )
 
 
 def _load_file(path: Path, *, fallback_source: str) -> list[NormalizedDocument]:

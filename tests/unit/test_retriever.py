@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from core.retrieval.normalized_docs import load_normalized_documents
@@ -55,3 +56,56 @@ def test_normalized_documents_have_required_schema_fields() -> None:
     assert isinstance(sample.tags, tuple)
     assert sample.updated_at
     assert isinstance(sample.metadata, dict)
+
+
+def test_load_normalized_documents_supports_multiple_seed_files(tmp_path: Path) -> None:
+    seed_root = tmp_path / "seed_data"
+    faq_dir = seed_root / "faq"
+    sop_dir = seed_root / "sop"
+    history_dir = seed_root / "historical_cases"
+    faq_dir.mkdir(parents=True)
+    sop_dir.mkdir(parents=True)
+    history_dir.mkdir(parents=True)
+
+    (faq_dir / "faq_documents.json").write_text(
+        json.dumps(
+            [
+                {
+                    "doc_id": "faq-main-1",
+                    "source_type": "faq",
+                    "title": "Main FAQ",
+                    "content": "Main document",
+                    "tags": ["main"],
+                }
+            ],
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    (faq_dir / "faq_external_documents.json").write_text(
+        json.dumps(
+            [
+                {
+                    "doc_id": "faq-ext-1",
+                    "source_type": "faq",
+                    "title": "External FAQ",
+                    "content": "External document",
+                    "tags": ["external"],
+                    "metadata": {"source_dataset": "external_demo"},
+                }
+            ],
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    (sop_dir / "sop_documents.json").write_text("[]", encoding="utf-8")
+    (history_dir / "history_documents.json").write_text("[]", encoding="utf-8")
+
+    docs = load_normalized_documents(seed_root)
+    faq_ids = {doc.doc_id for doc in docs if doc.source_type == "faq"}
+    assert "faq-main-1" in faq_ids
+    assert "faq-ext-1" in faq_ids
+
+    external_doc = next(doc for doc in docs if doc.doc_id == "faq-ext-1")
+    assert external_doc.metadata.get("source_dataset") == "external_demo"
+    assert external_doc.metadata.get("source_file") == "faq_external_documents.json"

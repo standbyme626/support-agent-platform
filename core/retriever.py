@@ -116,6 +116,8 @@ class Retriever:
                 content=raw_doc.content,
                 tags=list(raw_doc.tags),
                 score=ranking_score,
+                updated_at=raw_doc.updated_at,
+                metadata=dict(raw_doc.metadata),
             )
             ranked.append(
                 {
@@ -159,6 +161,12 @@ class Retriever:
                 content=item["doc"].content,
                 tags=list(item["doc"].tags),
                 score=item["score"],
+                updated_at=item["updated_at"],
+                metadata=(
+                    dict(item["metadata"])
+                    if isinstance(item.get("metadata"), dict)
+                    else {}
+                ),
             )
             for item in detailed
         ]

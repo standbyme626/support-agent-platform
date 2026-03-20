@@ -1,0 +1,62 @@
+[
+  {
+    "doc_id": "sop_proj_0001",
+    "source_type": "sop",
+    "title": "SOP: 重启 Ops API 并验证健康",
+    "content": "1) mkdir -p logs\n2) pkill -f \"python -m scripts.ops_api_server\" || true\n3) nohup python -m scripts.ops_api_server --env dev --host 127.0.0.1 --port 18082 > logs/ops_api_server.log 2>&1 &\n4) curl http://127.0.0.1:18082/healthz",
+    "tags": [
+      "sop",
+      "ops",
+      "healthcheck"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "support-agent-platform internal docs",
+      "source_url": "/home/kkk/Project/support-agent-platform/README.md, /home/kkk/Project/support-agent-platform/ARCHITECTURE.md, /home/kkk/Project/support-agent-platform/docs/project-review-refactor-plan.md",
+      "license": "Internal project docs",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "project_internal"
+    }
+  },
+  {
+    "doc_id": "sop_proj_0002",
+    "source_type": "sop",
+    "title": "SOP: 启动 Web Console 并验证页面",
+    "content": "1) cd web_console\n2) npm install\n3) npm run dev -- --host 0.0.0.0 --port 3001\n4) 打开 /tickets、/kb/faq 并确认页面可访问",
+    "tags": [
+      "sop",
+      "web_console",
+      "runbook"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "support-agent-platform internal docs",
+      "source_url": "/home/kkk/Project/support-agent-platform/README.md, /home/kkk/Project/support-agent-platform/ARCHITECTURE.md, /home/kkk/Project/support-agent-platform/docs/project-review-refactor-plan.md",
+      "license": "Internal project docs",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "project_internal"
+    }
+  },
+  {
+    "doc_id": "sop_proj_0003",
+    "source_type": "sop",
+    "title": "SOP: 工单知识库回归校验",
+    "content": "1) cd web_console && npm run lint\n2) cd web_console && npm run typecheck\n3) cd web_console && npm run test -- tickets\n4) 检查 /kb/faq 是否展示来源与许可证字段",
+    "tags": [
+      "sop",
+      "qa",
+      "kb"
+    ],
+    "updated_at": "2026-03-18T16:13:57.048594+00:00",
+    "metadata": {
+      "source_dataset": "support-agent-platform internal docs",
+      "source_url": "/home/kkk/Project/support-agent-platform/README.md, /home/kkk/Project/support-agent-platform/ARCHITECTURE.md, /home/kkk/Project/support-agent-platform/docs/project-review-refactor-plan.md",
+      "license": "Internal project docs",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T16:13:57.048594+00:00",
+      "governance_tier": "project_internal"
+    }
+  }
+]

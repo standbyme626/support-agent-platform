@@ -22,7 +22,7 @@ class TicketAPI:
         "escalated": {"pending", "handoff", "resolved", "closed"},
         "handoff": {"pending", "escalated", "resolved", "closed"},
         "resolved": {"open", "pending", "closed"},
-        "closed": set(),
+        "closed": {"open"},
     }
 
     def __init__(
@@ -193,7 +193,7 @@ class TicketAPI:
         actor_id: str,
         resolution_note: str,
         resolution_code: str | None = None,
-    ) -> Ticket:
+        ) -> Ticket:
         current = self.require_ticket(ticket_id)
         self._ensure_not_closed(current)
         return self._transition_status(
@@ -211,6 +211,34 @@ class TicketAPI:
                 "last_agent_action": "resolve",
             },
             payload={"resolution_note": resolution_note, "resolution_code": resolution_code},
+        )
+
+    def reopen_ticket(
+        self,
+        ticket_id: str,
+        *,
+        actor_id: str,
+        reason: str | None = None,
+    ) -> Ticket:
+        current = self.require_ticket(ticket_id)
+        if current.status != "closed":
+            raise ValueError(f"Cannot reopen ticket {ticket_id}: status is {current.status}")
+        return self._transition_status(
+            ticket_id=ticket_id,
+            new_status="open",
+            actor_id=actor_id,
+            event_type="ticket_reopened",
+            extra_updates={
+                "handoff_state": "in_progress",
+                "lifecycle_stage": "awaiting_human",
+                "resolution_note": None,
+                "resolution_code": None,
+                "close_reason": None,
+                "closed_at": None,
+                "resolved_at": None,
+                "last_agent_action": "reopen",
+            },
+            payload={"reason": reason or "manual_reopen"},
         )
 
     def escalate_ticket(

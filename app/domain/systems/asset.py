@@ -11,6 +11,8 @@ if TYPE_CHECKING:
 
 
 ASSET_LIFECYCLE = (
+    "requested",
+    "procurement",
     "inventory",
     "assigned",
     "maintenance",
@@ -19,6 +21,18 @@ ASSET_LIFECYCLE = (
 )
 
 ASSET_ACTIONS = {
+    "request": SystemAction(
+        name="request",
+        allowed_from=frozenset({"requested"}),
+        to_status="procurement",
+        required_fields=("asset_name", "asset_type"),
+    ),
+    "receive": SystemAction(
+        name="receive",
+        allowed_from=frozenset({"procurement"}),
+        to_status="inventory",
+        required_fields=("asset_tag",),
+    ),
     "assign": SystemAction(
         name="assign",
         allowed_from=frozenset({"inventory"}),

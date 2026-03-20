@@ -19,7 +19,8 @@ function baseHookState() {
         title: "Elevator restart SOP",
         content: "Restart breaker and verify control panel.",
         tags: ["elevator", "safety"],
-        updated_at: "2026-03-11T00:00:00+00:00"
+        updated_at: "2026-03-11T00:00:00+00:00",
+        metadata: {}
       }
     ],
     total: 1,

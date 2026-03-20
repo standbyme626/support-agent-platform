@@ -130,6 +130,11 @@ def test_wecom_dispatch_bridge_auto_dispatch_success(
         and item.get("session_id") == "group:ops-room:user:u_dispatch_bot"
         for item in events
     )
+    assert any(
+        item["event_type"] == "wecom_private_detail_async_scheduled"
+        and item.get("session_id") == "dm:u_customer_01"
+        for item in events
+    )
     collab_egress_events = [
         item
         for item in events
@@ -172,9 +177,84 @@ def test_wecom_dispatch_bridge_auto_dispatch_success(
         for item in ordered_collab_chunks
     )
     assert f"新工单 {result.ticket_id} 已创建" in collab_content
-    assert "\n工单详情：" in collab_content
+    assert "工单详情：" in collab_content
     assert "[new-ticket]" not in collab_content
     assert "commands:" not in collab_content
+
+
+def test_wecom_dispatch_bridge_system_mapping_writes_trace_and_metadata(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("SUPPORT_AGENT_ENV", "dev")
+    monkeypatch.setenv(
+        "SUPPORT_AGENT_SQLITE_PATH", str(tmp_path / "wecom_dispatch_system_mapping_trace.db")
+    )
+    monkeypatch.setenv("LLM_ENABLED", "0")
+    monkeypatch.setenv(
+        "WECOM_DISPATCH_TARGETS_JSON",
+        json.dumps(
+            {
+                "system:procurement": "group:proc-room:user:u_dispatch_bot",
+                "inbox:wecom.default": "group:ops-room:user:u_dispatch_bot",
+                "default": "group:default-room:user:u_dispatch_bot",
+            },
+            ensure_ascii=False,
+        ),
+    )
+    monkeypatch.setenv("WECOM_DISPATCH_AUTO_ENABLED", "1")
+
+    runtime = build_runtime("dev")
+    trace_id = "trace-dispatch-system-mapping-1"
+    result = process_wecom_message(
+        runtime,
+        {
+            "msgid": "mid-dispatch-system-mapping-1",
+            "chatid": "repair-room",
+            "chattype": "group",
+            "sender_id": "u_customer_03",
+            "text": "请帮我创建采购申请",
+            "req_id": trace_id,
+        },
+    )
+
+    assert result.status == "ok"
+    assert result.delivery_status == "dispatched"
+    assert result.collab_target is not None
+    assert result.collab_target["source"] == "mapping:system:procurement"
+    assert result.collab_target["matched_key"] == "system:procurement"
+    assert result.dispatch_decision is not None
+    assert result.dispatch_decision["route"]["system"] == "procurement"
+    assert result.dispatch_decision["route"]["matched_key"] == "system:procurement"
+
+    events = runtime.trace_logger.query_by_trace(trace_id, limit=500)
+    decision_events = [item for item in events if item.get("event_type") == "wecom_dispatch_decision"]
+    assert decision_events
+    assert decision_events[-1]["payload"]["system"] == "procurement"
+    assert decision_events[-1]["payload"]["matched_key"] == "system:procurement"
+
+    collab_egress_events = [
+        item
+        for item in events
+        if item.get("event_type") == "egress_rendered"
+        and item.get("session_id") == "group:proc-room:user:u_dispatch_bot"
+        and str(
+            (
+                (
+                    (item.get("payload") or {}).get("payload") or {}
+                ).get("metadata")
+                or {}
+            ).get("outbound_type")
+            or ""
+        )
+        == "collab_dispatch"
+    ]
+    assert collab_egress_events
+    collab_metadata = (
+        ((collab_egress_events[-1].get("payload") or {}).get("payload") or {}).get("metadata") or {}
+    )
+    assert collab_metadata.get("system") == "procurement"
+    assert collab_metadata.get("dispatch_matched_key") == "system:procurement"
 
 
 def test_wecom_dispatch_bridge_is_blocked_when_target_mapping_missing(
@@ -709,3 +789,112 @@ def test_wecom_dispatch_bridge_private_chat_supports_fault_report_and_progress_q
 
     assert _contains_private_detail(report_events) is False
     assert _contains_private_detail(progress_events) is False
+
+
+def test_wecom_dispatch_bridge_real_users_customer_operator_full_chain(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("SUPPORT_AGENT_ENV", "dev")
+    monkeypatch.setenv(
+        "SUPPORT_AGENT_SQLITE_PATH",
+        str(tmp_path / "wecom_dispatch_real_users_chain.db"),
+    )
+    monkeypatch.setenv("LLM_ENABLED", "0")
+    monkeypatch.setenv(
+        "WECOM_DISPATCH_TARGETS_JSON",
+        json.dumps(
+            {
+                "inbox:wecom.default": "group:ops-room:user:Yusongze",
+            },
+            ensure_ascii=False,
+        ),
+    )
+    monkeypatch.setenv("WECOM_DISPATCH_AUTO_ENABLED", "1")
+
+    runtime = build_runtime("dev")
+    customer_id = "keguonian"
+    operator_id = "Yusongze"
+
+    created = process_wecom_message(
+        runtime,
+        {
+            "msgid": "mid-real-users-create-1",
+            "chatid": "repair-room",
+            "chattype": "group",
+            "sender_id": customer_id,
+            "text": "空调不制冷，会议室温度持续升高，请尽快处理。",
+            "req_id": "trace-real-users-create-1",
+        },
+    )
+    assert created.status == "ok"
+    assert created.ticket_id
+    assert created.delivery_status == "dispatched"
+    assert created.collab_target is not None
+    assert created.collab_target["target_session_id"] == "group:ops-room:user:Yusongze"
+
+    claimed = process_wecom_message(
+        runtime,
+        {
+            "msgid": "mid-real-users-claim-1",
+            "chatid": "ops-room",
+            "chattype": "group",
+            "sender_id": operator_id,
+            "text": f"/claim {created.ticket_id}",
+            "req_id": "trace-real-users-claim-1",
+        },
+    )
+    assert claimed.status == "ok"
+    assert claimed.ticket_action == "collab_claim"
+    assert claimed.delivery_status == "dispatched"
+    assert claimed.collab_target is not None
+    assert claimed.collab_target["source"] == "workflow_cross_group_sync"
+    assert claimed.collab_target["target_session_id"] == f"group:repair-room:user:{customer_id}"
+
+    resolved = process_wecom_message(
+        runtime,
+        {
+            "msgid": "mid-real-users-resolve-1",
+            "chatid": "ops-room",
+            "chattype": "group",
+            "sender_id": operator_id,
+            "text": f"/resolve {created.ticket_id} 已完成现场处理并恢复。",
+            "req_id": "trace-real-users-resolve-1",
+        },
+    )
+    assert resolved.status == "ok"
+    assert resolved.ticket_action == "collab_resolve"
+
+    confirmed = process_wecom_message(
+        runtime,
+        {
+            "msgid": "mid-real-users-confirm-1",
+            "chatid": "repair-room",
+            "chattype": "group",
+            "sender_id": customer_id,
+            "text": "确认已解决，谢谢。",
+            "req_id": "trace-real-users-confirm-1",
+        },
+    )
+    assert confirmed.status == "ok"
+    assert confirmed.ticket_action == "collab_customer_confirm"
+
+    ticket_api = getattr(runtime.intake_workflow, "_ticket_api", None)
+    assert ticket_api is not None
+    closed_ticket = ticket_api.require_ticket(str(created.ticket_id))
+    assert closed_ticket.status == "closed"
+
+    followup = process_wecom_message(
+        runtime,
+        {
+            "msgid": "mid-real-users-followup-1",
+            "chatid": "repair-room",
+            "chattype": "group",
+            "sender_id": customer_id,
+            "text": "最后补充：影响范围是 A/B 两个区域共 30 人。",
+            "req_id": "trace-real-users-followup-1",
+        },
+    )
+    assert followup.status == "ok"
+    assert followup.ticket_id
+    assert followup.ticket_id != created.ticket_id

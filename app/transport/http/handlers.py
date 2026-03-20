@@ -40,6 +40,55 @@ from app.transport.http.routes import (
 
 ResponseLike = Any
 
+_VALID_KB_SOURCE_TYPES = {"faq", "sop", "history_case"}
+
+
+def _normalize_kb_tags(raw_tags: Any) -> list[str]:
+    if not isinstance(raw_tags, list):
+        return []
+    tags: list[str] = []
+    for item in raw_tags:
+        text = str(item).strip()
+        if text:
+            tags.append(text)
+    return tags
+
+
+def _normalize_kb_metadata(raw_metadata: Any) -> dict[str, Any]:
+    if not isinstance(raw_metadata, dict):
+        return {}
+    try:
+        normalized = json.loads(
+            json.dumps(raw_metadata, ensure_ascii=False, default=str)
+        )
+    except TypeError:
+        return {}
+    if not isinstance(normalized, dict):
+        return {}
+    return normalized
+
+
+def _normalize_kb_record(
+    raw_record: dict[str, Any], *, preserve_updated_at: bool
+) -> dict[str, Any]:
+    updated_at_raw = raw_record.get("updated_at")
+    updated_at = (
+        str(updated_at_raw).strip()
+        if preserve_updated_at and isinstance(updated_at_raw, str)
+        else ""
+    )
+    if not updated_at:
+        updated_at = datetime.now(UTC).isoformat()
+    return {
+        "doc_id": str(raw_record.get("doc_id") or "").strip(),
+        "source_type": str(raw_record.get("source_type") or "").strip(),
+        "title": str(raw_record.get("title") or "").strip(),
+        "content": str(raw_record.get("content") or "").strip(),
+        "tags": _normalize_kb_tags(raw_record.get("tags")),
+        "updated_at": updated_at,
+        "metadata": _normalize_kb_metadata(raw_record.get("metadata")),
+    }
+
 
 def try_handle_session_read_routes(
     *,
@@ -803,7 +852,10 @@ def try_handle_kb_routes(
     write_kb_docs: Callable[[Any, list[dict[str, Any]]], None],
 ) -> ResponseLike | None:
     if method == "GET" and path == "/api/kb":
-        kb_docs = load_kb_docs(runtime.kb_store_path)
+        kb_docs = [
+            _normalize_kb_record(item, preserve_updated_at=True)
+            for item in load_kb_docs(runtime.kb_store_path)
+        ]
         source_type = (query.get("source_type") or "").strip()
         q = (query.get("q") or "").strip().lower()
         page = parse_int(query.get("page"), default=1, minimum=1, maximum=100000)
@@ -834,8 +886,9 @@ def try_handle_kb_routes(
         source_type = str(payload.get("source_type") or "").strip()
         title = str(payload.get("title") or "").strip()
         content = str(payload.get("content") or "").strip()
-        tags = payload.get("tags") or []
-        if source_type not in {"faq", "sop", "history_case"}:
+        tags = _normalize_kb_tags(payload.get("tags"))
+        metadata = _normalize_kb_metadata(payload.get("metadata"))
+        if source_type not in _VALID_KB_SOURCE_TYPES:
             return error_response(
                 req_id,
                 code="invalid_source_type",
@@ -848,36 +901,61 @@ def try_handle_kb_routes(
                 message="title and content are required",
             )
 
-        kb_docs = load_kb_docs(runtime.kb_store_path)
+        kb_docs = [
+            _normalize_kb_record(item, preserve_updated_at=True)
+            for item in load_kb_docs(runtime.kb_store_path)
+        ]
         if any(str(item.get("doc_id")) == doc_id for item in kb_docs):
             return error_response(
                 req_id,
                 code="doc_exists",
                 message=f"doc {doc_id} already exists",
             )
-        record = {
-            "doc_id": doc_id,
-            "source_type": source_type,
-            "title": title,
-            "content": content,
-            "tags": [str(item) for item in tags if str(item).strip()],
-            "updated_at": datetime.now(UTC).isoformat(),
-        }
+        record = _normalize_kb_record(
+            {
+                "doc_id": doc_id,
+                "source_type": source_type,
+                "title": title,
+                "content": content,
+                "tags": tags,
+                "metadata": metadata,
+                "updated_at": datetime.now(UTC).isoformat(),
+            },
+            preserve_updated_at=True,
+        )
         kb_docs.append(record)
         write_kb_docs(runtime.kb_store_path, kb_docs)
         return json_response(req_id, {"data": record}, status=HTTPStatus.CREATED)
 
     if method == "PATCH" and (match := KB_DOC_RE.match(path)):
         doc_id = match.group("doc_id")
-        kb_docs = load_kb_docs(runtime.kb_store_path)
+        kb_docs = [
+            _normalize_kb_record(item, preserve_updated_at=True)
+            for item in load_kb_docs(runtime.kb_store_path)
+        ]
+        if "source_type" in payload:
+            next_source_type = str(payload.get("source_type") or "").strip()
+            if next_source_type not in _VALID_KB_SOURCE_TYPES:
+                return error_response(
+                    req_id,
+                    code="invalid_source_type",
+                    message="source_type must be faq/sop/history_case",
+                )
         updated_doc: dict[str, Any] | None = None
         for item in kb_docs:
             if str(item.get("doc_id")) != doc_id:
                 continue
-            for key in ("title", "content", "source_type", "tags"):
+            for key in ("title", "content", "source_type"):
                 if key in payload:
-                    item[key] = payload[key]
+                    item[key] = str(payload.get(key) or "").strip()
+            if "tags" in payload:
+                item["tags"] = _normalize_kb_tags(payload.get("tags"))
+            if "metadata" in payload:
+                item["metadata"] = _normalize_kb_metadata(payload.get("metadata"))
             item["updated_at"] = datetime.now(UTC).isoformat()
+            normalized = _normalize_kb_record(item, preserve_updated_at=True)
+            item.clear()
+            item.update(normalized)
             updated_doc = item
             break
         if updated_doc is None:
@@ -892,7 +970,10 @@ def try_handle_kb_routes(
 
     if method == "DELETE" and (match := KB_DOC_RE.match(path)):
         doc_id = match.group("doc_id")
-        kb_docs = load_kb_docs(runtime.kb_store_path)
+        kb_docs = [
+            _normalize_kb_record(item, preserve_updated_at=True)
+            for item in load_kb_docs(runtime.kb_store_path)
+        ]
         remaining = [item for item in kb_docs if str(item.get("doc_id")) != doc_id]
         if len(remaining) == len(kb_docs):
             return error_response(

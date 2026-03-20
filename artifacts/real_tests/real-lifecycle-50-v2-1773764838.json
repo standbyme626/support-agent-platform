@@ -1,0 +1,1349 @@
+{
+  "run_id": "real-lifecycle-50-v2-1773764838",
+  "generated_at": "2026-03-17T16:32:02.955757+00:00",
+  "total": 50,
+  "passed": 46,
+  "failed": 4,
+  "state": {
+    "t1": "TCK-8F4899A13E",
+    "t2": "TCK-97851050B1",
+    "t3": "TCK-D3EC877D94",
+    "t4": "TCK-26F327B5F2"
+  },
+  "steps": [
+    {
+      "idx": 1,
+      "name": "create_issue_1",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s01",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m01",
+      "role": "customer",
+      "chat": "repair",
+      "sender_id": "keguonian",
+      "text": "5楼会议室投影无信号，HDMI切换无效，请处理。",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "handoff",
+      "delivery_status": "dispatched",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ:user:keguonian",
+          "action": "appchat_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        },
+        {
+          "session_id": "dm:keguonian",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        },
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:u_dispatch_bot",
+          "action": "appchat_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 2,
+      "name": "claim_slash",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s02",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m02",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "/claim TCK-8F4899A13E",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_claim",
+      "delivery_status": "dispatched",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        },
+        {
+          "session_id": "group:wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ:user:keguonian",
+          "action": "appchat_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 3,
+      "name": "claim_natural",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s03",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m03",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "认领工单 TCK-8F4899A13E",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_claim",
+      "delivery_status": "dispatched",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        },
+        {
+          "session_id": "group:wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ:user:keguonian",
+          "action": "appchat_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 4,
+      "name": "status_slash",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s04",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m04",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "/status TCK-8F4899A13E",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_status",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 5,
+      "name": "status_natural",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s05",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m05",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "查看状态 TCK-8F4899A13E",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_status",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 6,
+      "name": "priority_slash",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s06",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m06",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "/priority TCK-8F4899A13E P1",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_priority",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 7,
+      "name": "priority_natural",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s07",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m07",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "紧急 TCK-8F4899A13E",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_priority",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 8,
+      "name": "needs_info_slash",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s08",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m08",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "/needs-info TCK-8F4899A13E 请补充故障照片",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_needs_info",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 9,
+      "name": "needs_info_natural",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s09",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m09",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "请补充信息 TCK-8F4899A13E 需要错误截图",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_needs_info",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 10,
+      "name": "customer_supplement",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s10",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m10",
+      "role": "customer",
+      "chat": "repair",
+      "sender_id": "keguonian",
+      "text": "补充：屏幕左上角有雪花点，重启后仍复现。",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "handoff",
+      "delivery_status": "dispatched",
+      "api_delivered": [
+        {
+          "session_id": "dm:keguonian",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        },
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:u_dispatch_bot",
+          "action": "appchat_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 11,
+      "name": "assign_slash",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s11",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m11",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "/assign TCK-8F4899A13E Yusongze",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_assign",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 12,
+      "name": "assign_natural",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s12",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m12",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "分配给 Yusongze TCK-8F4899A13E",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_assign",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 13,
+      "name": "reassign_slash",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s13",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m13",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "/reassign TCK-8F4899A13E Yusongze",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_reassign",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 14,
+      "name": "escalate_slash",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s14",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m14",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "/escalate TCK-8F4899A13E 需要主管介入",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_escalate",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 15,
+      "name": "escalate_natural",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s15",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m15",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "升级处理 TCK-8F4899A13E 影响范围扩大",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_escalate",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 16,
+      "name": "state_in_progress",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s16",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m16",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "/state TCK-8F4899A13E in_progress",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_command_failed",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": false,
+      "reasons": [
+        "ticket_action=collab_command_failed expected=collab_state"
+      ]
+    },
+    {
+      "idx": 17,
+      "name": "state_waiting_customer",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s17",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m17",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "/state TCK-8F4899A13E waiting_customer",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_state",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 18,
+      "name": "resolve_slash",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s18",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m18",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "/resolve TCK-8F4899A13E 已更换转接器并恢复显示",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_resolve",
+      "delivery_status": "dispatched",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        },
+        {
+          "session_id": "group:wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ:user:keguonian",
+          "action": "appchat_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 19,
+      "name": "customer_confirm_natural",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s19",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m19",
+      "role": "customer",
+      "chat": "repair",
+      "sender_id": "keguonian",
+      "text": "确认已解决",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_customer_confirm",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ:user:keguonian",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 20,
+      "name": "reopen_slash",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s20",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m20",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "/reopen TCK-8F4899A13E 用户反馈偶发黑屏",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_reopen",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 21,
+      "name": "reopen_natural",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s21",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m21",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "重新打开工单 TCK-8F4899A13E",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_command_failed",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": false,
+      "reasons": [
+        "ticket_action=collab_command_failed expected=collab_reopen"
+      ]
+    },
+    {
+      "idx": 22,
+      "name": "resolve_slash_2",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s22",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m22",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "/resolve TCK-8F4899A13E 二次排查后稳定",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_resolve",
+      "delivery_status": "dispatched",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        },
+        {
+          "session_id": "group:wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ:user:keguonian",
+          "action": "appchat_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 23,
+      "name": "customer_confirm_slash",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s23",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m23",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "/customer-confirm TCK-8F4899A13E 用户电话确认恢复",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_customer_confirm",
+      "delivery_status": "dispatched",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        },
+        {
+          "session_id": "group:wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ:user:keguonian",
+          "action": "appchat_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 24,
+      "name": "reopen_before_close_compat",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s24",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m24",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "/reopen TCK-8F4899A13E 做兼容关闭回归",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_reopen",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 25,
+      "name": "close_compat_slash",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s25",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m25",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "/close TCK-8F4899A13E 兼容指令关闭",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_close_compat",
+      "delivery_status": "dispatched",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        },
+        {
+          "session_id": "group:wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ:user:keguonian",
+          "action": "appchat_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 26,
+      "name": "end_session_slash",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s26",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m26",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "/end-session TCK-8F4899A13E 本单结束会话",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_end_session",
+      "delivery_status": "dispatched",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        },
+        {
+          "session_id": "group:wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ:user:keguonian",
+          "action": "appchat_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 27,
+      "name": "list_slash",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s27",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m27",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "/list",
+      "status": "ok",
+      "ticket_id": null,
+      "ticket_action": "list_tickets",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 28,
+      "name": "list_natural",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s28",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m28",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "查看工单列表",
+      "status": "ok",
+      "ticket_id": null,
+      "ticket_action": "list_tickets",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 29,
+      "name": "list_p1_natural",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s29",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m29",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "查看P1工单",
+      "status": "ok",
+      "ticket_id": null,
+      "ticket_action": "list_tickets",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 30,
+      "name": "list_pending_natural",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s30",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m30",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "待处理工单列表",
+      "status": "ok",
+      "ticket_id": null,
+      "ticket_action": "list_tickets",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 31,
+      "name": "customer_session_state",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s31",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m31",
+      "role": "customer",
+      "chat": "repair",
+      "sender_id": "keguonian",
+      "text": "/state",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "collab_command_invalid",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ:user:keguonian",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 32,
+      "name": "customer_new_mode",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s32",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m32",
+      "role": "customer",
+      "chat": "repair",
+      "sender_id": "keguonian",
+      "text": "/new",
+      "status": "ok",
+      "ticket_id": "TCK-8F4899A13E",
+      "ticket_action": "new_issue_mode",
+      "delivery_status": "dispatched",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ:user:keguonian",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        },
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:u_dispatch_bot",
+          "action": "appchat_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 33,
+      "name": "create_issue_2",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s33",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m33",
+      "role": "customer",
+      "chat": "repair",
+      "sender_id": "keguonian",
+      "text": "新问题：3楼打印机报错E103，卡纸并报警。",
+      "status": "ok",
+      "ticket_id": "TCK-97851050B1",
+      "ticket_action": "handoff",
+      "delivery_status": "dispatched",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ:user:keguonian",
+          "action": "appchat_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        },
+        {
+          "session_id": "dm:keguonian",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        },
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:u_dispatch_bot",
+          "action": "appchat_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 34,
+      "name": "customer_end_mode",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s34",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m34",
+      "role": "customer",
+      "chat": "repair",
+      "sender_id": "keguonian",
+      "text": "/end",
+      "status": "ok",
+      "ticket_id": "TCK-97851050B1",
+      "ticket_action": "session_end",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ:user:keguonian",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 35,
+      "name": "create_issue_3",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s35",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m35",
+      "role": "customer",
+      "chat": "repair",
+      "sender_id": "keguonian",
+      "text": "另一个问题：门禁刷卡无响应，前台无法进门。",
+      "status": "ok",
+      "ticket_id": "TCK-D3EC877D94",
+      "ticket_action": "handoff",
+      "delivery_status": "dispatched",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ:user:keguonian",
+          "action": "appchat_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        },
+        {
+          "session_id": "dm:keguonian",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        },
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:u_dispatch_bot",
+          "action": "appchat_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 36,
+      "name": "view_ticket_detail",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s36",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m36",
+      "role": "customer",
+      "chat": "repair",
+      "sender_id": "keguonian",
+      "text": "查看工单详情 TCK-97851050B1",
+      "status": "ok",
+      "ticket_id": "TCK-D3EC877D94",
+      "ticket_action": "view_ticket_detail",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "dm:keguonian",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 37,
+      "name": "set_active_t2",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s37",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m37",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "/status TCK-97851050B1",
+      "status": "ok",
+      "ticket_id": "TCK-97851050B1",
+      "ticket_action": "collab_status",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 38,
+      "name": "link_slash",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s38",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m38",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "/link TCK-D3EC877D94",
+      "status": "ok",
+      "ticket_id": "TCK-D3EC877D94",
+      "ticket_action": "collab_command_invalid",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": false,
+      "reasons": [
+        "ticket_action=collab_command_invalid expected=collab_link"
+      ]
+    },
+    {
+      "idx": 39,
+      "name": "link_natural",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s39",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m39",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "关联工单 TCK-97851050B1 TCK-D3EC877D94",
+      "status": "ok",
+      "ticket_id": "TCK-97851050B1",
+      "ticket_action": "collab_link",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 40,
+      "name": "set_active_t3",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s40",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m40",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "/status TCK-D3EC877D94",
+      "status": "ok",
+      "ticket_id": "TCK-D3EC877D94",
+      "ticket_action": "collab_status",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 41,
+      "name": "merge_slash",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s41",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m41",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "/merge TCK-97851050B1",
+      "status": "ok",
+      "ticket_id": "TCK-97851050B1",
+      "ticket_action": "collab_command_invalid",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": false,
+      "reasons": [
+        "ticket_action=collab_command_invalid expected=collab_merge"
+      ]
+    },
+    {
+      "idx": 42,
+      "name": "customer_new_mode_2",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s42",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m42",
+      "role": "customer",
+      "chat": "repair",
+      "sender_id": "keguonian",
+      "text": "/new",
+      "status": "ok",
+      "ticket_id": "TCK-D3EC877D94",
+      "ticket_action": "new_issue_mode",
+      "delivery_status": "dispatched",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ:user:keguonian",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        },
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:u_dispatch_bot",
+          "action": "appchat_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 43,
+      "name": "create_issue_4",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s43",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m43",
+      "role": "customer",
+      "chat": "repair",
+      "sender_id": "keguonian",
+      "text": "新问题：A区网络抖动，视频会议频繁中断。",
+      "status": "ok",
+      "ticket_id": "TCK-26F327B5F2",
+      "ticket_action": "create_ticket",
+      "delivery_status": "dispatched",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ:user:keguonian",
+          "action": "appchat_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        },
+        {
+          "session_id": "dm:keguonian",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        },
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:u_dispatch_bot",
+          "action": "appchat_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 44,
+      "name": "claim_t4",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s44",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m44",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "/claim TCK-26F327B5F2",
+      "status": "ok",
+      "ticket_id": "TCK-26F327B5F2",
+      "ticket_action": "collab_claim",
+      "delivery_status": "dispatched",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        },
+        {
+          "session_id": "group:wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ:user:keguonian",
+          "action": "appchat_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 45,
+      "name": "resolve_natural",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s45",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m45",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "处理完成 TCK-26F327B5F2 已恢复网络稳定",
+      "status": "ok",
+      "ticket_id": "TCK-26F327B5F2",
+      "ticket_action": "collab_resolve",
+      "delivery_status": "dispatched",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        },
+        {
+          "session_id": "group:wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ:user:keguonian",
+          "action": "appchat_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 46,
+      "name": "customer_confirm_short",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s46",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m46",
+      "role": "customer",
+      "chat": "repair",
+      "sender_id": "keguonian",
+      "text": "好的",
+      "status": "ok",
+      "ticket_id": "TCK-26F327B5F2",
+      "ticket_action": "collab_customer_confirm",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ:user:keguonian",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 47,
+      "name": "reopen_t4",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s47",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m47",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "/reopen TCK-26F327B5F2 回归压测复发",
+      "status": "ok",
+      "ticket_id": "TCK-26F327B5F2",
+      "ticket_action": "collab_reopen",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 48,
+      "name": "operator_close_natural",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s48",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m48",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "强制关闭 TCK-26F327B5F2 人工收口",
+      "status": "ok",
+      "ticket_id": "TCK-26F327B5F2",
+      "ticket_action": "collab_operator_close",
+      "delivery_status": "dispatched",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        },
+        {
+          "session_id": "group:wrAEX9RgAAEuFUL3vLamRkD6m8MtU6bQ:user:keguonian",
+          "action": "appchat_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 49,
+      "name": "english_assign",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s49",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m49",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "assign TCK-26F327B5F2 Yusongze",
+      "status": "ok",
+      "ticket_id": "TCK-26F327B5F2",
+      "ticket_action": "collab_command_failed",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    },
+    {
+      "idx": 50,
+      "name": "english_priority",
+      "trace_id": "real-lifecycle-50-v2-1773764838-s50",
+      "msg_id": "real-lifecycle-50-v2-1773764838-m50",
+      "role": "operator",
+      "chat": "ops",
+      "sender_id": "Yusongze",
+      "text": "priority TCK-26F327B5F2 P2",
+      "status": "ok",
+      "ticket_id": "TCK-26F327B5F2",
+      "ticket_action": "collab_command_failed",
+      "delivery_status": "blocked_by_policy_gate",
+      "api_delivered": [
+        {
+          "session_id": "group:wrAEX9RgAAKNkRjmFs6f3f2z_tEPiT1A:user:Yusongze",
+          "action": "message_send",
+          "errcode": 0,
+          "errmsg": "ok"
+        }
+      ],
+      "ok": true,
+      "reasons": []
+    }
+  ]
+}

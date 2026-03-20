@@ -15,6 +15,11 @@ function toDateTimeText(value: string | null) {
   return parsed.toLocaleString();
 }
 
+function toMetadataString(metadata: Record<string, unknown>, key: string) {
+  const value = metadata[key];
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : "";
+}
+
 export function KbTable({
   rows,
   page,
@@ -47,6 +52,7 @@ export function KbTable({
                 <th>{t("文档 ID", "Doc ID")}</th>
                 <th>{t("类型", "Type")}</th>
                 <th>{t("标题", "Title")}</th>
+                <th>{t("来源", "Source")}</th>
                 <th>{t("标签", "Tags")}</th>
                 <th>{t("更新时间", "Updated")}</th>
                 <th>{t("操作", "Actions")}</th>
@@ -62,6 +68,27 @@ export function KbTable({
                 <td>
                   <div style={{ fontWeight: 600 }}>{item.title}</div>
                   <div style={{ color: "var(--muted)", fontSize: 12 }}>{item.content}</div>
+                </td>
+                <td>
+                  {(() => {
+                    const source = toMetadataString(item.metadata, "source_dataset");
+                    const license = toMetadataString(item.metadata, "license");
+                    const sourceUrl = toMetadataString(item.metadata, "source_url");
+                    const sourceText = [source, license].filter((text) => text.length > 0).join(" · ");
+                    if (!sourceText && !sourceUrl) {
+                      return "-";
+                    }
+                    return (
+                      <div style={{ fontSize: 12, color: "var(--muted)" }}>
+                        <div>{sourceText || "-"}</div>
+                        {sourceUrl ? (
+                          <a href={sourceUrl} target="_blank" rel="noreferrer">
+                            {t("数据来源链接", "Source Link")}
+                          </a>
+                        ) : null}
+                      </div>
+                    );
+                  })()}
                 </td>
                 <td>{item.tags.join(", ") || "-"}</td>
                 <td>{toDateTimeText(item.updated_at)}</td>

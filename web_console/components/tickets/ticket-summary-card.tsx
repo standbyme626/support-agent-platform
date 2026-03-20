@@ -3,29 +3,30 @@
 import { useI18n } from "@/lib/i18n";
 import type { TicketAssistResponse, TicketItem } from "@/lib/api/tickets";
 
-function renderMetadata(ticket: TicketItem) {
-  const targetKeys = [
-    "service_type",
-    "community_name",
-    "building",
-    "parking_lot",
-    "approval_required",
-    "risk_level"
-  ];
+function toInlineValue(raw: unknown) {
+  if (raw === null || raw === undefined || raw === "") {
+    return "-";
+  }
+  if (typeof raw === "string" || typeof raw === "number" || typeof raw === "boolean") {
+    return String(raw);
+  }
+  try {
+    const serialized = JSON.stringify(raw);
+    return serialized.length > 120 ? `${serialized.slice(0, 117)}...` : serialized;
+  } catch {
+    return String(raw);
+  }
+}
 
-  return targetKeys
-    .map((key) => {
-      const raw = ticket.metadata?.[key];
-      if (raw === undefined || raw === null || raw === "") {
-        return null;
-      }
-      return (
-        <li key={key}>
-          <strong>{key}:</strong> {String(raw)}
-        </li>
-      );
-    })
-    .filter(Boolean);
+function buildContextRows(ticket: TicketItem, t: (zh: string, en: string) => string) {
+  const rows = [
+    { key: "service_type", label: t("服务类型", "Service"), value: ticket.metadata?.service_type },
+    { key: "community_name", label: t("小区", "Community"), value: ticket.metadata?.community_name },
+    { key: "building", label: t("楼栋", "Building"), value: ticket.metadata?.building },
+    { key: "parking_lot", label: t("停车位", "Parking Lot"), value: ticket.metadata?.parking_lot },
+    { key: "approval_required", label: t("审批要求", "Approval Required"), value: ticket.metadata?.approval_required }
+  ];
+  return rows.filter((row) => row.value !== undefined && row.value !== null && row.value !== "");
 }
 
 export function TicketSummaryCard({
@@ -36,7 +37,8 @@ export function TicketSummaryCard({
   assist: TicketAssistResponse | null;
 }) {
   const { t } = useI18n();
-  const metadataRows = renderMetadata(ticket);
+  const contextRows = buildContextRows(ticket, t);
+  const riskFlags = Array.isArray(assist?.risk_flags) ? assist.risk_flags : [];
   return (
     <article className="card">
       <div className="ops-card-title-row">
@@ -50,13 +52,16 @@ export function TicketSummaryCard({
         {t("最新消息", "Latest message")}: {ticket.latest_message}
       </div>
       <div style={{ marginTop: 10 }}>
-        <strong>{t("风险标签", "Risk flags")}:</strong> {assist?.risk_flags?.join(", ") || "-"}
+        <strong>{t("风险标签", "Risk flags")}:</strong> {riskFlags.join(", ") || "-"}
       </div>
-      <div style={{ marginTop: 6, color: "var(--muted)", fontSize: 12 }}>
-        {t("提示词版本", "Prompt version")}: {assist?.prompt_version ?? "-"}
-      </div>
-      {metadataRows.length > 0 ? (
-        <ul className="ops-inline-list" style={{ marginTop: 10, marginBottom: 0 }}>{metadataRows}</ul>
+      {contextRows.length > 0 ? (
+        <ul className="ops-inline-list" style={{ marginTop: 10, marginBottom: 0 }}>
+          {contextRows.map((row) => (
+            <li key={row.key}>
+              <strong>{row.label}:</strong> {toInlineValue(row.value)}
+            </li>
+          ))}
+        </ul>
       ) : null}
     </article>
   );

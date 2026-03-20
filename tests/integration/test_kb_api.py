@@ -55,10 +55,15 @@ def test_kb_api_crud_flow(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
                     "title": "门禁常见问题",
                     "content": "先检查授权，再重启门禁控制器。",
                     "tags": ["access", "faq"],
+                    "metadata": {
+                        "source_dataset": "internal_seed",
+                        "license": "Apache-2.0",
+                    },
                 },
             )
             assert created["data"]["doc_id"] == "doc_kb_api_001"
             assert created["data"]["source_type"] == "faq"
+            assert created["data"]["metadata"]["source_dataset"] == "internal_seed"
 
             listed = _json(
                 client,
@@ -76,10 +81,15 @@ def test_kb_api_crud_flow(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
                     "title": "门禁FAQ更新版",
                     "content": "先核验权限并检查网络状态。",
                     "tags": ["access", "updated"],
+                    "metadata": {
+                        "source_dataset": "internal_seed_v2",
+                        "license": "CC BY 4.0",
+                    },
                 },
             )
             assert updated["data"]["doc_id"] == "doc_kb_api_001"
             assert updated["data"]["title"] == "门禁FAQ更新版"
+            assert updated["data"]["metadata"]["source_dataset"] == "internal_seed_v2"
 
             queried = _json(
                 client,

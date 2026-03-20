@@ -61,11 +61,23 @@ def test_ticket_api_full_lifecycle(tmp_path: Path) -> None:
     assert closed.resolution_code == "BILLING_REFUND"
     assert closed.closed_at is not None
 
+    reopened = api.reopen_ticket(
+        ticket.ticket_id,
+        actor_id="agent-a",
+        reason="客户反馈问题复现",
+    )
+    assert reopened.status == "open"
+    assert reopened.handoff_state == "in_progress"
+    assert reopened.lifecycle_stage == "awaiting_human"
+    assert reopened.resolution_note is None
+    assert reopened.closed_at is None
+
     events = api.list_events(ticket.ticket_id)
-    assert len(events) >= 6
+    assert len(events) >= 7
     event_types = [event.event_type for event in events]
     assert "ticket_created" in event_types
     assert "ticket_assigned" in event_types
     assert "ticket_escalated" in event_types
     assert "ticket_resolved" in event_types
     assert "ticket_closed" in event_types
+    assert "ticket_reopened" in event_types

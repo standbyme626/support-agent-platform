@@ -33,6 +33,10 @@ DEFAULT_WECOM_OUTBOUND_CHUNK_CHARS_ENV = "WECOM_BRIDGE_OUTBOUND_CHUNK_CHARS"
 DEFAULT_WECOM_OUTBOUND_CHUNK_CHARS = 1200
 DEFAULT_GROUP_FAST_REPLY_MIN_CHARS = 60
 DEFAULT_PRIVATE_DETAIL_ASYNC_ENV = "WECOM_GROUP_PRIVATE_DETAIL_ASYNC"
+DEFAULT_PRIVATE_DETAIL_RETRY_ATTEMPTS_ENV = "WECOM_GROUP_PRIVATE_DETAIL_RETRY_ATTEMPTS"
+DEFAULT_PRIVATE_DETAIL_RETRY_DELAY_MS_ENV = "WECOM_GROUP_PRIVATE_DETAIL_RETRY_DELAY_MS"
+DEFAULT_PRIVATE_DETAIL_RETRY_ATTEMPTS = 3
+DEFAULT_PRIVATE_DETAIL_RETRY_DELAY_MS = 300
 DEFAULT_GROUP_TEMPLATE_DEDUP_WINDOW_SECONDS_ENV = "WECOM_GROUP_TEMPLATE_DEDUP_WINDOW_SECONDS"
 DEFAULT_GROUP_TEMPLATE_DEDUP_WINDOW_SECONDS = 60
 _PRIORITY_LABELS_ZH: dict[str, str] = {
@@ -108,6 +112,8 @@ def process_wecom_message(runtime: _RuntimeLike, payload: dict[str, Any]) -> Bri
     sender_id = _pick_string(
         payload,
         "sender_id",
+        "sender_id.user_id",
+        "sender_id.userid",
         "from_userid",
         "from_user_id",
         "fromUserId",
@@ -118,6 +124,9 @@ def process_wecom_message(runtime: _RuntimeLike, payload: dict[str, Any]) -> Bri
         "sender.userid",
         "sender.user_id",
         "sender.id",
+        "sender.sender_id.user_id",
+        "sender.sender_id.userid",
+        "sender.sender_id.userId",
         "userid",
         "user_id",
         "UserID",
@@ -208,6 +217,13 @@ def process_wecom_message(runtime: _RuntimeLike, payload: dict[str, Any]) -> Bri
     priority = str(getattr(intake, "priority", "") or "").strip()
     collab_push = getattr(intake, "collab_push", None)
     inbox = str(envelope.metadata.get("inbox") or "wecom.default").strip()
+    system_key = str(
+        getattr(intake, "system", "")
+        or getattr(intake, "system_key", "")
+        or envelope.metadata.get("system")
+        or envelope.metadata.get("system_key")
+        or ""
+    ).strip().lower()
     reply_text = str(getattr(intake, "reply_text", "") or "")
     user_receipt_body = reply_text
     private_detail_body = ""
@@ -237,11 +253,15 @@ def process_wecom_message(runtime: _RuntimeLike, payload: dict[str, Any]) -> Bri
 
     dispatch_decision = _build_dispatch_decision(
         runtime=runtime,
-        query_text=f"dispatch ticket={ticket_id or 'unknown'} queue={queue} inbox={inbox}",
+        query_text=(
+            f"dispatch ticket={ticket_id or 'unknown'} "
+            f"system={system_key or 'unknown'} queue={queue} inbox={inbox}"
+        ),
         queue=queue,
     )
     collab_target = _resolve_collab_target(
         payload=payload,
+        system_key=system_key,
         queue=queue,
         inbox=inbox,
         collab_push=collab_push if isinstance(collab_push, dict) else None,
@@ -257,8 +277,10 @@ def process_wecom_message(runtime: _RuntimeLike, payload: dict[str, Any]) -> Bri
     )
     dispatch_decision["policy_gate"] = policy_gate
     dispatch_decision["route"] = {
+        "system": system_key,
         "queue": queue,
         "inbox": inbox,
+        "matched_key": collab_target.get("matched_key"),
         "target_session_id": collab_target.get("target_session_id"),
         "target_group_id": collab_target.get("target_group_id"),
         "source": collab_target.get("source"),
@@ -271,6 +293,8 @@ def process_wecom_message(runtime: _RuntimeLike, payload: dict[str, Any]) -> Bri
         ticket_id=ticket_id,
         session_id=envelope.session_id,
         payload={
+            "system": system_key,
+            "matched_key": collab_target.get("matched_key"),
             "ticket_action": ticket_action,
             "decision": dispatch_decision,
             "collab_target": collab_target,
@@ -286,6 +310,8 @@ def process_wecom_message(runtime: _RuntimeLike, payload: dict[str, Any]) -> Bri
             "trace_id": req_id,
             "ticket_id": ticket_id,
             "outbound_type": "user_receipt",
+            "system": system_key,
+            "dispatch_matched_key": collab_target.get("matched_key"),
             **user_receipt_metadata,
         },
     )
@@ -306,6 +332,8 @@ def process_wecom_message(runtime: _RuntimeLike, payload: dict[str, Any]) -> Bri
                 "trace_id": req_id,
                 "ticket_id": ticket_id,
                 "outbound_type": "private_detail",
+                "system": system_key,
+                "dispatch_matched_key": collab_target.get("matched_key"),
                 "reply_mode": "group_fast_private_detail",
                 "source_session_id": envelope.session_id,
             },
@@ -334,7 +362,9 @@ def process_wecom_message(runtime: _RuntimeLike, payload: dict[str, Any]) -> Bri
                     "trace_id": req_id,
                     "ticket_id": ticket_id,
                     "outbound_type": "collab_dispatch",
+                    "system": system_key,
                     "dispatch_reason": str(policy_gate.get("reason") or ""),
+                    "dispatch_matched_key": collab_target.get("matched_key"),
                     "dispatch_target": target_session_id,
                     "target_group_id": collab_target.get("target_group_id"),
                 },
@@ -351,6 +381,8 @@ def process_wecom_message(runtime: _RuntimeLike, payload: dict[str, Any]) -> Bri
             ticket_id=ticket_id,
             session_id=envelope.session_id,
             payload={
+                "system": system_key,
+                "matched_key": collab_target.get("matched_key"),
                 "reason": policy_gate.get("reason"),
                 "ticket_action": ticket_action,
                 "target_session_id": collab_target.get("target_session_id"),
@@ -372,6 +404,8 @@ def process_wecom_message(runtime: _RuntimeLike, payload: dict[str, Any]) -> Bri
         ticket_id=ticket_id,
         session_id=envelope.session_id,
         payload={
+            "system": system_key,
+            "matched_key": collab_target.get("matched_key"),
             "delivery_status": delivery_status,
             "channel_route": channel_route,
         },
@@ -425,6 +459,7 @@ def _build_dispatch_decision(
 def _resolve_collab_target(
     *,
     payload: dict[str, Any],
+    system_key: str,
     queue: str,
     inbox: str,
     collab_push: dict[str, Any] | None,
@@ -434,11 +469,20 @@ def _resolve_collab_target(
         if explicit_session_id:
             return {
                 "source": "workflow_cross_group_sync",
+                "matched_key": "workflow_cross_group_sync",
                 "target_session_id": explicit_session_id,
                 "target_group_id": _group_id_from_session_id(explicit_session_id),
             }
     mapping = _load_dispatch_targets(payload)
-    for key in (f"queue:{queue}", f"inbox:{inbox}", queue, inbox, "default"):
+    for key in (
+        f"system:{system_key}",
+        system_key,
+        f"queue:{queue}",
+        f"inbox:{inbox}",
+        queue,
+        inbox,
+        "default",
+    ):
         if not key:
             continue
         target = _coerce_target(mapping.get(key))
@@ -446,11 +490,13 @@ def _resolve_collab_target(
             continue
         return {
             "source": f"mapping:{key}",
+            "matched_key": key,
             "target_session_id": target["target_session_id"],
             "target_group_id": target.get("target_group_id"),
         }
     return {
         "source": "mapping:none",
+        "matched_key": None,
         "target_session_id": None,
         "target_group_id": None,
     }
@@ -615,7 +661,25 @@ def _resolve_collab_message(
     compact_detail = re.sub(r"\s+", " ", detail_text).strip()
     if len(compact_detail) > 800:
         compact_detail = f"{compact_detail[:800].rstrip()}…"
+    reported_by = str((collab_push or {}).get("customer_id") or "").strip() or "未知"
+    reported_at = str((collab_push or {}).get("created_at") or "").strip()
+    if reported_at:
+        reported_at = reported_at.replace("T", " ").split("+", 1)[0]
+    else:
+        reported_at = time.strftime("%Y-%m-%d %H:%M")
     normalized_action = str(ticket_action or "").strip()
+    if normalized_action in {"create_ticket", "handoff", "conservative_ticket"} and not has_existing_ticket_context:
+        detail_line = compact_detail or "（未提供问题描述）"
+        return (
+            f"新工单 {ticket_label} 已创建\n"
+            "────────────────\n"
+            f"📌 优先级：{priority_label}\n"
+            f"📥 队列：人工接力 / {queue_label}\n"
+            f"👤 报修人：{reported_by}\n"
+            f"🕒 报修时间：{reported_at}\n"
+            "────────────────\n"
+            f"📝 工单详情：{detail_line}"
+        )
     if normalized_action == "clarification_required":
         if compact_detail:
             return (
@@ -680,8 +744,6 @@ def _build_group_fast_reply(
     if str(chat_type or "").strip().lower() != "group":
         return None
     detail = str(reply_text or "").strip()
-    if len(detail) < DEFAULT_GROUP_FAST_REPLY_MIN_CHARS:
-        return None
     action = str(ticket_action or "").strip()
     if action.startswith("collab_"):
         return None
@@ -695,6 +757,8 @@ def _build_group_fast_reply(
         return f"已收到进度查询，工单 {ticket_label} 的详细进展已私发给你，请留意。"
     if action == "clarification_required":
         return detail
+    if len(detail) < DEFAULT_GROUP_FAST_REPLY_MIN_CHARS:
+        return None
     return f"已收到，工单 {ticket_label} 的详细处理说明已私发给你，请留意。"
 
 
@@ -734,13 +798,17 @@ def _send_private_detail(
     body: str,
     metadata: dict[str, Any],
 ) -> None:
+    retry_attempts = _private_detail_retry_attempts()
+    retry_delay_seconds = _private_detail_retry_delay_seconds()
     if not _truthy_env(os.getenv(DEFAULT_PRIVATE_DETAIL_ASYNC_ENV), default=True):
-        _send_outbound_if_supported(
+        _send_private_detail_with_retry(
             runtime,
             channel=channel,
             session_id=session_id,
             body=body,
             metadata=metadata,
+            retry_attempts=retry_attempts,
+            retry_delay_seconds=retry_delay_seconds,
         )
         return
 
@@ -754,18 +822,24 @@ def _send_private_detail(
             "channel": channel,
             "session_id": session_id,
             "outbound_type": str(metadata.get("outbound_type") or ""),
+            "system": str(metadata.get("system") or ""),
+            "dispatch_matched_key": metadata.get("dispatch_matched_key"),
             "body_chars": len(str(body or "")),
+            "retry_attempts": retry_attempts,
+            "retry_delay_ms": int(retry_delay_seconds * 1000),
         },
     )
 
     thread = threading.Thread(
-        target=_send_outbound_if_supported,
+        target=_send_private_detail_with_retry,
         kwargs={
             "runtime": runtime,
             "channel": channel,
             "session_id": session_id,
             "body": body,
             "metadata": metadata,
+            "retry_attempts": retry_attempts,
+            "retry_delay_seconds": retry_delay_seconds,
         },
         daemon=True,
         name="wecom-private-detail",
@@ -830,6 +904,62 @@ def _resolve_ticket_api(runtime: _RuntimeLike) -> Any | None:
     if from_intake is not None:
         return from_intake
     return getattr(intake, "ticket_api", None)
+
+
+def _send_private_detail_with_retry(
+    runtime: _RuntimeLike,
+    *,
+    channel: str,
+    session_id: str,
+    body: str,
+    metadata: dict[str, Any],
+    retry_attempts: int,
+    retry_delay_seconds: float,
+) -> None:
+    max_attempts = max(1, int(retry_attempts))
+    trace_id = str(metadata.get("trace_id") or "")
+    ticket_id = str(metadata.get("ticket_id") or "").strip() or None
+    for attempt in range(1, max_attempts + 1):
+        sent = _send_outbound_if_supported(
+            runtime,
+            channel=channel,
+            session_id=session_id,
+            body=body,
+            metadata=metadata,
+        )
+        _trace_dispatch_event(
+            runtime,
+            event_type="wecom_private_detail_attempt",
+            trace_id=trace_id,
+            ticket_id=ticket_id,
+            session_id=session_id,
+            payload={
+                "attempt": attempt,
+                "max_attempts": max_attempts,
+                "sent": sent,
+                "retry_delay_ms": int(retry_delay_seconds * 1000),
+            },
+        )
+        if sent:
+            _trace_dispatch_event(
+                runtime,
+                event_type="wecom_private_detail_delivered",
+                trace_id=trace_id,
+                ticket_id=ticket_id,
+                session_id=session_id,
+                payload={"attempt": attempt, "max_attempts": max_attempts},
+            )
+            return
+        if attempt < max_attempts and retry_delay_seconds > 0:
+            time.sleep(retry_delay_seconds)
+    _trace_dispatch_event(
+        runtime,
+        event_type="wecom_private_detail_failed",
+        trace_id=trace_id,
+        ticket_id=ticket_id,
+        session_id=session_id,
+        payload={"attempts": max_attempts},
+    )
 
 
 def _send_outbound_if_supported(
@@ -1034,6 +1164,29 @@ def _truthy_env(raw: str | None, *, default: bool) -> bool:
     if value in {"0", "false", "no", "off"}:
         return False
     return default
+
+
+def _private_detail_retry_attempts() -> int:
+    raw = os.getenv(DEFAULT_PRIVATE_DETAIL_RETRY_ATTEMPTS_ENV, "").strip()
+    if not raw:
+        return DEFAULT_PRIVATE_DETAIL_RETRY_ATTEMPTS
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return DEFAULT_PRIVATE_DETAIL_RETRY_ATTEMPTS
+    return max(1, min(parsed, 8))
+
+
+def _private_detail_retry_delay_seconds() -> float:
+    raw = os.getenv(DEFAULT_PRIVATE_DETAIL_RETRY_DELAY_MS_ENV, "").strip()
+    if not raw:
+        return DEFAULT_PRIVATE_DETAIL_RETRY_DELAY_MS / 1000
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return DEFAULT_PRIVATE_DETAIL_RETRY_DELAY_MS / 1000
+    parsed = max(0, min(parsed, 5000))
+    return parsed / 1000
 
 
 def _compose_session_id(*, sender_id: str, chat_id: str, chat_type: str) -> str:

@@ -67,6 +67,7 @@ from core.disambiguation import NewIssueDetector
 from core.hitl.approval_runtime import ApprovalRuntime
 from core.intent_router import IntentRouter
 from core.recommended_actions_engine import RecommendedActionsEngine
+from core.retrieval.normalized_docs import load_normalized_documents
 from core.retrieval.source_attribution import build_source_payloads
 from core.retriever import Retriever
 from core.summary_engine import SummaryEngine
@@ -192,18 +193,32 @@ def build_runtime(environment: str | None) -> OpsApiRuntime:
 
 
 def _seed_kb_docs() -> list[dict[str, Any]]:
-    docs = Retriever(_seed_root()).search_grounded("工单", top_k=200)
-    return [_kb_doc_to_json(item) for item in docs]
+    docs = load_normalized_documents(_seed_root())
+    sorted_docs = sorted(docs, key=lambda item: (item.source_type, item.doc_id))
+    return [
+        {
+            "doc_id": item.doc_id,
+            "source_type": item.source_type,
+            "title": item.title,
+            "content": item.content,
+            "tags": list(item.tags),
+            "updated_at": item.updated_at,
+            "metadata": dict(item.metadata),
+        }
+        for item in sorted_docs
+    ]
 
 
 def _kb_doc_to_json(doc: KBDocument) -> dict[str, Any]:
+    updated_at = doc.updated_at or datetime.now(UTC).isoformat()
     return {
         "doc_id": doc.doc_id,
         "source_type": doc.source_type,
         "title": doc.title,
         "content": doc.content,
         "tags": list(doc.tags),
-        "updated_at": datetime.now(UTC).isoformat(),
+        "updated_at": updated_at,
+        "metadata": dict(doc.metadata),
     }
 
 

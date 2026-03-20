@@ -168,6 +168,28 @@ describe("ReplyWorkspace", () => {
     expect(screen.getByText("消息已提交，状态=queued。")).toBeInTheDocument();
   });
 
+  it("hides reply events when showReplyEvents is false", () => {
+    render(
+      <ReplyWorkspace
+        ticket={baseTicket}
+        assignees={["u_ops_01"]}
+        replyDraft={null}
+        replyDraftLoading={false}
+        replyDraftError={null}
+        replySend={baseSendResult}
+        replySendLoading={false}
+        replySendError={null}
+        replyEvents={baseReplyEvents}
+        showReplyEvents={false}
+        onGenerateDraft={vi.fn().mockResolvedValue(baseDraft)}
+        onSendReply={vi.fn().mockResolvedValue(baseSendResult)}
+      />
+    );
+
+    expect(screen.queryByText("Reply Events")).not.toBeInTheDocument();
+    expect(screen.queryByText("reply_send_delivered")).not.toBeInTheDocument();
+  });
+
   it("shows suggested status transition and executes manual action with confirmation", async () => {
     const confirmSpy = vi.spyOn(window, "confirm");
     confirmSpy.mockReturnValue(true);

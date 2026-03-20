@@ -1,0 +1,3601 @@
+[
+  {
+    "doc_id": "faq-001",
+    "source_type": "faq",
+    "title": "账号登录常见问题#001",
+    "content": "当出现账号登录问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-001。",
+    "tags": [
+      "账号",
+      "登录",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-002",
+    "source_type": "faq",
+    "title": "工单查询常见问题#002",
+    "content": "当出现工单查询问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-002。",
+    "tags": [
+      "工单",
+      "查询",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-003",
+    "source_type": "faq",
+    "title": "支付退款常见问题#003",
+    "content": "当出现支付退款问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-003。",
+    "tags": [
+      "支付",
+      "退款",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-004",
+    "source_type": "faq",
+    "title": "发票开具常见问题#004",
+    "content": "当出现发票开具问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-004。",
+    "tags": [
+      "发票",
+      "账单",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-005",
+    "source_type": "faq",
+    "title": "设备报修常见问题#005",
+    "content": "当出现设备报修问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-005。",
+    "tags": [
+      "报修",
+      "故障",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-006",
+    "source_type": "faq",
+    "title": "投诉处理常见问题#006",
+    "content": "当出现投诉处理问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-006。",
+    "tags": [
+      "投诉",
+      "升级",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-007",
+    "source_type": "faq",
+    "title": "人工转接常见问题#007",
+    "content": "当出现人工转接问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-007。",
+    "tags": [
+      "人工",
+      "客服",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-008",
+    "source_type": "faq",
+    "title": "服务中断常见问题#008",
+    "content": "当出现服务中断问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-008。",
+    "tags": [
+      "中断",
+      "恢复",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-009",
+    "source_type": "faq",
+    "title": "权限申请常见问题#009",
+    "content": "当出现权限申请问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-009。",
+    "tags": [
+      "权限",
+      "审批",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-010",
+    "source_type": "faq",
+    "title": "消息通知常见问题#010",
+    "content": "当出现消息通知问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-010。",
+    "tags": [
+      "通知",
+      "提醒",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-011",
+    "source_type": "faq",
+    "title": "账号登录常见问题#011",
+    "content": "当出现账号登录问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-011。",
+    "tags": [
+      "账号",
+      "登录",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-012",
+    "source_type": "faq",
+    "title": "工单查询常见问题#012",
+    "content": "当出现工单查询问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-012。",
+    "tags": [
+      "工单",
+      "查询",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-013",
+    "source_type": "faq",
+    "title": "支付退款常见问题#013",
+    "content": "当出现支付退款问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-013。",
+    "tags": [
+      "支付",
+      "退款",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-014",
+    "source_type": "faq",
+    "title": "发票开具常见问题#014",
+    "content": "当出现发票开具问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-014。",
+    "tags": [
+      "发票",
+      "账单",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-015",
+    "source_type": "faq",
+    "title": "设备报修常见问题#015",
+    "content": "当出现设备报修问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-015。",
+    "tags": [
+      "报修",
+      "故障",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-016",
+    "source_type": "faq",
+    "title": "投诉处理常见问题#016",
+    "content": "当出现投诉处理问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-016。",
+    "tags": [
+      "投诉",
+      "升级",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-017",
+    "source_type": "faq",
+    "title": "人工转接常见问题#017",
+    "content": "当出现人工转接问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-017。",
+    "tags": [
+      "人工",
+      "客服",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-018",
+    "source_type": "faq",
+    "title": "服务中断常见问题#018",
+    "content": "当出现服务中断问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-018。",
+    "tags": [
+      "中断",
+      "恢复",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-019",
+    "source_type": "faq",
+    "title": "权限申请常见问题#019",
+    "content": "当出现权限申请问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-019。",
+    "tags": [
+      "权限",
+      "审批",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-020",
+    "source_type": "faq",
+    "title": "消息通知常见问题#020",
+    "content": "当出现消息通知问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-020。",
+    "tags": [
+      "通知",
+      "提醒",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-021",
+    "source_type": "faq",
+    "title": "账号登录常见问题#021",
+    "content": "当出现账号登录问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-021。",
+    "tags": [
+      "账号",
+      "登录",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-022",
+    "source_type": "faq",
+    "title": "工单查询常见问题#022",
+    "content": "当出现工单查询问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-022。",
+    "tags": [
+      "工单",
+      "查询",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-023",
+    "source_type": "faq",
+    "title": "支付退款常见问题#023",
+    "content": "当出现支付退款问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-023。",
+    "tags": [
+      "支付",
+      "退款",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-024",
+    "source_type": "faq",
+    "title": "发票开具常见问题#024",
+    "content": "当出现发票开具问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-024。",
+    "tags": [
+      "发票",
+      "账单",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-025",
+    "source_type": "faq",
+    "title": "设备报修常见问题#025",
+    "content": "当出现设备报修问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-025。",
+    "tags": [
+      "报修",
+      "故障",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-026",
+    "source_type": "faq",
+    "title": "投诉处理常见问题#026",
+    "content": "当出现投诉处理问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-026。",
+    "tags": [
+      "投诉",
+      "升级",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-027",
+    "source_type": "faq",
+    "title": "人工转接常见问题#027",
+    "content": "当出现人工转接问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-027。",
+    "tags": [
+      "人工",
+      "客服",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-028",
+    "source_type": "faq",
+    "title": "服务中断常见问题#028",
+    "content": "当出现服务中断问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-028。",
+    "tags": [
+      "中断",
+      "恢复",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-029",
+    "source_type": "faq",
+    "title": "权限申请常见问题#029",
+    "content": "当出现权限申请问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-029。",
+    "tags": [
+      "权限",
+      "审批",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-030",
+    "source_type": "faq",
+    "title": "消息通知常见问题#030",
+    "content": "当出现消息通知问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-030。",
+    "tags": [
+      "通知",
+      "提醒",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-031",
+    "source_type": "faq",
+    "title": "账号登录常见问题#031",
+    "content": "当出现账号登录问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-031。",
+    "tags": [
+      "账号",
+      "登录",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-032",
+    "source_type": "faq",
+    "title": "工单查询常见问题#032",
+    "content": "当出现工单查询问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-032。",
+    "tags": [
+      "工单",
+      "查询",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-033",
+    "source_type": "faq",
+    "title": "支付退款常见问题#033",
+    "content": "当出现支付退款问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-033。",
+    "tags": [
+      "支付",
+      "退款",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-034",
+    "source_type": "faq",
+    "title": "发票开具常见问题#034",
+    "content": "当出现发票开具问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-034。",
+    "tags": [
+      "发票",
+      "账单",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-035",
+    "source_type": "faq",
+    "title": "设备报修常见问题#035",
+    "content": "当出现设备报修问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-035。",
+    "tags": [
+      "报修",
+      "故障",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-036",
+    "source_type": "faq",
+    "title": "投诉处理常见问题#036",
+    "content": "当出现投诉处理问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-036。",
+    "tags": [
+      "投诉",
+      "升级",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-037",
+    "source_type": "faq",
+    "title": "人工转接常见问题#037",
+    "content": "当出现人工转接问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-037。",
+    "tags": [
+      "人工",
+      "客服",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-038",
+    "source_type": "faq",
+    "title": "服务中断常见问题#038",
+    "content": "当出现服务中断问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-038。",
+    "tags": [
+      "中断",
+      "恢复",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-039",
+    "source_type": "faq",
+    "title": "权限申请常见问题#039",
+    "content": "当出现权限申请问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-039。",
+    "tags": [
+      "权限",
+      "审批",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-040",
+    "source_type": "faq",
+    "title": "消息通知常见问题#040",
+    "content": "当出现消息通知问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-040。",
+    "tags": [
+      "通知",
+      "提醒",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-041",
+    "source_type": "faq",
+    "title": "账号登录常见问题#041",
+    "content": "当出现账号登录问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-041。",
+    "tags": [
+      "账号",
+      "登录",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-042",
+    "source_type": "faq",
+    "title": "工单查询常见问题#042",
+    "content": "当出现工单查询问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-042。",
+    "tags": [
+      "工单",
+      "查询",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-043",
+    "source_type": "faq",
+    "title": "支付退款常见问题#043",
+    "content": "当出现支付退款问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-043。",
+    "tags": [
+      "支付",
+      "退款",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-044",
+    "source_type": "faq",
+    "title": "发票开具常见问题#044",
+    "content": "当出现发票开具问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-044。",
+    "tags": [
+      "发票",
+      "账单",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-045",
+    "source_type": "faq",
+    "title": "设备报修常见问题#045",
+    "content": "当出现设备报修问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-045。",
+    "tags": [
+      "报修",
+      "故障",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-046",
+    "source_type": "faq",
+    "title": "投诉处理常见问题#046",
+    "content": "当出现投诉处理问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-046。",
+    "tags": [
+      "投诉",
+      "升级",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-047",
+    "source_type": "faq",
+    "title": "人工转接常见问题#047",
+    "content": "当出现人工转接问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-047。",
+    "tags": [
+      "人工",
+      "客服",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-048",
+    "source_type": "faq",
+    "title": "服务中断常见问题#048",
+    "content": "当出现服务中断问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-048。",
+    "tags": [
+      "中断",
+      "恢复",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-049",
+    "source_type": "faq",
+    "title": "权限申请常见问题#049",
+    "content": "当出现权限申请问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-049。",
+    "tags": [
+      "权限",
+      "审批",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-050",
+    "source_type": "faq",
+    "title": "消息通知常见问题#050",
+    "content": "当出现消息通知问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-050。",
+    "tags": [
+      "通知",
+      "提醒",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-051",
+    "source_type": "faq",
+    "title": "账号登录常见问题#051",
+    "content": "当出现账号登录问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-051。",
+    "tags": [
+      "账号",
+      "登录",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-052",
+    "source_type": "faq",
+    "title": "工单查询常见问题#052",
+    "content": "当出现工单查询问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-052。",
+    "tags": [
+      "工单",
+      "查询",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-053",
+    "source_type": "faq",
+    "title": "支付退款常见问题#053",
+    "content": "当出现支付退款问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-053。",
+    "tags": [
+      "支付",
+      "退款",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-054",
+    "source_type": "faq",
+    "title": "发票开具常见问题#054",
+    "content": "当出现发票开具问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-054。",
+    "tags": [
+      "发票",
+      "账单",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-055",
+    "source_type": "faq",
+    "title": "设备报修常见问题#055",
+    "content": "当出现设备报修问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-055。",
+    "tags": [
+      "报修",
+      "故障",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-056",
+    "source_type": "faq",
+    "title": "投诉处理常见问题#056",
+    "content": "当出现投诉处理问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-056。",
+    "tags": [
+      "投诉",
+      "升级",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-057",
+    "source_type": "faq",
+    "title": "人工转接常见问题#057",
+    "content": "当出现人工转接问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-057。",
+    "tags": [
+      "人工",
+      "客服",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-058",
+    "source_type": "faq",
+    "title": "服务中断常见问题#058",
+    "content": "当出现服务中断问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-058。",
+    "tags": [
+      "中断",
+      "恢复",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-059",
+    "source_type": "faq",
+    "title": "权限申请常见问题#059",
+    "content": "当出现权限申请问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-059。",
+    "tags": [
+      "权限",
+      "审批",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-060",
+    "source_type": "faq",
+    "title": "消息通知常见问题#060",
+    "content": "当出现消息通知问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-060。",
+    "tags": [
+      "通知",
+      "提醒",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-061",
+    "source_type": "faq",
+    "title": "账号登录常见问题#061",
+    "content": "当出现账号登录问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-061。",
+    "tags": [
+      "账号",
+      "登录",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-062",
+    "source_type": "faq",
+    "title": "工单查询常见问题#062",
+    "content": "当出现工单查询问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-062。",
+    "tags": [
+      "工单",
+      "查询",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-063",
+    "source_type": "faq",
+    "title": "支付退款常见问题#063",
+    "content": "当出现支付退款问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-063。",
+    "tags": [
+      "支付",
+      "退款",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-064",
+    "source_type": "faq",
+    "title": "发票开具常见问题#064",
+    "content": "当出现发票开具问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-064。",
+    "tags": [
+      "发票",
+      "账单",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-065",
+    "source_type": "faq",
+    "title": "设备报修常见问题#065",
+    "content": "当出现设备报修问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-065。",
+    "tags": [
+      "报修",
+      "故障",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-066",
+    "source_type": "faq",
+    "title": "投诉处理常见问题#066",
+    "content": "当出现投诉处理问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-066。",
+    "tags": [
+      "投诉",
+      "升级",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-067",
+    "source_type": "faq",
+    "title": "人工转接常见问题#067",
+    "content": "当出现人工转接问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-067。",
+    "tags": [
+      "人工",
+      "客服",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-068",
+    "source_type": "faq",
+    "title": "服务中断常见问题#068",
+    "content": "当出现服务中断问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-068。",
+    "tags": [
+      "中断",
+      "恢复",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-069",
+    "source_type": "faq",
+    "title": "权限申请常见问题#069",
+    "content": "当出现权限申请问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-069。",
+    "tags": [
+      "权限",
+      "审批",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-070",
+    "source_type": "faq",
+    "title": "消息通知常见问题#070",
+    "content": "当出现消息通知问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-070。",
+    "tags": [
+      "通知",
+      "提醒",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-071",
+    "source_type": "faq",
+    "title": "账号登录常见问题#071",
+    "content": "当出现账号登录问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-071。",
+    "tags": [
+      "账号",
+      "登录",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-072",
+    "source_type": "faq",
+    "title": "工单查询常见问题#072",
+    "content": "当出现工单查询问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-072。",
+    "tags": [
+      "工单",
+      "查询",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-073",
+    "source_type": "faq",
+    "title": "支付退款常见问题#073",
+    "content": "当出现支付退款问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-073。",
+    "tags": [
+      "支付",
+      "退款",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-074",
+    "source_type": "faq",
+    "title": "发票开具常见问题#074",
+    "content": "当出现发票开具问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-074。",
+    "tags": [
+      "发票",
+      "账单",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-075",
+    "source_type": "faq",
+    "title": "设备报修常见问题#075",
+    "content": "当出现设备报修问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-075。",
+    "tags": [
+      "报修",
+      "故障",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-076",
+    "source_type": "faq",
+    "title": "投诉处理常见问题#076",
+    "content": "当出现投诉处理问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-076。",
+    "tags": [
+      "投诉",
+      "升级",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-077",
+    "source_type": "faq",
+    "title": "人工转接常见问题#077",
+    "content": "当出现人工转接问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-077。",
+    "tags": [
+      "人工",
+      "客服",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-078",
+    "source_type": "faq",
+    "title": "服务中断常见问题#078",
+    "content": "当出现服务中断问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-078。",
+    "tags": [
+      "中断",
+      "恢复",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-079",
+    "source_type": "faq",
+    "title": "权限申请常见问题#079",
+    "content": "当出现权限申请问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-079。",
+    "tags": [
+      "权限",
+      "审批",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-080",
+    "source_type": "faq",
+    "title": "消息通知常见问题#080",
+    "content": "当出现消息通知问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-080。",
+    "tags": [
+      "通知",
+      "提醒",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-081",
+    "source_type": "faq",
+    "title": "账号登录常见问题#081",
+    "content": "当出现账号登录问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-081。",
+    "tags": [
+      "账号",
+      "登录",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-082",
+    "source_type": "faq",
+    "title": "工单查询常见问题#082",
+    "content": "当出现工单查询问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-082。",
+    "tags": [
+      "工单",
+      "查询",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-083",
+    "source_type": "faq",
+    "title": "支付退款常见问题#083",
+    "content": "当出现支付退款问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-083。",
+    "tags": [
+      "支付",
+      "退款",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-084",
+    "source_type": "faq",
+    "title": "发票开具常见问题#084",
+    "content": "当出现发票开具问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-084。",
+    "tags": [
+      "发票",
+      "账单",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-085",
+    "source_type": "faq",
+    "title": "设备报修常见问题#085",
+    "content": "当出现设备报修问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-085。",
+    "tags": [
+      "报修",
+      "故障",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-086",
+    "source_type": "faq",
+    "title": "投诉处理常见问题#086",
+    "content": "当出现投诉处理问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-086。",
+    "tags": [
+      "投诉",
+      "升级",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-087",
+    "source_type": "faq",
+    "title": "人工转接常见问题#087",
+    "content": "当出现人工转接问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-087。",
+    "tags": [
+      "人工",
+      "客服",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-088",
+    "source_type": "faq",
+    "title": "服务中断常见问题#088",
+    "content": "当出现服务中断问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-088。",
+    "tags": [
+      "中断",
+      "恢复",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-089",
+    "source_type": "faq",
+    "title": "权限申请常见问题#089",
+    "content": "当出现权限申请问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-089。",
+    "tags": [
+      "权限",
+      "审批",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-090",
+    "source_type": "faq",
+    "title": "消息通知常见问题#090",
+    "content": "当出现消息通知问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-090。",
+    "tags": [
+      "通知",
+      "提醒",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-091",
+    "source_type": "faq",
+    "title": "账号登录常见问题#091",
+    "content": "当出现账号登录问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-091。",
+    "tags": [
+      "账号",
+      "登录",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-092",
+    "source_type": "faq",
+    "title": "工单查询常见问题#092",
+    "content": "当出现工单查询问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-092。",
+    "tags": [
+      "工单",
+      "查询",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-093",
+    "source_type": "faq",
+    "title": "支付退款常见问题#093",
+    "content": "当出现支付退款问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-093。",
+    "tags": [
+      "支付",
+      "退款",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-094",
+    "source_type": "faq",
+    "title": "发票开具常见问题#094",
+    "content": "当出现发票开具问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-094。",
+    "tags": [
+      "发票",
+      "账单",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-095",
+    "source_type": "faq",
+    "title": "设备报修常见问题#095",
+    "content": "当出现设备报修问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-095。",
+    "tags": [
+      "报修",
+      "故障",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-096",
+    "source_type": "faq",
+    "title": "投诉处理常见问题#096",
+    "content": "当出现投诉处理问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-096。",
+    "tags": [
+      "投诉",
+      "升级",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-097",
+    "source_type": "faq",
+    "title": "人工转接常见问题#097",
+    "content": "当出现人工转接问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-097。",
+    "tags": [
+      "人工",
+      "客服",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-098",
+    "source_type": "faq",
+    "title": "服务中断常见问题#098",
+    "content": "当出现服务中断问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-098。",
+    "tags": [
+      "中断",
+      "恢复",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-099",
+    "source_type": "faq",
+    "title": "权限申请常见问题#099",
+    "content": "当出现权限申请问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-099。",
+    "tags": [
+      "权限",
+      "审批",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq-100",
+    "source_type": "faq",
+    "title": "消息通知常见问题#100",
+    "content": "当出现消息通知问题时，先核验用户身份与上下文，再按标准流程处理并记录工单证据。场景编号FAQ-100。",
+    "tags": [
+      "通知",
+      "提醒",
+      "FAQ"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "faq_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq_bootstrap_0001",
+    "source_type": "faq",
+    "title": "FAQ: 如何重置账户密码",
+    "content": "Q: 如何重置账户密码？\nA: 进入账户中心，完成验证码校验后可重置密码。",
+    "tags": [
+      "external",
+      "faq",
+      "account"
+    ],
+    "updated_at": "2026-03-18T15:53:32.966457+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T15:53:32.966457+00:00",
+      "governance_tier": "external_public",
+      "source_file": "faq_external_documents.json"
+    }
+  },
+  {
+    "doc_id": "faq_bootstrap_0002",
+    "source_type": "faq",
+    "title": "FAQ: 如何查询退款进度",
+    "content": "Q: 如何查询退款进度？\nA: 在订单详情页输入工单号即可查询退款状态。",
+    "tags": [
+      "external",
+      "faq",
+      "billing"
+    ],
+    "updated_at": "2026-03-18T15:53:32.966457+00:00",
+    "metadata": {
+      "source_dataset": "MakTek/Customer_support_faqs_dataset",
+      "source_url": "https://huggingface.co/datasets/MakTek/Customer_support_faqs_dataset",
+      "license": "Apache-2.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T15:53:32.966457+00:00",
+      "governance_tier": "external_public",
+      "source_file": "faq_external_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-001",
+    "source_type": "history_case",
+    "title": "支付重复扣费案例#001",
+    "content": "历史案例001：先冻结通道后退款并告知用户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-1"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-002",
+    "source_type": "history_case",
+    "title": "设备离线故障案例#002",
+    "content": "历史案例002：远程诊断后派单现场处理，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-1"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-003",
+    "source_type": "history_case",
+    "title": "客户投诉升级案例#003",
+    "content": "历史案例003：2小时内首响并触发人工接管，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "complaint",
+      "history",
+      "batch-1"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-004",
+    "source_type": "history_case",
+    "title": "服务中断告警案例#004",
+    "content": "历史案例004：隔离故障并升级值班工程师，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "incident",
+      "history",
+      "batch-1"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-005",
+    "source_type": "history_case",
+    "title": "发票争议案例#005",
+    "content": "历史案例005：核对交易记录后补开发票，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-1"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-006",
+    "source_type": "history_case",
+    "title": "账号锁定案例#006",
+    "content": "历史案例006：完成身份核验后重置凭据，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "account",
+      "history",
+      "batch-1"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-007",
+    "source_type": "history_case",
+    "title": "权限误配案例#007",
+    "content": "历史案例007：回滚权限并补充审批链，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "permission",
+      "history",
+      "batch-1"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-008",
+    "source_type": "history_case",
+    "title": "物流延迟案例#008",
+    "content": "历史案例008：同步时效并触发补偿流程，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "delivery",
+      "history",
+      "batch-1"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-009",
+    "source_type": "history_case",
+    "title": "消息丢失案例#009",
+    "content": "历史案例009：重放消息并校验幂等键，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "notification",
+      "history",
+      "batch-1"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-010",
+    "source_type": "history_case",
+    "title": "现场维修延期案例#010",
+    "content": "历史案例010：更新SLA并主动告知客户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-1"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-011",
+    "source_type": "history_case",
+    "title": "支付重复扣费案例#011",
+    "content": "历史案例011：先冻结通道后退款并告知用户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-2"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-012",
+    "source_type": "history_case",
+    "title": "设备离线故障案例#012",
+    "content": "历史案例012：远程诊断后派单现场处理，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-2"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-013",
+    "source_type": "history_case",
+    "title": "客户投诉升级案例#013",
+    "content": "历史案例013：2小时内首响并触发人工接管，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "complaint",
+      "history",
+      "batch-2"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-014",
+    "source_type": "history_case",
+    "title": "服务中断告警案例#014",
+    "content": "历史案例014：隔离故障并升级值班工程师，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "incident",
+      "history",
+      "batch-2"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-015",
+    "source_type": "history_case",
+    "title": "发票争议案例#015",
+    "content": "历史案例015：核对交易记录后补开发票，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-2"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-016",
+    "source_type": "history_case",
+    "title": "账号锁定案例#016",
+    "content": "历史案例016：完成身份核验后重置凭据，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "account",
+      "history",
+      "batch-2"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-017",
+    "source_type": "history_case",
+    "title": "权限误配案例#017",
+    "content": "历史案例017：回滚权限并补充审批链，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "permission",
+      "history",
+      "batch-2"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-018",
+    "source_type": "history_case",
+    "title": "物流延迟案例#018",
+    "content": "历史案例018：同步时效并触发补偿流程，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "delivery",
+      "history",
+      "batch-2"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-019",
+    "source_type": "history_case",
+    "title": "消息丢失案例#019",
+    "content": "历史案例019：重放消息并校验幂等键，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "notification",
+      "history",
+      "batch-2"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-020",
+    "source_type": "history_case",
+    "title": "现场维修延期案例#020",
+    "content": "历史案例020：更新SLA并主动告知客户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-2"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-021",
+    "source_type": "history_case",
+    "title": "支付重复扣费案例#021",
+    "content": "历史案例021：先冻结通道后退款并告知用户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-3"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-022",
+    "source_type": "history_case",
+    "title": "设备离线故障案例#022",
+    "content": "历史案例022：远程诊断后派单现场处理，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-3"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-023",
+    "source_type": "history_case",
+    "title": "客户投诉升级案例#023",
+    "content": "历史案例023：2小时内首响并触发人工接管，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "complaint",
+      "history",
+      "batch-3"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-024",
+    "source_type": "history_case",
+    "title": "服务中断告警案例#024",
+    "content": "历史案例024：隔离故障并升级值班工程师，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "incident",
+      "history",
+      "batch-3"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-025",
+    "source_type": "history_case",
+    "title": "发票争议案例#025",
+    "content": "历史案例025：核对交易记录后补开发票，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-3"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-026",
+    "source_type": "history_case",
+    "title": "账号锁定案例#026",
+    "content": "历史案例026：完成身份核验后重置凭据，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "account",
+      "history",
+      "batch-3"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-027",
+    "source_type": "history_case",
+    "title": "权限误配案例#027",
+    "content": "历史案例027：回滚权限并补充审批链，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "permission",
+      "history",
+      "batch-3"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-028",
+    "source_type": "history_case",
+    "title": "物流延迟案例#028",
+    "content": "历史案例028：同步时效并触发补偿流程，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "delivery",
+      "history",
+      "batch-3"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-029",
+    "source_type": "history_case",
+    "title": "消息丢失案例#029",
+    "content": "历史案例029：重放消息并校验幂等键，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "notification",
+      "history",
+      "batch-3"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-030",
+    "source_type": "history_case",
+    "title": "现场维修延期案例#030",
+    "content": "历史案例030：更新SLA并主动告知客户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-3"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-031",
+    "source_type": "history_case",
+    "title": "支付重复扣费案例#031",
+    "content": "历史案例031：先冻结通道后退款并告知用户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-4"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-032",
+    "source_type": "history_case",
+    "title": "设备离线故障案例#032",
+    "content": "历史案例032：远程诊断后派单现场处理，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-4"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-033",
+    "source_type": "history_case",
+    "title": "客户投诉升级案例#033",
+    "content": "历史案例033：2小时内首响并触发人工接管，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "complaint",
+      "history",
+      "batch-4"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-034",
+    "source_type": "history_case",
+    "title": "服务中断告警案例#034",
+    "content": "历史案例034：隔离故障并升级值班工程师，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "incident",
+      "history",
+      "batch-4"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-035",
+    "source_type": "history_case",
+    "title": "发票争议案例#035",
+    "content": "历史案例035：核对交易记录后补开发票，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-4"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-036",
+    "source_type": "history_case",
+    "title": "账号锁定案例#036",
+    "content": "历史案例036：完成身份核验后重置凭据，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "account",
+      "history",
+      "batch-4"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-037",
+    "source_type": "history_case",
+    "title": "权限误配案例#037",
+    "content": "历史案例037：回滚权限并补充审批链，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "permission",
+      "history",
+      "batch-4"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-038",
+    "source_type": "history_case",
+    "title": "物流延迟案例#038",
+    "content": "历史案例038：同步时效并触发补偿流程，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "delivery",
+      "history",
+      "batch-4"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-039",
+    "source_type": "history_case",
+    "title": "消息丢失案例#039",
+    "content": "历史案例039：重放消息并校验幂等键，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "notification",
+      "history",
+      "batch-4"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-040",
+    "source_type": "history_case",
+    "title": "现场维修延期案例#040",
+    "content": "历史案例040：更新SLA并主动告知客户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-4"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-041",
+    "source_type": "history_case",
+    "title": "支付重复扣费案例#041",
+    "content": "历史案例041：先冻结通道后退款并告知用户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-5"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-042",
+    "source_type": "history_case",
+    "title": "设备离线故障案例#042",
+    "content": "历史案例042：远程诊断后派单现场处理，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-5"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-043",
+    "source_type": "history_case",
+    "title": "客户投诉升级案例#043",
+    "content": "历史案例043：2小时内首响并触发人工接管，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "complaint",
+      "history",
+      "batch-5"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-044",
+    "source_type": "history_case",
+    "title": "服务中断告警案例#044",
+    "content": "历史案例044：隔离故障并升级值班工程师，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "incident",
+      "history",
+      "batch-5"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-045",
+    "source_type": "history_case",
+    "title": "发票争议案例#045",
+    "content": "历史案例045：核对交易记录后补开发票，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-5"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-046",
+    "source_type": "history_case",
+    "title": "账号锁定案例#046",
+    "content": "历史案例046：完成身份核验后重置凭据，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "account",
+      "history",
+      "batch-5"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-047",
+    "source_type": "history_case",
+    "title": "权限误配案例#047",
+    "content": "历史案例047：回滚权限并补充审批链，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "permission",
+      "history",
+      "batch-5"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-048",
+    "source_type": "history_case",
+    "title": "物流延迟案例#048",
+    "content": "历史案例048：同步时效并触发补偿流程，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "delivery",
+      "history",
+      "batch-5"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-049",
+    "source_type": "history_case",
+    "title": "消息丢失案例#049",
+    "content": "历史案例049：重放消息并校验幂等键，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "notification",
+      "history",
+      "batch-5"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-050",
+    "source_type": "history_case",
+    "title": "现场维修延期案例#050",
+    "content": "历史案例050：更新SLA并主动告知客户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-5"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-051",
+    "source_type": "history_case",
+    "title": "支付重复扣费案例#051",
+    "content": "历史案例051：先冻结通道后退款并告知用户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-6"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-052",
+    "source_type": "history_case",
+    "title": "设备离线故障案例#052",
+    "content": "历史案例052：远程诊断后派单现场处理，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-6"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-053",
+    "source_type": "history_case",
+    "title": "客户投诉升级案例#053",
+    "content": "历史案例053：2小时内首响并触发人工接管，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "complaint",
+      "history",
+      "batch-6"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-054",
+    "source_type": "history_case",
+    "title": "服务中断告警案例#054",
+    "content": "历史案例054：隔离故障并升级值班工程师，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "incident",
+      "history",
+      "batch-6"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-055",
+    "source_type": "history_case",
+    "title": "发票争议案例#055",
+    "content": "历史案例055：核对交易记录后补开发票，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-6"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-056",
+    "source_type": "history_case",
+    "title": "账号锁定案例#056",
+    "content": "历史案例056：完成身份核验后重置凭据，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "account",
+      "history",
+      "batch-6"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-057",
+    "source_type": "history_case",
+    "title": "权限误配案例#057",
+    "content": "历史案例057：回滚权限并补充审批链，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "permission",
+      "history",
+      "batch-6"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-058",
+    "source_type": "history_case",
+    "title": "物流延迟案例#058",
+    "content": "历史案例058：同步时效并触发补偿流程，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "delivery",
+      "history",
+      "batch-6"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-059",
+    "source_type": "history_case",
+    "title": "消息丢失案例#059",
+    "content": "历史案例059：重放消息并校验幂等键，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "notification",
+      "history",
+      "batch-6"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-060",
+    "source_type": "history_case",
+    "title": "现场维修延期案例#060",
+    "content": "历史案例060：更新SLA并主动告知客户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-6"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-061",
+    "source_type": "history_case",
+    "title": "支付重复扣费案例#061",
+    "content": "历史案例061：先冻结通道后退款并告知用户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-7"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-062",
+    "source_type": "history_case",
+    "title": "设备离线故障案例#062",
+    "content": "历史案例062：远程诊断后派单现场处理，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-7"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-063",
+    "source_type": "history_case",
+    "title": "客户投诉升级案例#063",
+    "content": "历史案例063：2小时内首响并触发人工接管，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "complaint",
+      "history",
+      "batch-7"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-064",
+    "source_type": "history_case",
+    "title": "服务中断告警案例#064",
+    "content": "历史案例064：隔离故障并升级值班工程师，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "incident",
+      "history",
+      "batch-7"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-065",
+    "source_type": "history_case",
+    "title": "发票争议案例#065",
+    "content": "历史案例065：核对交易记录后补开发票，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-7"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-066",
+    "source_type": "history_case",
+    "title": "账号锁定案例#066",
+    "content": "历史案例066：完成身份核验后重置凭据，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "account",
+      "history",
+      "batch-7"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-067",
+    "source_type": "history_case",
+    "title": "权限误配案例#067",
+    "content": "历史案例067：回滚权限并补充审批链，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "permission",
+      "history",
+      "batch-7"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-068",
+    "source_type": "history_case",
+    "title": "物流延迟案例#068",
+    "content": "历史案例068：同步时效并触发补偿流程，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "delivery",
+      "history",
+      "batch-7"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-069",
+    "source_type": "history_case",
+    "title": "消息丢失案例#069",
+    "content": "历史案例069：重放消息并校验幂等键，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "notification",
+      "history",
+      "batch-7"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-070",
+    "source_type": "history_case",
+    "title": "现场维修延期案例#070",
+    "content": "历史案例070：更新SLA并主动告知客户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-7"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-071",
+    "source_type": "history_case",
+    "title": "支付重复扣费案例#071",
+    "content": "历史案例071：先冻结通道后退款并告知用户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-8"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-072",
+    "source_type": "history_case",
+    "title": "设备离线故障案例#072",
+    "content": "历史案例072：远程诊断后派单现场处理，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-8"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-073",
+    "source_type": "history_case",
+    "title": "客户投诉升级案例#073",
+    "content": "历史案例073：2小时内首响并触发人工接管，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "complaint",
+      "history",
+      "batch-8"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-074",
+    "source_type": "history_case",
+    "title": "服务中断告警案例#074",
+    "content": "历史案例074：隔离故障并升级值班工程师，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "incident",
+      "history",
+      "batch-8"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-075",
+    "source_type": "history_case",
+    "title": "发票争议案例#075",
+    "content": "历史案例075：核对交易记录后补开发票，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-8"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-076",
+    "source_type": "history_case",
+    "title": "账号锁定案例#076",
+    "content": "历史案例076：完成身份核验后重置凭据，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "account",
+      "history",
+      "batch-8"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-077",
+    "source_type": "history_case",
+    "title": "权限误配案例#077",
+    "content": "历史案例077：回滚权限并补充审批链，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "permission",
+      "history",
+      "batch-8"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-078",
+    "source_type": "history_case",
+    "title": "物流延迟案例#078",
+    "content": "历史案例078：同步时效并触发补偿流程，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "delivery",
+      "history",
+      "batch-8"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-079",
+    "source_type": "history_case",
+    "title": "消息丢失案例#079",
+    "content": "历史案例079：重放消息并校验幂等键，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "notification",
+      "history",
+      "batch-8"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-080",
+    "source_type": "history_case",
+    "title": "现场维修延期案例#080",
+    "content": "历史案例080：更新SLA并主动告知客户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-8"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-081",
+    "source_type": "history_case",
+    "title": "支付重复扣费案例#081",
+    "content": "历史案例081：先冻结通道后退款并告知用户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-9"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-082",
+    "source_type": "history_case",
+    "title": "设备离线故障案例#082",
+    "content": "历史案例082：远程诊断后派单现场处理，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-9"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-083",
+    "source_type": "history_case",
+    "title": "客户投诉升级案例#083",
+    "content": "历史案例083：2小时内首响并触发人工接管，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "complaint",
+      "history",
+      "batch-9"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-084",
+    "source_type": "history_case",
+    "title": "服务中断告警案例#084",
+    "content": "历史案例084：隔离故障并升级值班工程师，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "incident",
+      "history",
+      "batch-9"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-085",
+    "source_type": "history_case",
+    "title": "发票争议案例#085",
+    "content": "历史案例085：核对交易记录后补开发票，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-9"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-086",
+    "source_type": "history_case",
+    "title": "账号锁定案例#086",
+    "content": "历史案例086：完成身份核验后重置凭据，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "account",
+      "history",
+      "batch-9"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-087",
+    "source_type": "history_case",
+    "title": "权限误配案例#087",
+    "content": "历史案例087：回滚权限并补充审批链，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "permission",
+      "history",
+      "batch-9"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-088",
+    "source_type": "history_case",
+    "title": "物流延迟案例#088",
+    "content": "历史案例088：同步时效并触发补偿流程，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "delivery",
+      "history",
+      "batch-9"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-089",
+    "source_type": "history_case",
+    "title": "消息丢失案例#089",
+    "content": "历史案例089：重放消息并校验幂等键，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "notification",
+      "history",
+      "batch-9"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-090",
+    "source_type": "history_case",
+    "title": "现场维修延期案例#090",
+    "content": "历史案例090：更新SLA并主动告知客户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-9"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-091",
+    "source_type": "history_case",
+    "title": "支付重复扣费案例#091",
+    "content": "历史案例091：先冻结通道后退款并告知用户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-10"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-092",
+    "source_type": "history_case",
+    "title": "设备离线故障案例#092",
+    "content": "历史案例092：远程诊断后派单现场处理，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-10"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-093",
+    "source_type": "history_case",
+    "title": "客户投诉升级案例#093",
+    "content": "历史案例093：2小时内首响并触发人工接管，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "complaint",
+      "history",
+      "batch-10"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-094",
+    "source_type": "history_case",
+    "title": "服务中断告警案例#094",
+    "content": "历史案例094：隔离故障并升级值班工程师，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "incident",
+      "history",
+      "batch-10"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-095",
+    "source_type": "history_case",
+    "title": "发票争议案例#095",
+    "content": "历史案例095：核对交易记录后补开发票，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "billing",
+      "history",
+      "batch-10"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-096",
+    "source_type": "history_case",
+    "title": "账号锁定案例#096",
+    "content": "历史案例096：完成身份核验后重置凭据，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "account",
+      "history",
+      "batch-10"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-097",
+    "source_type": "history_case",
+    "title": "权限误配案例#097",
+    "content": "历史案例097：回滚权限并补充审批链，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "permission",
+      "history",
+      "batch-10"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-098",
+    "source_type": "history_case",
+    "title": "物流延迟案例#098",
+    "content": "历史案例098：同步时效并触发补偿流程，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "delivery",
+      "history",
+      "batch-10"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-099",
+    "source_type": "history_case",
+    "title": "消息丢失案例#099",
+    "content": "历史案例099：重放消息并校验幂等键，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "notification",
+      "history",
+      "batch-10"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case-100",
+    "source_type": "history_case",
+    "title": "现场维修延期案例#100",
+    "content": "历史案例100：更新SLA并主动告知客户，并在工单中沉淀证据链与最终处理动作。",
+    "tags": [
+      "repair",
+      "history",
+      "batch-10"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "history_documents.json"
+    }
+  },
+  {
+    "doc_id": "case_bootstrap_0001",
+    "source_type": "history_case",
+    "title": "历史案例: VPN access not working",
+    "content": "Subject: VPN access not working\nTicket: User cannot connect from remote office.\nResolution: Re-sync MFA and renew VPN profile.",
+    "tags": [
+      "external",
+      "history_case",
+      "incident",
+      "high"
+    ],
+    "updated_at": "2026-03-18T15:53:32.966457+00:00",
+    "metadata": {
+      "source_dataset": "Tobi-Bueck/customer-support-tickets",
+      "source_url": "https://huggingface.co/datasets/Tobi-Bueck/customer-support-tickets",
+      "license": "CC-BY-NC-4.0",
+      "commercial_use": false,
+      "imported_at": "2026-03-18T15:53:32.966457+00:00",
+      "governance_tier": "external_public",
+      "source_file": "history_external_documents.json"
+    }
+  },
+  {
+    "doc_id": "process_bootstrap_0001",
+    "source_type": "history_case",
+    "title": "流程事件(UCI): Incident INC-10001",
+    "content": "Incident INC-10001: state=resolved, priority=2, assignment_group=network, made_sla=true, reopen_count=0, reassignment_count=1.",
+    "tags": [
+      "external",
+      "process",
+      "sla",
+      "uci"
+    ],
+    "updated_at": "2026-03-18T15:53:32.966457+00:00",
+    "metadata": {
+      "source_dataset": "UCI Incident Management Process Enriched Event Log",
+      "source_url": "https://archive.ics.uci.edu/dataset/498/incident+management+process+enriched+event+log",
+      "license": "CC BY 4.0",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T15:53:32.966457+00:00",
+      "governance_tier": "external_public",
+      "source_file": "history_external_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-001",
+    "source_type": "sop",
+    "title": "报修工单SOP#001",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步维修队列，步骤4回写resolution与close_reason。SOP-001。",
+    "tags": [
+      "support",
+      "维修队列",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-002",
+    "source_type": "sop",
+    "title": "投诉升级SOP#002",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步值班负责人，步骤4回写resolution与close_reason。SOP-002。",
+    "tags": [
+      "complaint",
+      "值班负责人",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-003",
+    "source_type": "sop",
+    "title": "账单争议SOP#003",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步财务队列，步骤4回写resolution与close_reason。SOP-003。",
+    "tags": [
+      "billing",
+      "财务队列",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-004",
+    "source_type": "sop",
+    "title": "人工接管SOP#004",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步人工客服，步骤4回写resolution与close_reason。SOP-004。",
+    "tags": [
+      "handoff",
+      "人工客服",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-005",
+    "source_type": "sop",
+    "title": "服务中断SOP#005",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步oncall，步骤4回写resolution与close_reason。SOP-005。",
+    "tags": [
+      "incident",
+      "oncall",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-006",
+    "source_type": "sop",
+    "title": "权限审批SOP#006",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步内控队列，步骤4回写resolution与close_reason。SOP-006。",
+    "tags": [
+      "approval",
+      "内控队列",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-007",
+    "source_type": "sop",
+    "title": "报修工单SOP#007",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步维修队列，步骤4回写resolution与close_reason。SOP-007。",
+    "tags": [
+      "support",
+      "维修队列",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-008",
+    "source_type": "sop",
+    "title": "投诉升级SOP#008",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步值班负责人，步骤4回写resolution与close_reason。SOP-008。",
+    "tags": [
+      "complaint",
+      "值班负责人",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-009",
+    "source_type": "sop",
+    "title": "账单争议SOP#009",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步财务队列，步骤4回写resolution与close_reason。SOP-009。",
+    "tags": [
+      "billing",
+      "财务队列",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-010",
+    "source_type": "sop",
+    "title": "人工接管SOP#010",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步人工客服，步骤4回写resolution与close_reason。SOP-010。",
+    "tags": [
+      "handoff",
+      "人工客服",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-011",
+    "source_type": "sop",
+    "title": "服务中断SOP#011",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步oncall，步骤4回写resolution与close_reason。SOP-011。",
+    "tags": [
+      "incident",
+      "oncall",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-012",
+    "source_type": "sop",
+    "title": "权限审批SOP#012",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步内控队列，步骤4回写resolution与close_reason。SOP-012。",
+    "tags": [
+      "approval",
+      "内控队列",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-013",
+    "source_type": "sop",
+    "title": "报修工单SOP#013",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步维修队列，步骤4回写resolution与close_reason。SOP-013。",
+    "tags": [
+      "support",
+      "维修队列",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-014",
+    "source_type": "sop",
+    "title": "投诉升级SOP#014",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步值班负责人，步骤4回写resolution与close_reason。SOP-014。",
+    "tags": [
+      "complaint",
+      "值班负责人",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-015",
+    "source_type": "sop",
+    "title": "账单争议SOP#015",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步财务队列，步骤4回写resolution与close_reason。SOP-015。",
+    "tags": [
+      "billing",
+      "财务队列",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-016",
+    "source_type": "sop",
+    "title": "人工接管SOP#016",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步人工客服，步骤4回写resolution与close_reason。SOP-016。",
+    "tags": [
+      "handoff",
+      "人工客服",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-017",
+    "source_type": "sop",
+    "title": "服务中断SOP#017",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步oncall，步骤4回写resolution与close_reason。SOP-017。",
+    "tags": [
+      "incident",
+      "oncall",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-018",
+    "source_type": "sop",
+    "title": "权限审批SOP#018",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步内控队列，步骤4回写resolution与close_reason。SOP-018。",
+    "tags": [
+      "approval",
+      "内控队列",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-019",
+    "source_type": "sop",
+    "title": "报修工单SOP#019",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步维修队列，步骤4回写resolution与close_reason。SOP-019。",
+    "tags": [
+      "support",
+      "维修队列",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-020",
+    "source_type": "sop",
+    "title": "投诉升级SOP#020",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步值班负责人，步骤4回写resolution与close_reason。SOP-020。",
+    "tags": [
+      "complaint",
+      "值班负责人",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-021",
+    "source_type": "sop",
+    "title": "账单争议SOP#021",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步财务队列，步骤4回写resolution与close_reason。SOP-021。",
+    "tags": [
+      "billing",
+      "财务队列",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-022",
+    "source_type": "sop",
+    "title": "人工接管SOP#022",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步人工客服，步骤4回写resolution与close_reason。SOP-022。",
+    "tags": [
+      "handoff",
+      "人工客服",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-023",
+    "source_type": "sop",
+    "title": "服务中断SOP#023",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步oncall，步骤4回写resolution与close_reason。SOP-023。",
+    "tags": [
+      "incident",
+      "oncall",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-024",
+    "source_type": "sop",
+    "title": "权限审批SOP#024",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步内控队列，步骤4回写resolution与close_reason。SOP-024。",
+    "tags": [
+      "approval",
+      "内控队列",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-025",
+    "source_type": "sop",
+    "title": "报修工单SOP#025",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步维修队列，步骤4回写resolution与close_reason。SOP-025。",
+    "tags": [
+      "support",
+      "维修队列",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-026",
+    "source_type": "sop",
+    "title": "投诉升级SOP#026",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步值班负责人，步骤4回写resolution与close_reason。SOP-026。",
+    "tags": [
+      "complaint",
+      "值班负责人",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-027",
+    "source_type": "sop",
+    "title": "账单争议SOP#027",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步财务队列，步骤4回写resolution与close_reason。SOP-027。",
+    "tags": [
+      "billing",
+      "财务队列",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-028",
+    "source_type": "sop",
+    "title": "人工接管SOP#028",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步人工客服，步骤4回写resolution与close_reason。SOP-028。",
+    "tags": [
+      "handoff",
+      "人工客服",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-029",
+    "source_type": "sop",
+    "title": "服务中断SOP#029",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步oncall，步骤4回写resolution与close_reason。SOP-029。",
+    "tags": [
+      "incident",
+      "oncall",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop-030",
+    "source_type": "sop",
+    "title": "权限审批SOP#030",
+    "content": "步骤1收集证据，步骤2更新ticket状态，步骤3同步内控队列，步骤4回写resolution与close_reason。SOP-030。",
+    "tags": [
+      "approval",
+      "内控队列",
+      "SOP"
+    ],
+    "updated_at": "1970-01-01T00:00:00+00:00",
+    "metadata": {
+      "source_file": "sop_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop_proj_0001",
+    "source_type": "sop",
+    "title": "SOP: 重启 Ops API 并验证健康",
+    "content": "1) mkdir -p logs\n2) pkill -f \"python -m scripts.ops_api_server\" || true\n3) nohup python -m scripts.ops_api_server --env dev --host 127.0.0.1 --port 18082 > logs/ops_api_server.log 2>&1 &\n4) curl http://127.0.0.1:18082/healthz",
+    "tags": [
+      "sop",
+      "ops",
+      "healthcheck"
+    ],
+    "updated_at": "2026-03-18T15:53:32.966457+00:00",
+    "metadata": {
+      "source_dataset": "support-agent-platform internal docs",
+      "source_url": "/home/kkk/Project/support-agent-platform/README.md, /home/kkk/Project/support-agent-platform/ARCHITECTURE.md, /home/kkk/Project/support-agent-platform/docs/project-review-refactor-plan.md",
+      "license": "Internal project docs",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T15:53:32.966457+00:00",
+      "governance_tier": "project_internal",
+      "source_file": "sop_project_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop_proj_0002",
+    "source_type": "sop",
+    "title": "SOP: 启动 Web Console 并验证页面",
+    "content": "1) cd web_console\n2) npm install\n3) npm run dev -- --host 0.0.0.0 --port 3001\n4) 打开 /tickets、/kb/faq 并确认页面可访问",
+    "tags": [
+      "sop",
+      "web_console",
+      "runbook"
+    ],
+    "updated_at": "2026-03-18T15:53:32.966457+00:00",
+    "metadata": {
+      "source_dataset": "support-agent-platform internal docs",
+      "source_url": "/home/kkk/Project/support-agent-platform/README.md, /home/kkk/Project/support-agent-platform/ARCHITECTURE.md, /home/kkk/Project/support-agent-platform/docs/project-review-refactor-plan.md",
+      "license": "Internal project docs",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T15:53:32.966457+00:00",
+      "governance_tier": "project_internal",
+      "source_file": "sop_project_documents.json"
+    }
+  },
+  {
+    "doc_id": "sop_proj_0003",
+    "source_type": "sop",
+    "title": "SOP: 工单知识库回归校验",
+    "content": "1) cd web_console && npm run lint\n2) cd web_console && npm run typecheck\n3) cd web_console && npm run test -- tickets\n4) 检查 /kb/faq 是否展示来源与许可证字段",
+    "tags": [
+      "sop",
+      "qa",
+      "kb"
+    ],
+    "updated_at": "2026-03-18T15:53:32.966457+00:00",
+    "metadata": {
+      "source_dataset": "support-agent-platform internal docs",
+      "source_url": "/home/kkk/Project/support-agent-platform/README.md, /home/kkk/Project/support-agent-platform/ARCHITECTURE.md, /home/kkk/Project/support-agent-platform/docs/project-review-refactor-plan.md",
+      "license": "Internal project docs",
+      "commercial_use": true,
+      "imported_at": "2026-03-18T15:53:32.966457+00:00",
+      "governance_tier": "project_internal",
+      "source_file": "sop_project_documents.json"
+    }
+  }
+]

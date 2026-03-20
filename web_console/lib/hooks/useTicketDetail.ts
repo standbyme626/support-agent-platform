@@ -153,8 +153,26 @@ export function useTicketDetail(ticketId: string) {
   async function runAction(action: TicketActionType, payload: TicketActionPayload) {
     setState((previous) => ({ ...previous, actionLoading: action, actionError: null }));
     try {
-      await runTicketAction(ticketId, action, payload);
-      await load({ silent: true });
+      const actionResponse = await runTicketAction(ticketId, action, payload);
+      setState((previous) => ({
+        ...previous,
+        ticket: actionResponse.data
+      }));
+      const [assist, events, replyEvents, groundingSources, similarCases] = await Promise.all([
+        fetchTicketAssist(ticketId),
+        fetchTicketEvents(ticketId),
+        fetchTicketReplyEvents(ticketId),
+        fetchGroundingSources(ticketId),
+        fetchSimilarCases(ticketId)
+      ]);
+      setState((previous) => ({
+        ...previous,
+        assist,
+        events: sortTicketEvents(events.items),
+        replyEvents: replyEvents.items,
+        groundingSources: groundingSources.items,
+        similarCases: similarCases.items
+      }));
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to execute action";
       setState((previous) => ({

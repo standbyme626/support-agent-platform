@@ -97,6 +97,8 @@ class KBDocument:
     content: str
     tags: list[str] = field(default_factory=list)
     score: float = 0.0
+    updated_at: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

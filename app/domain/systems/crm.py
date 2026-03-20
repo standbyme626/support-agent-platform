@@ -14,6 +14,7 @@ CRM_LIFECYCLE = (
     "new",
     "assigned",
     "in_progress",
+    "pending",
     "resolved",
     "closed",
 )
@@ -31,9 +32,21 @@ CRM_ACTIONS = {
         to_status="in_progress",
         required_fields=(),
     ),
+    "set_pending": SystemAction(
+        name="set_pending",
+        allowed_from=frozenset({"in_progress"}),
+        to_status="pending",
+        required_fields=("pending_reason",),
+    ),
+    "resume": SystemAction(
+        name="resume",
+        allowed_from=frozenset({"pending"}),
+        to_status="in_progress",
+        required_fields=(),
+    ),
     "resolve": SystemAction(
         name="resolve",
-        allowed_from=frozenset({"in_progress"}),
+        allowed_from=frozenset({"in_progress", "pending"}),
         to_status="resolved",
         required_fields=("resolution",),
     ),

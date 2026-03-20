@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import TicketDetailPage from "@/app/(dashboard)/tickets/[ticketId]/page";
 import { useTicketDetail } from "@/lib/hooks/useTicketDetail";
 import { useTicketPendingActions } from "@/lib/hooks/useTicketPendingActions";
@@ -190,26 +190,30 @@ describe("TicketDetailPage", () => {
     render(<TicketDetailPage />);
     expect(screen.getByText("工单详情")).toBeInTheDocument();
     expect(screen.getByText("Elevator issue")).toBeInTheDocument();
-    expect(screen.getAllByText("人工动作区").length).toBeGreaterThan(0);
-    expect(screen.getByText("Reply Workspace（人工接管私聊闭环）")).toBeInTheDocument();
-    expect(screen.getByText("审批恢复区")).toBeInTheDocument();
-    expect(screen.getByText("AI 助手区")).toBeInTheDocument();
-    expect(screen.getByText("主视图区")).toBeInTheDocument();
-    expect(screen.getByText("事件时间线")).toBeInTheDocument();
-    expect(screen.getByText("推荐动作")).toBeInTheDocument();
-    expect(screen.getByText("相似案例")).toBeInTheDocument();
-    expect(screen.getByText("定制字段")).toBeInTheDocument();
-    expect(screen.getByText("Runtime 视角")).toBeInTheDocument();
-    expect(screen.getByText(/current graph node: intake_router/)).toBeInTheDocument();
-    expect(screen.getByText(/graph state summary: awaiting_dispatch/)).toBeInTheDocument();
-    expect(screen.getByText(/dispatch status: queue_balancing/)).toBeInTheDocument();
-    expect(screen.getByText(/delivery status: pending_vendor_ack/)).toBeInTheDocument();
-    expect(screen.getByText("Operator 建议")).toBeInTheDocument();
-    expect(screen.getByText("Dispatch 建议")).toBeInTheDocument();
-    expect(screen.getByText(/agent source=operator_agent/)).toBeInTheDocument();
-    expect(screen.getByText(/agent source=dispatch_agent/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "运行调查" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "结束会话" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "返回工单列表" })).toHaveAttribute("href", "/tickets");
+    const primary = screen.getByTestId("ticket-primary-sections");
+    const secondary = screen.getByTestId("ticket-secondary-sections");
+    expect(within(primary).getByText("客户上下文 / 来源消息")).toBeInTheDocument();
+    expect(within(primary).getByText("AI 摘要")).toBeInTheDocument();
+    expect(within(primary).getByText("推荐动作")).toBeInTheDocument();
+    expect(within(primary).getByText("Reply Workspace（人工接管私聊闭环）")).toBeInTheDocument();
+    expect(within(primary).getByText("审批恢复区")).toBeInTheDocument();
+    expect(within(primary).queryByText("事件时间线")).not.toBeInTheDocument();
+
+    expect(within(secondary).getByText("二级详情：时间线")).toBeInTheDocument();
+    expect(within(secondary).getByText("二级详情：Runtime 视角")).toBeInTheDocument();
+    expect(within(secondary).getByText("二级详情：Trace / Reply Events")).toBeInTheDocument();
+    expect(within(secondary).getByText("二级详情：技术字段 / 定制字段")).toBeInTheDocument();
+    expect(within(secondary).getByText("事件时间线")).toBeInTheDocument();
+    expect(within(secondary).getByText("Runtime 视角")).toBeInTheDocument();
+    expect(within(secondary).getByText(/current graph node: intake_router/)).toBeInTheDocument();
+    expect(within(secondary).getByText(/graph state summary: awaiting_dispatch/)).toBeInTheDocument();
+    expect(within(secondary).getByText(/dispatch status: queue_balancing/)).toBeInTheDocument();
+    expect(within(secondary).getByText(/delivery status: pending_vendor_ack/)).toBeInTheDocument();
+    expect(within(secondary).getByText("Operator 建议")).toBeInTheDocument();
+    expect(within(secondary).getByText("Dispatch 建议")).toBeInTheDocument();
+    expect(within(secondary).getByText(/agent source=operator_agent/)).toBeInTheDocument();
+    expect(within(secondary).getByText(/agent source=dispatch_agent/)).toBeInTheDocument();
   });
 
   it("shows partial AI degradation warning but keeps available agent outputs", () => {

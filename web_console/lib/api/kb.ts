@@ -2,6 +2,13 @@ import { getJson } from "@/lib/api/client";
 
 export type KbSourceType = "faq" | "sop" | "history_case";
 
+export type KbMetadata = Record<string, unknown> & {
+  source_dataset?: string;
+  license?: string;
+  source_url?: string;
+  commercial_use?: boolean;
+};
+
 export type KbItem = {
   doc_id: string;
   source_type: KbSourceType;
@@ -9,6 +16,7 @@ export type KbItem = {
   content: string;
   tags: string[];
   updated_at: string | null;
+  metadata: KbMetadata;
 };
 
 export type KbListQuery = {
@@ -43,6 +51,7 @@ export type KbCreatePayload = {
   title: string;
   content: string;
   tags: string[];
+  metadata?: KbMetadata;
 };
 
 export type KbUpdatePayload = Partial<{
@@ -50,6 +59,7 @@ export type KbUpdatePayload = Partial<{
   title: string;
   content: string;
   tags: string[];
+  metadata: KbMetadata;
 }>;
 
 function toSearchParams(query: KbListQuery) {
@@ -81,6 +91,13 @@ function toStringArray(value: unknown) {
   return value.map((item) => String(item)).filter((item) => item.length > 0);
 }
 
+function toMetadata(value: unknown): KbMetadata {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  return { ...(value as Record<string, unknown>) };
+}
+
 function normalizeKbItem(item: Partial<KbItem>, index: number): KbItem {
   return {
     doc_id: toStringOrEmpty(item.doc_id) || `doc_unknown_${index}`,
@@ -88,7 +105,8 @@ function normalizeKbItem(item: Partial<KbItem>, index: number): KbItem {
     title: toStringOrEmpty(item.title),
     content: toStringOrEmpty(item.content),
     tags: toStringArray(item.tags),
-    updated_at: typeof item.updated_at === "string" ? item.updated_at : null
+    updated_at: typeof item.updated_at === "string" ? item.updated_at : null,
+    metadata: toMetadata(item.metadata)
   };
 }
 

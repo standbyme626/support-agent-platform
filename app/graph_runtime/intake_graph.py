@@ -285,6 +285,12 @@ class SupportIntakeGraphRunner:
                 disambiguation=disambiguation,
                 existing_ticket_id=state.get("existing_ticket_id"),
             )
+        if result is None:
+            result = self._workflow._build_session_misc_control_result(
+                envelope=envelope,
+                disambiguation=disambiguation,
+                existing_ticket_id=state.get("existing_ticket_id"),
+            )
         next_state = _wf_copy_state(state)
         next_state["runtime_path"] = _wf_append_path(state, "session_control_detect")
         next_state["result"] = result

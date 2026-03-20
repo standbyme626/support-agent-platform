@@ -1,0 +1,25 @@
+{
+  "imported_at": "2026-03-18T16:13:57.048594+00:00",
+  "faq_count": 89,
+  "history_count": 10000,
+  "sop_count": 3,
+  "outputs": {
+    "faq": "/home/kkk/Project/support-agent-platform/seed_data/faq/faq_external_documents.json",
+    "history_case": "/home/kkk/Project/support-agent-platform/seed_data/historical_cases/history_external_documents.json",
+    "sop": "/home/kkk/Project/support-agent-platform/seed_data/sop/sop_project_documents.json"
+  },
+  "governance": {
+    "faq": {
+      "license": "Apache-2.0",
+      "commercial_use": true
+    },
+    "history_case": {
+      "license": "CC-BY-NC-4.0",
+      "commercial_use": false
+    },
+    "process_logs": {
+      "license": "CC BY 4.0",
+      "commercial_use": true
+    }
+  }
+}

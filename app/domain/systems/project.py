@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 
 
 PROJECT_LIFECYCLE = (
+    "requested",
     "planning",
     "active",
     "on_hold",
@@ -19,6 +20,12 @@ PROJECT_LIFECYCLE = (
 )
 
 PROJECT_ACTIONS = {
+    "plan": SystemAction(
+        name="plan",
+        allowed_from=frozenset({"requested"}),
+        to_status="planning",
+        required_fields=("project_name", "scope"),
+    ),
     "activate": SystemAction(
         name="activate",
         allowed_from=frozenset({"planning"}),
@@ -45,7 +52,7 @@ PROJECT_ACTIONS = {
     ),
     "cancel": SystemAction(
         name="cancel",
-        allowed_from=frozenset({"planning", "active", "on_hold"}),
+        allowed_from=frozenset({"requested", "planning", "active", "on_hold"}),
         to_status="cancelled",
         required_fields=("cancel_reason",),
     ),

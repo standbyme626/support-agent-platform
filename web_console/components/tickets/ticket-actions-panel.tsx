@@ -302,10 +302,11 @@ export function TicketActionsPanel({
       </div>
 
       <div className="ops-action-grid">
-        <button className="btn-primary" disabled={loadingAction !== null} onClick={() => submit("claim", { actor_id: actorId })}>
+        <button type="button" className="btn-primary" disabled={loadingAction !== null} onClick={() => submit("claim", { actor_id: actorId })}>
           {t("认领", "Claim")}
         </button>
         <button
+          type="button"
           className="btn-primary"
           disabled={loadingAction !== null}
           onClick={() =>
@@ -319,6 +320,7 @@ export function TicketActionsPanel({
           {t("改派", "Reassign")}
         </button>
         <button
+          type="button"
           className="btn-primary"
           disabled={loadingAction !== null}
           onClick={() => submit("escalate", { actor_id: actorId, note: note || t("运营升级处理", "Escalated by ops") })}
@@ -326,6 +328,7 @@ export function TicketActionsPanel({
           {t("升级", "Escalate")}
         </button>
         <button
+          type="button"
           className="btn-primary"
           disabled={loadingAction !== null}
           onClick={() =>
@@ -339,6 +342,7 @@ export function TicketActionsPanel({
           {t("解决", "Resolve")}
         </button>
         <button
+          type="button"
           className="btn-primary"
           disabled={loadingAction !== null}
           onClick={() =>
@@ -353,6 +357,7 @@ export function TicketActionsPanel({
           {t("客户确认", "Customer Confirm")}
         </button>
         <button
+          type="button"
           className="btn-primary"
           disabled={loadingAction !== null}
           onClick={() =>
@@ -369,6 +374,7 @@ export function TicketActionsPanel({
         </button>
         {compatMode ? (
           <button
+            type="button"
             className="btn-ghost"
             disabled={loadingAction !== null}
             onClick={() =>

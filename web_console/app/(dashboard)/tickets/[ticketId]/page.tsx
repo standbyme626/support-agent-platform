@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { PendingApprovalList } from "@/components/hitl/pending-approval-list";
 import { ReplyWorkspace } from "@/components/tickets/reply-workspace";
@@ -20,7 +21,11 @@ function toText(value: unknown) {
   if (value === null || value === undefined || value === "") {
     return "-";
   }
-  return String(value);
+  if (typeof value === "object") {
+    return toBriefJson(value);
+  }
+  const text = String(value);
+  return text.length > 140 ? `${text.slice(0, 137)}...` : text;
 }
 
 function toBriefJson(value: unknown) {
@@ -78,6 +83,17 @@ function recommendationDescription(action: Record<string, unknown>) {
   return String(action.description ?? action.reason ?? "");
 }
 
+function formatTimestamp(value: string | null | undefined) {
+  if (!value) {
+    return "-";
+  }
+  const timestamp = Date.parse(value);
+  if (Number.isNaN(timestamp)) {
+    return value;
+  }
+  return new Date(timestamp).toLocaleString();
+}
+
 export default function TicketDetailPage() {
   const { t } = useI18n();
   const params = useParams<{ ticketId: string }>();
@@ -86,13 +102,23 @@ export default function TicketDetailPage() {
   const [investigationQuestion, setInvestigationQuestion] = useState("");
   const [sessionEndReason, setSessionEndReason] = useState("");
   const [actionDraft, setActionDraft] = useState<TicketActionDraft | null>(null);
+  const backLink = (
+    <div>
+      <Link href="/tickets" className="btn-ghost" data-testid="back-to-tickets-link">
+        {t("返回工单列表", "Back to Tickets")}
+      </Link>
+    </div>
+  );
 
   if (!ticketId) {
     return (
-      <ErrorState
-        title={t("无效工单 ID。", "Invalid ticket id.")}
-        message={t("无法从路由中解析工单。", "Cannot resolve ticket from route.")}
-      />
+      <section className="ops-page-stack">
+        {backLink}
+        <ErrorState
+          title={t("无效工单 ID。", "Invalid ticket id.")}
+          message={t("无法从路由中解析工单。", "Cannot resolve ticket from route.")}
+        />
+      </section>
     );
   }
 
@@ -135,22 +161,37 @@ export default function TicketDetailPage() {
   } = useTicketDetail(ticketId);
   const pendingApprovals = useTicketPendingActions(ticketId);
 
-  if (loading || pendingApprovals.loading) {
-    return <LoadingState title={t("工单详情同步中。", "Ticket detail is syncing.")} />;
+  if (loading) {
+    return (
+      <section className="ops-page-stack">
+        {backLink}
+        <LoadingState title={t("工单详情同步中。", "Ticket detail is syncing.")} />
+      </section>
+    );
   }
 
   if (error) {
     return (
-      <ErrorState title={t("加载工单详情失败。", "Failed to load ticket detail.")} message={error} onRetry={() => void refetch()} />
+      <section className="ops-page-stack">
+        {backLink}
+        <ErrorState
+          title={t("加载工单详情失败。", "Failed to load ticket detail.")}
+          message={error}
+          onRetry={() => void refetch()}
+        />
+      </section>
     );
   }
 
   if (!ticket) {
     return (
-      <EmptyState
-        title={t("未找到工单。", "Ticket not found.")}
-        message={t(`未找到 ${ticketId} 的工单数据。`, `No ticket payload for ${ticketId}.`)}
-      />
+      <section className="ops-page-stack">
+        {backLink}
+        <EmptyState
+          title={t("未找到工单。", "Ticket not found.")}
+          message={t(`未找到 ${ticketId} 的工单数据。`, `No ticket payload for ${ticketId}.`)}
+        />
+      </section>
     );
   }
 
@@ -160,6 +201,8 @@ export default function TicketDetailPage() {
   const metadataEntries = Object.entries(ticket.metadata ?? {})
     .filter(([, value]) => value !== null && value !== undefined && value !== "")
     .sort(([left], [right]) => left.localeCompare(right));
+  const metadataPreviewEntries = metadataEntries.slice(0, 16);
+  const metadataRemainingEntries = metadataEntries.slice(16);
   const approvalCounts = {
     pending: pendingApprovals.items.filter((item) => item.status === "pending_approval").length,
     approved: pendingApprovals.items.filter((item) => item.status === "approved").length,
@@ -233,6 +276,23 @@ export default function TicketDetailPage() {
         .filter((item) => String(item).trim().length > 0)
         .join(" · ")
     : t("暂无审批后的恢复记录。", "No post-approval resume record yet.");
+  const recentReplyEvents = [...(Array.isArray(replyEvents) ? replyEvents : [])].reverse().slice(0, 8);
+  const latestMessages = Array.isArray(assist?.latest_messages) ? assist.latest_messages : [];
+  const recommendedActions = Array.isArray(assist?.recommended_actions) ? assist.recommended_actions : [];
+  const copilotRiskFlags = Array.isArray(copilot?.risk_flags) ? copilot.risk_flags : [];
+  const copilotRecommendedActions = Array.isArray(copilot?.recommended_actions) ? copilot.recommended_actions : [];
+  const operatorGroundingSources = Array.isArray(operatorCopilot?.grounding_sources)
+    ? operatorCopilot.grounding_sources
+    : [];
+  const operatorRecommendedActions = Array.isArray(operatorCopilot?.recommended_actions)
+    ? operatorCopilot.recommended_actions
+    : [];
+  const dispatchGroundingSources = Array.isArray(dispatchCopilot?.grounding_sources)
+    ? dispatchCopilot.grounding_sources
+    : [];
+  const dispatchRecommendedActions = Array.isArray(dispatchCopilot?.recommended_actions)
+    ? dispatchCopilot.recommended_actions
+    : [];
 
   async function submitCopilotQuery(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -267,123 +327,52 @@ export default function TicketDetailPage() {
 
   return (
     <section className="ops-page-stack">
+      {backLink}
       <h2 className="section-title">{t("工单详情", "Ticket Detail")}</h2>
       <p className="ops-kicker">
         {t(
-          "四区工作台：主视图、AI助手区、人工动作区、审批恢复区，同步同一 ticket/trace 主线。",
-          "Four-zone workspace: main view, AI assistant, manual actions, and approval recovery on one ticket/trace line."
+          "summary-first：首屏聚焦客户上下文、AI摘要、推荐动作、人工回复与审批状态；技术细节按需展开。",
+          "Summary-first: keep context, AI summary, recommended actions, manual reply, and approvals on first screen; open technical details on demand."
         )}
       </p>
       <TicketDetailHeader ticket={ticket} />
 
-      <div className="detail-grid" style={{ marginTop: 12 }}>
-        <div className="detail-col">
-          <p className="ops-kicker">{t("主视图区", "Main View")}</p>
+      <div className="ticket-detail-primary-grid" style={{ marginTop: 12 }} data-testid="ticket-primary-sections">
+        <div className="ticket-detail-primary-main">
           <article className="card">
-            <h3>{t("事件时间线", "Event Timeline")}</h3>
-            <TicketTimeline events={events} />
-            <h4 style={{ marginTop: 12, marginBottom: 6, fontSize: 13 }}>
-              {t("来源消息 / 上下文", "Source Messages / Context")}
-            </h4>
-            <ul className="list">
+            <h3>{t("客户上下文 / 来源消息", "Customer Context / Source Messages")}</h3>
+            <ul className="list" style={{ marginTop: 10 }}>
               <li className="list-item">
                 <small>{t("当前消息", "Current message")}: {ticket.latest_message || "-"}</small>
               </li>
-              {(assist?.latest_messages ?? []).slice(0, 3).map((line, index) => (
+              <li className="list-item">
+                <small>{t("队列", "Queue")}: {ticket.queue} · {t("处理人", "Assignee")}: {ticket.assignee ?? "-"}</small>
+              </li>
+              <li className="list-item">
+                <small>{t("渠道", "Channel")}: {ticket.channel} · {t("接管状态", "Handoff State")}: {ticket.handoff_state}</small>
+              </li>
+              {latestMessages.slice(0, 3).map((line, index) => (
                 <li className="list-item" key={`source-msg-${index}`}>
                   <small>{line}</small>
                 </li>
               ))}
             </ul>
           </article>
-          <article className="card" style={{ marginTop: 12 }}>
-            <h3>{t("核心字段", "Core Fields")}</h3>
-            <ul className="ops-inline-list" style={{ marginTop: 10 }}>
-              <li>{t("队列", "Queue")}: {ticket.queue}</li>
-              <li>{t("处理人", "Assignee")}: {ticket.assignee ?? "-"}</li>
-              <li>{t("渠道", "Channel")}: {ticket.channel}</li>
-              <li>{t("接管状态", "Handoff State")}: {ticket.handoff_state}</li>
-              <li>{t("风险等级", "Risk Level")}: {ticket.risk_level}</li>
-              <li>{t("优先级", "Priority")}: {ticket.priority}</li>
-              <li>{t("状态", "Status")}: {ticket.status}</li>
-              <li>
-                {t("最新接管事件", "Latest handoff event")}:{" "}
-                {lastHandoffEvent ? `${lastHandoffEvent.event_type} · ${toText(lastHandoffEvent.created_at)}` : t("无", "none")}
-              </li>
-              <li>{t("接管载荷", "Handoff payload")}: {lastHandoffEvent ? toBriefJson(lastHandoffEvent.payload) : "-"}</li>
-            </ul>
-          </article>
-          <article className="card" style={{ marginTop: 12 }}>
-            <h3>{t("Runtime 视角", "Runtime View")}</h3>
-            <ul className="ops-inline-list" style={{ marginTop: 10 }}>
-              <li>current graph node: {currentGraphNode}</li>
-              <li>graph state summary: {toBriefJson(graphStateSummary)}</li>
-              <li>pending approval: {pendingApproval ? "true" : "false"}</li>
-              <li>pending customer: {pendingCustomer ? "true" : "false"}</li>
-              <li>pending handoff: {pendingHandoff ? "true" : "false"}</li>
-              <li>dispatch status: {dispatchStatus}</li>
-              <li>delivery status: {deliveryStatus}</li>
-            </ul>
-            <p className="hint" style={{ marginTop: 8, marginBottom: 0 }}>
-              {t(
-                "该卡片聚焦 graph/runtime 关键态，不再仅依赖旧 workflow 字段。",
-                "This card focuses on graph/runtime states instead of only legacy workflow fields."
-              )}
-            </p>
-          </article>
-          <article className="card" style={{ marginTop: 12 }}>
-            <h3>{t("定制字段", "Custom Fields")}</h3>
-            {metadataEntries.length > 0 ? (
-              <ul className="ops-inline-list" style={{ marginTop: 10 }}>
-                {metadataEntries.map(([key, value]) => (
-                  <li key={key}>
-                    <strong>{key}</strong>: {toText(value)}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p style={{ color: "var(--muted)" }}>{t("暂无定制字段。", "No custom fields.")}</p>
-            )}
-          </article>
-        </div>
 
-        <div className="detail-col">
-          <p className="ops-kicker">{t("AI 助手区", "AI Assistant")}</p>
           <TicketSummaryCard ticket={ticket} assist={assist} />
-          <article className="card" style={{ marginTop: 12 }}>
-            <h3>{t("Grounding", "Grounding")}</h3>
-            <ul className="ops-inline-list" style={{ marginTop: 10 }}>
-              <li>{t("服务类型", "Service Type")}: {toText(ticket.metadata?.service_type)}</li>
-              <li>{t("小区", "Community Name")}: {toText(ticket.metadata?.community_name)}</li>
-              <li>{t("楼栋", "Building")}: {toText(ticket.metadata?.building)}</li>
-              <li>{t("停车位", "Parking Lot")}: {toText(ticket.metadata?.parking_lot)}</li>
-              <li>{t("审批要求", "Approval Required")}: {toText(ticket.metadata?.approval_required)}</li>
-            </ul>
-            {groundingSources.length ? (
-              <ul className="list" style={{ marginTop: 10 }}>
-                {groundingSources.map((item, index) => (
-                  <li className="list-item" key={`${item.source_id ?? "source"}-${index}`}>
-                    <strong>{item.title ?? t("未命名来源", "Untitled source")}</strong>
-                    <div style={{ color: "var(--muted)", fontSize: 13 }}>
-                      {t("来源", "Source")}={item.source_type ?? "-"} · {t("排名", "Rank")}={item.rank ?? "-"} ·{" "}
-                      {t("分数", "Score")}={item.score ?? "-"}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </article>
-          <article className="card" style={{ marginTop: 12 }}>
+
+          <article className="card">
             <h3>{t("推荐动作", "Recommended Actions")}</h3>
-            {assist?.recommended_actions?.length ? (
+            {recommendedActions.length ? (
               <ul className="list" style={{ marginTop: 10 }}>
-                {assist.recommended_actions.map((action, index) => (
+                {recommendedActions.map((action, index) => (
                   <li className="list-item" key={`action-${index}`}>
                     <strong>{recommendationLabel(action)}</strong>
                     <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 2 }}>
                       {recommendationDescription(action)}
                     </div>
                     <button
+                      type="button"
                       className="btn-ghost"
                       style={{ marginTop: 8 }}
                       onClick={() =>
@@ -403,7 +392,119 @@ export default function TicketDetailPage() {
               <p style={{ color: "var(--muted)" }}>{t("暂无推荐动作。", "No recommended actions available.")}</p>
             )}
           </article>
-          <article className="card" style={{ marginTop: 12 }}>
+        </div>
+
+        <div className="ticket-detail-primary-side">
+          <p className="ops-kicker">{t("人工动作区", "Manual Actions")}</p>
+          <ReplyWorkspace
+            ticket={ticket}
+            assignees={assignees}
+            replyDraft={replyDraft}
+            replyDraftLoading={replyDraftLoading}
+            replyDraftError={replyDraftError}
+            replySend={replySend}
+            replySendLoading={replySendLoading}
+            replySendError={replySendError}
+            actionLoading={actionLoading}
+            replyEvents={replyEvents}
+            showReplyEvents={false}
+            onGenerateDraft={(payload) => runReplyDraft(payload)}
+            onSendReply={(payload) => runReplySend(payload)}
+            onAction={(action: TicketActionType, payload: TicketActionPayload) =>
+              runAction(action, payload)
+            }
+          />
+          <TicketActionsPanel
+            ticket={ticket}
+            assignees={assignees}
+            loadingAction={actionLoading}
+            actionError={actionError}
+            aiDraft={actionDraft}
+            onAction={(action: TicketActionType, payload: TicketActionPayload) =>
+              runAction(action, payload)
+            }
+          />
+
+          <p className="ops-kicker" style={{ marginTop: 12 }}>
+            {t("审批恢复区", "Approval Recovery")}
+          </p>
+          <article className="card">
+            <h3>{t("审批分支总览", "Approval Branch Overview")}</h3>
+            <ul className="ops-inline-list" style={{ marginTop: 10 }}>
+              <li>pending_approval: {approvalCounts.pending}</li>
+              <li>approved: {approvalCounts.approved}</li>
+              <li>rejected: {approvalCounts.rejected}</li>
+              <li>timeout: {approvalCounts.timeout}</li>
+            </ul>
+            <div style={{ marginTop: 10 }}>
+              <div style={{ color: "var(--muted)", fontSize: 13 }}>
+                {t("当前审批状态", "Current approval state")}: {" "}
+                {approvalCounts.pending > 0 ? "pending_approval" : t("无进行中审批", "no pending approval")}
+              </div>
+              <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 4 }}>
+                {t("resume 所需动作", "Resume required action")}: {resumeRequiredAction}
+              </div>
+              <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 4 }}>
+                {t("审批后 graph 恢复结果", "Post-approval graph resume result")}: {approvalResumeResult}
+              </div>
+            </div>
+          </article>
+          <div style={{ marginTop: 12 }}>
+            <PendingApprovalList
+              title={t("工单审批 / 恢复记录", "Ticket Approval / Recovery Records")}
+              showAllStatuses
+              items={pendingApprovals.items}
+              loading={pendingApprovals.loading}
+              actionLoadingId={pendingApprovals.actionLoadingId}
+              error={pendingApprovals.error}
+              onRefresh={() => void pendingApprovals.refetch()}
+              onApprove={async (approvalId, note) => {
+                await pendingApprovals.approve(approvalId, note, ticket.assignee ?? "u_supervisor_01");
+                await refetch();
+              }}
+              onReject={async (approvalId, note) => {
+                await pendingApprovals.reject(approvalId, note, ticket.assignee ?? "u_supervisor_01");
+                await refetch();
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="ticket-detail-secondary-stack" data-testid="ticket-secondary-sections">
+        <details className="ticket-detail-disclosure">
+          <summary>{t("二级详情：时间线", "Details: Timeline")}</summary>
+          <article className="card" style={{ marginTop: 10 }}>
+            <h3>{t("事件时间线", "Event Timeline")}</h3>
+            <TicketTimeline events={events} />
+          </article>
+        </details>
+
+        <details className="ticket-detail-disclosure">
+          <summary>{t("二级详情：Runtime 视角", "Details: Runtime View")}</summary>
+          <article className="card" style={{ marginTop: 10 }}>
+            <h3>{t("Runtime 视角", "Runtime View")}</h3>
+            <ul className="ops-inline-list" style={{ marginTop: 10 }}>
+              <li>current graph node: {currentGraphNode}</li>
+              <li>graph state summary: {toBriefJson(graphStateSummary)}</li>
+              <li>pending approval: {pendingApproval ? "true" : "false"}</li>
+              <li>pending customer: {pendingCustomer ? "true" : "false"}</li>
+              <li>pending handoff: {pendingHandoff ? "true" : "false"}</li>
+              <li>dispatch status: {dispatchStatus}</li>
+              <li>delivery status: {deliveryStatus}</li>
+            </ul>
+            <p className="hint" style={{ marginTop: 8, marginBottom: 0 }}>
+              {t(
+                "该卡片聚焦 graph/runtime 关键态，不再仅依赖旧 workflow 字段。",
+                "This card focuses on graph/runtime states instead of only legacy workflow fields."
+              )}
+            </p>
+          </article>
+        </details>
+
+        <details className="ticket-detail-disclosure">
+          <summary>{t("二级详情：Trace / Reply Events", "Details: Trace / Reply Events")}</summary>
+          <article className="card" style={{ marginTop: 10 }}>
             <h3>{t("Copilot 查询（advice_only）", "Copilot Query (advice_only)")}</h3>
             <form className="ops-kb-search-row" onSubmit={(event) => void submitCopilotQuery(event)}>
               <input
@@ -438,16 +539,17 @@ export default function TicketDetailPage() {
                 </div>
                 <p style={{ marginTop: 8 }}>{copilot.answer || copilot.summary}</p>
                 <div className="ops-muted" style={{ fontSize: 13 }}>
-                  {t("风险标签", "Risk flags")}: {copilot.risk_flags.join(", ") || "-"}
+                  {t("风险标签", "Risk flags")}: {copilotRiskFlags.join(", ") || "-"}
                 </div>
                 <div className="ops-muted" style={{ fontSize: 13, marginTop: 2 }}>
-                  agent source=ticket_copilot · grounding={copilot.grounding_sources.length} · recommended_actions=
-                  {(copilot.recommended_actions ?? []).length}
+                  agent source=ticket_copilot · grounding={Array.isArray(copilot.grounding_sources) ? copilot.grounding_sources.length : 0} · recommended_actions=
+                  {copilotRecommendedActions.length}
                 </div>
                 <div className="ops-muted" style={{ fontSize: 13, marginTop: 2 }}>
                   runtime_trace={toBriefJson(copilot.runtime_trace ?? copilot.llm_trace)}
                 </div>
                 <button
+                  type="button"
                   className="btn-ghost"
                   style={{ marginTop: 8 }}
                   onClick={() =>
@@ -470,8 +572,8 @@ export default function TicketDetailPage() {
                 </div>
                 <p style={{ marginTop: 6 }}>{operatorCopilot.answer}</p>
                 <div className="ops-muted" style={{ fontSize: 13 }}>
-                  agent source=operator_agent · grounding={operatorCopilot.grounding_sources.length} · recommended_actions=
-                  {(operatorCopilot.recommended_actions ?? []).length} · confidence=
+                  agent source=operator_agent · grounding={operatorGroundingSources.length} · recommended_actions=
+                  {operatorRecommendedActions.length} · confidence=
                   {operatorCopilot.confidence ?? "-"}
                 </div>
                 <div className="ops-muted" style={{ fontSize: 13, marginTop: 2 }}>
@@ -487,8 +589,8 @@ export default function TicketDetailPage() {
                 </div>
                 <p style={{ marginTop: 6 }}>{dispatchCopilot.answer}</p>
                 <div className="ops-muted" style={{ fontSize: 13 }}>
-                  agent source=dispatch_agent · grounding={dispatchCopilot.grounding_sources.length} · recommended_actions=
-                  {(dispatchCopilot.recommended_actions ?? []).length} · top_queue=
+                  agent source=dispatch_agent · grounding={dispatchGroundingSources.length} · recommended_actions=
+                  {dispatchRecommendedActions.length} · top_queue=
                   {toText(toRecord(dispatchCopilot.queue_summary?.[0]).queue_name)}
                 </div>
                 <div className="ops-muted" style={{ fontSize: 13, marginTop: 2 }}>
@@ -565,7 +667,76 @@ export default function TicketDetailPage() {
               ) : null}
             </div>
           </article>
-          <article className="card" style={{ marginTop: 12 }}>
+
+          <article className="card" style={{ marginTop: 10 }}>
+            <h3>{t("Reply Events", "Reply Events")}</h3>
+            {recentReplyEvents.length ? (
+              <ul className="list" style={{ marginTop: 10 }}>
+                {recentReplyEvents.map((item) => (
+                  <li className="list-item" key={item.event_id}>
+                    <strong>{item.event_type}</strong>
+                    <div style={{ color: "var(--muted)", fontSize: 13 }}>
+                      {t("时间", "Time")}={formatTimestamp(item.created_at)} · {t("状态", "Status")}=
+                      {item.delivery_status ?? "-"} · attempt={item.attempt ?? "-"}
+                    </div>
+                    <div style={{ color: "var(--muted)", fontSize: 13 }}>
+                      trace={item.trace_id ?? "-"} · actor={item.actor_id ?? "-"} · source={item.source}
+                    </div>
+                    {item.trace_id ? (
+                      <a href={`/traces/${encodeURIComponent(item.trace_id)}`} style={{ fontSize: 13 }}>
+                        {t("查看 trace 详情", "View Trace Detail")}
+                      </a>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="hint">{t("暂无 reply-events。", "No reply events yet.")}</p>
+            )}
+          </article>
+        </details>
+
+        <details className="ticket-detail-disclosure">
+          <summary>{t("二级详情：技术字段 / 定制字段", "Details: Technical / Custom Fields")}</summary>
+          <article className="card" style={{ marginTop: 10 }}>
+            <h3>{t("核心字段", "Core Fields")}</h3>
+            <ul className="ops-inline-list" style={{ marginTop: 10 }}>
+              <li>{t("风险等级", "Risk Level")}: {ticket.risk_level}</li>
+              <li>{t("优先级", "Priority")}: {ticket.priority}</li>
+              <li>{t("状态", "Status")}: {ticket.status}</li>
+              <li>
+                {t("最新接管事件", "Latest handoff event")}:{" "}
+                {lastHandoffEvent ? `${lastHandoffEvent.event_type} · ${toText(lastHandoffEvent.created_at)}` : t("无", "none")}
+              </li>
+              <li>{t("接管载荷", "Handoff payload")}: {lastHandoffEvent ? toBriefJson(lastHandoffEvent.payload) : "-"}</li>
+            </ul>
+          </article>
+
+          <article className="card" style={{ marginTop: 10 }}>
+            <h3>{t("Grounding", "Grounding")}</h3>
+            <ul className="ops-inline-list" style={{ marginTop: 10 }}>
+              <li>{t("服务类型", "Service Type")}: {toText(ticket.metadata?.service_type)}</li>
+              <li>{t("小区", "Community Name")}: {toText(ticket.metadata?.community_name)}</li>
+              <li>{t("楼栋", "Building")}: {toText(ticket.metadata?.building)}</li>
+              <li>{t("停车位", "Parking Lot")}: {toText(ticket.metadata?.parking_lot)}</li>
+              <li>{t("审批要求", "Approval Required")}: {toText(ticket.metadata?.approval_required)}</li>
+            </ul>
+            {groundingSources.length ? (
+              <ul className="list" style={{ marginTop: 10 }}>
+                {groundingSources.map((item, index) => (
+                  <li className="list-item" key={`${item.source_id ?? "source"}-${index}`}>
+                    <strong>{item.title ?? t("未命名来源", "Untitled source")}</strong>
+                    <div style={{ color: "var(--muted)", fontSize: 13 }}>
+                      {t("来源", "Source")}={item.source_type ?? "-"} · {t("排名", "Rank")}={item.rank ?? "-"} ·{" "}
+                      {t("分数", "Score")}={item.score ?? "-"}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </article>
+
+          <article className="card" style={{ marginTop: 10 }}>
             <h3>{t("相似案例", "Similar Cases")}</h3>
             {similarCases.length ? (
               <ul className="list" style={{ marginTop: 10 }}>
@@ -583,82 +754,40 @@ export default function TicketDetailPage() {
               <p style={{ color: "var(--muted)" }}>{t("暂无相似案例。", "No similar cases.")}</p>
             )}
           </article>
-        </div>
 
-        <div className="detail-col">
-          <p className="ops-kicker">{t("人工动作区", "Manual Actions")}</p>
-          <ReplyWorkspace
-            ticket={ticket}
-            assignees={assignees}
-            replyDraft={replyDraft}
-            replyDraftLoading={replyDraftLoading}
-            replyDraftError={replyDraftError}
-            replySend={replySend}
-            replySendLoading={replySendLoading}
-            replySendError={replySendError}
-            actionLoading={actionLoading}
-            replyEvents={replyEvents}
-            onGenerateDraft={(payload) => runReplyDraft(payload)}
-            onSendReply={(payload) => runReplySend(payload)}
-            onAction={(action: TicketActionType, payload: TicketActionPayload) =>
-              runAction(action, payload)
-            }
-          />
-          <TicketActionsPanel
-            ticket={ticket}
-            assignees={assignees}
-            loadingAction={actionLoading}
-            actionError={actionError}
-            aiDraft={actionDraft}
-            onAction={(action: TicketActionType, payload: TicketActionPayload) =>
-              runAction(action, payload)
-            }
-          />
-
-          <p className="ops-kicker" style={{ marginTop: 12 }}>
-            {t("审批恢复区", "Approval Recovery")}
-          </p>
-          <article className="card">
-            <h3>{t("审批分支总览", "Approval Branch Overview")}</h3>
-            <ul className="ops-inline-list" style={{ marginTop: 10 }}>
-              <li>pending_approval: {approvalCounts.pending}</li>
-              <li>approved: {approvalCounts.approved}</li>
-              <li>rejected: {approvalCounts.rejected}</li>
-              <li>timeout: {approvalCounts.timeout}</li>
-            </ul>
-            <div style={{ marginTop: 10 }}>
-              <div style={{ color: "var(--muted)", fontSize: 13 }}>
-                {t("当前审批状态", "Current approval state")}:{" "}
-                {approvalCounts.pending > 0 ? "pending_approval" : t("无进行中审批", "no pending approval")}
-              </div>
-              <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 4 }}>
-                {t("resume 所需动作", "Resume required action")}: {resumeRequiredAction}
-              </div>
-              <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 4 }}>
-                {t("审批后 graph 恢复结果", "Post-approval graph resume result")}: {approvalResumeResult}
-              </div>
-            </div>
+          <article className="card" style={{ marginTop: 10 }}>
+            <h3>{t("定制字段", "Custom Fields")}</h3>
+            {metadataEntries.length > 0 ? (
+              <>
+                <ul className="ops-inline-list" style={{ marginTop: 10 }}>
+                  {metadataPreviewEntries.map(([key, value]) => (
+                    <li key={key} style={{ overflowWrap: "anywhere" }}>
+                      <strong>{key}</strong>: {toText(value)}
+                    </li>
+                  ))}
+                </ul>
+                {metadataRemainingEntries.length > 0 ? (
+                  <details style={{ marginTop: 8 }}>
+                    <summary style={{ color: "var(--muted)", cursor: "pointer", fontSize: 13 }}>
+                      {t("展开更多字段", "Show more fields")} ({metadataRemainingEntries.length})
+                    </summary>
+                    <div style={{ maxHeight: 260, overflowY: "auto", marginTop: 8 }}>
+                      <ul className="ops-inline-list" style={{ marginTop: 0 }}>
+                        {metadataRemainingEntries.map(([key, value]) => (
+                          <li key={key} style={{ overflowWrap: "anywhere" }}>
+                            <strong>{key}</strong>: {toText(value)}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </details>
+                ) : null}
+              </>
+            ) : (
+              <p style={{ color: "var(--muted)" }}>{t("暂无定制字段。", "No custom fields.")}</p>
+            )}
           </article>
-          <div style={{ marginTop: 12 }}>
-            <PendingApprovalList
-              title={t("工单审批 / 恢复记录", "Ticket Approval / Recovery Records")}
-              showAllStatuses
-              items={pendingApprovals.items}
-              loading={pendingApprovals.loading}
-              actionLoadingId={pendingApprovals.actionLoadingId}
-              error={pendingApprovals.error}
-              onRefresh={() => void pendingApprovals.refetch()}
-              onApprove={async (approvalId, note) => {
-                await pendingApprovals.approve(approvalId, note, ticket.assignee ?? "u_supervisor_01");
-                await refetch();
-              }}
-              onReject={async (approvalId, note) => {
-                await pendingApprovals.reject(approvalId, note, ticket.assignee ?? "u_supervisor_01");
-                await refetch();
-              }}
-            />
-          </div>
-        </div>
+        </details>
       </div>
     </section>
   );

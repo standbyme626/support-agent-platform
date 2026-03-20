@@ -61,6 +61,7 @@ export function ReplyWorkspace({
   replySendError,
   actionLoading,
   replyEvents,
+  showReplyEvents = true,
   onGenerateDraft,
   onSendReply,
   onAction
@@ -75,6 +76,7 @@ export function ReplyWorkspace({
   replySendError: string | null;
   actionLoading?: TicketActionType | null;
   replyEvents: ReplyEventItem[];
+  showReplyEvents?: boolean;
   onGenerateDraft: (payload: ReplyDraftPayload) => Promise<ReplyDraftData>;
   onSendReply: (payload: ReplySendPayload) => Promise<ReplySendData>;
   onAction?: (action: TicketActionType, payload: TicketActionPayload) => Promise<void>;
@@ -368,32 +370,34 @@ export function ReplyWorkspace({
         message={localError || replyDraftError || replySendError ? (localError || replyDraftError || replySendError) : null}
       />
 
-      <div style={{ marginTop: 12 }}>
-        <h4 style={{ marginBottom: 6 }}>{t("Reply Events", "Reply Events")}</h4>
-        {sortedReplyEvents.length ? (
-          <ul className="list">
-            {sortedReplyEvents.map((item) => (
-              <li className="list-item" key={item.event_id}>
-                <strong>{item.event_type}</strong>
-                <div style={{ color: "var(--muted)", fontSize: 13 }}>
-                  {t("时间", "Time")}={formatTimestamp(item.created_at)} · {t("状态", "Status")}=
-                  {item.delivery_status ?? "-"} · attempt={item.attempt ?? "-"}
-                </div>
-                <div style={{ color: "var(--muted)", fontSize: 13 }}>
-                  trace={item.trace_id ?? "-"} · actor={item.actor_id ?? "-"} · source={item.source}
-                </div>
-                {item.trace_id ? (
-                  <a href={`/traces/${encodeURIComponent(item.trace_id)}`} style={{ fontSize: 13 }}>
-                    {t("查看 trace 详情", "View Trace Detail")}
-                  </a>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="hint">{t("暂无 reply-events。", "No reply events yet.")}</p>
-        )}
-      </div>
+      {showReplyEvents ? (
+        <div style={{ marginTop: 12 }}>
+          <h4 style={{ marginBottom: 6 }}>{t("Reply Events", "Reply Events")}</h4>
+          {sortedReplyEvents.length ? (
+            <ul className="list">
+              {sortedReplyEvents.map((item) => (
+                <li className="list-item" key={item.event_id}>
+                  <strong>{item.event_type}</strong>
+                  <div style={{ color: "var(--muted)", fontSize: 13 }}>
+                    {t("时间", "Time")}={formatTimestamp(item.created_at)} · {t("状态", "Status")}=
+                    {item.delivery_status ?? "-"} · attempt={item.attempt ?? "-"}
+                  </div>
+                  <div style={{ color: "var(--muted)", fontSize: 13 }}>
+                    trace={item.trace_id ?? "-"} · actor={item.actor_id ?? "-"} · source={item.source}
+                  </div>
+                  {item.trace_id ? (
+                    <a href={`/traces/${encodeURIComponent(item.trace_id)}`} style={{ fontSize: 13 }}>
+                      {t("查看 trace 详情", "View Trace Detail")}
+                    </a>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="hint">{t("暂无 reply-events。", "No reply events yet.")}</p>
+          )}
+        </div>
+      ) : null}
     </article>
   );
 }
