@@ -296,7 +296,11 @@ def process_wecom_message(runtime: _RuntimeLike, payload: dict[str, Any]) -> Bri
     if group_fast_reply is not None:
         group_id = _safe_group_id(chat_id=chat_id, session_id=envelope.session_id)
         if group_id:
-            user_receipt_body = group_fast_reply
+            # 如果是新系统路由，优先使用新系统的reply_text
+            if system_result and system_result.get("ok"):
+                user_receipt_body = reply_text
+            else:
+                user_receipt_body = group_fast_reply
             user_receipt_metadata["force_group_send"] = True
             user_receipt_metadata["target_group_id"] = group_id
             user_receipt_metadata["reply_mode"] = "group_fast_rule"
