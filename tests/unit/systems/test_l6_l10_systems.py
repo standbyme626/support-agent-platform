@@ -34,7 +34,7 @@ class TestAssetSystem:
 
         assert result["ok"] is True
         assert result["system"] == "asset"
-        assert result["status"] == "inventory"
+        assert result["status"] == "requested"
 
     def test_asset_lifecycle(self, tmp_path: Path) -> None:
         repo = AssetRepository(tmp_path / "systems.db")
@@ -45,7 +45,21 @@ class TestAssetSystem:
         entity_id = result["entity_id"]
 
         result = system.execute_action(
-            entity_id, "assign", "admin", {"assigned_to": "EMP-001"}, "trace-1"
+            entity_id,
+            "request",
+            "admin",
+            {"asset_name": "Dell Laptop", "asset_type": "IT"},
+            "trace-1",
+        )
+        assert result["status"] == "procurement"
+
+        result = system.execute_action(
+            entity_id, "receive", "admin", {"asset_tag": "TAG-001"}, "trace-2"
+        )
+        assert result["status"] == "inventory"
+
+        result = system.execute_action(
+            entity_id, "assign", "admin", {"assigned_to": "EMP-001"}, "trace-3"
         )
         assert result["ok"] is True
         assert result["status"] == "assigned"
@@ -143,7 +157,7 @@ class TestProjectSystem:
 
         assert result["ok"] is True
         assert result["system"] == "project"
-        assert result["status"] == "planning"
+        assert result["status"] == "requested"
 
     def test_project_lifecycle(self, tmp_path: Path) -> None:
         repo = ProjectRepository(tmp_path / "systems.db")
@@ -152,8 +166,14 @@ class TestProjectSystem:
 
         result = system.create({"name": "测试项目", "owner_id": "PM-001"})
         entity_id = result["entity_id"]
+        assert result["status"] == "requested"
 
-        result = system.execute_action(entity_id, "activate", "admin", {}, "trace-1")
+        result = system.execute_action(
+            entity_id, "plan", "admin", {"project_name": "测试项目", "scope": "范围"}, "trace-1"
+        )
+        assert result["status"] == "planning"
+
+        result = system.execute_action(entity_id, "activate", "admin", {}, "trace-2")
         assert result["ok"] is True
         assert result["status"] == "active"
 
@@ -175,7 +195,7 @@ class TestSupplyChainSystem:
 
         assert result["ok"] is True
         assert result["system"] == "supply_chain"
-        assert result["status"] == "pending"
+        assert result["status"] == "awaiting_receipt"
 
     def test_supply_chain_lifecycle(self, tmp_path: Path) -> None:
         repo = SupplyChainRepository(tmp_path / "systems.db")
@@ -184,10 +204,15 @@ class TestSupplyChainSystem:
 
         result = system.create({"order_type": "purchase", "supplier_id": "SUP-001"})
         entity_id = result["entity_id"]
+        assert result["status"] == "awaiting_receipt"
 
-        result = system.execute_action(entity_id, "confirm", "admin", {}, "trace-1")
-        assert result["ok"] is True
-        assert result["status"] == "confirmed"
+        result = system.execute_action(
+            entity_id, "receive", "admin", {"receipt_qty": 10}, "trace-1"
+        )
+        assert result["status"] == "received"
+
+        result = system.execute_action(entity_id, "stock", "admin", {"location": "A1"}, "trace-2")
+        assert result["status"] == "stocked"
 
 
 class TestAllSystemsRegistered:

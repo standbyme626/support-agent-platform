@@ -14,7 +14,8 @@ KB_LIFECYCLE = (
     "draft",
     "review",
     "published",
-    "expiring",
+    "feedback_received",
+    "needs_update",
     "archived",
 )
 
@@ -37,23 +38,29 @@ KB_ACTIONS = {
         to_status="draft",
         required_fields=("reject_reason",),
     ),
-    "expire": SystemAction(
-        name="expire",
+    "receive_feedback": SystemAction(
+        name="receive_feedback",
         allowed_from=frozenset({"published"}),
-        to_status="expiring",
-        required_fields=(),
+        to_status="feedback_received",
+        required_fields=("feedback_text",),
+    ),
+    "flag_update": SystemAction(
+        name="flag_update",
+        allowed_from=frozenset({"feedback_received"}),
+        to_status="needs_update",
+        required_fields=("update_reason",),
+    ),
+    "update_content": SystemAction(
+        name="update_content",
+        allowed_from=frozenset({"needs_update", "published"}),
+        to_status="published",
+        required_fields=("content",),
     ),
     "archive": SystemAction(
         name="archive",
-        allowed_from=frozenset({"published", "expiring"}),
+        allowed_from=frozenset({"published", "needs_update", "feedback_received"}),
         to_status="archived",
         required_fields=("archive_reason",),
-    ),
-    "update": SystemAction(
-        name="update",
-        allowed_from=frozenset({"published"}),
-        to_status="published",
-        required_fields=("content",),
     ),
 }
 

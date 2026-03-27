@@ -11,50 +11,51 @@ if TYPE_CHECKING:
 
 
 SUPPLY_CHAIN_LIFECYCLE = (
-    "pending",
-    "confirmed",
-    "shipped",
-    "in_transit",
-    "delivered",
-    "completed",
+    "awaiting_receipt",
+    "received",
+    "stocked",
+    "allocated",
+    "fulfilled",
+    "returned",
+    "closed",
 )
 
 SUPPLY_CHAIN_ACTIONS = {
-    "confirm": SystemAction(
-        name="confirm",
-        allowed_from=frozenset({"pending"}),
-        to_status="confirmed",
+    "receive": SystemAction(
+        name="receive",
+        allowed_from=frozenset({"awaiting_receipt"}),
+        to_status="received",
+        required_fields=("receipt_qty",),
+    ),
+    "stock": SystemAction(
+        name="stock",
+        allowed_from=frozenset({"received"}),
+        to_status="stocked",
+        required_fields=("location",),
+    ),
+    "allocate": SystemAction(
+        name="allocate",
+        allowed_from=frozenset({"stocked"}),
+        to_status="allocated",
+        required_fields=("order_id",),
+    ),
+    "fulfill": SystemAction(
+        name="fulfill",
+        allowed_from=frozenset({"allocated"}),
+        to_status="fulfilled",
+        required_fields=("shipment_id",),
+    ),
+    "return": SystemAction(
+        name="return",
+        allowed_from=frozenset({"fulfilled"}),
+        to_status="returned",
+        required_fields=("return_reason",),
+    ),
+    "close": SystemAction(
+        name="close",
+        allowed_from=frozenset({"fulfilled", "returned"}),
+        to_status="closed",
         required_fields=(),
-    ),
-    "ship": SystemAction(
-        name="ship",
-        allowed_from=frozenset({"confirmed"}),
-        to_status="shipped",
-        required_fields=("tracking_no",),
-    ),
-    "in_transit": SystemAction(
-        name="in_transit",
-        allowed_from=frozenset({"shipped"}),
-        to_status="in_transit",
-        required_fields=(),
-    ),
-    "deliver": SystemAction(
-        name="deliver",
-        allowed_from=frozenset({"in_transit"}),
-        to_status="delivered",
-        required_fields=(),
-    ),
-    "complete": SystemAction(
-        name="complete",
-        allowed_from=frozenset({"delivered"}),
-        to_status="completed",
-        required_fields=(),
-    ),
-    "cancel": SystemAction(
-        name="cancel",
-        allowed_from=frozenset({"pending", "confirmed"}),
-        to_status="pending",
-        required_fields=("cancel_reason",),
     ),
 }
 

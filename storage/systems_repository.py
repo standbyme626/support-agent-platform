@@ -803,7 +803,7 @@ class SupplyChainRepository(SystemRepository):
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 entity_id,
-                "pending",
+                "awaiting_receipt",
                 data.get("order_type"),
                 data.get("supplier_id"),
                 items,

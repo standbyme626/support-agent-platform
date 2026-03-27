@@ -9,3 +9,6 @@ storage/*.log
 storage/acceptance/
 storage/releases/
 refs/
+litellm-env/
+litellm.log
+litellm_config.yaml

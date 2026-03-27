@@ -593,9 +593,9 @@ class SupportIntakeWorkflow:
         reply_text: str,
         collab_push: dict[str, str] | None,
     ) -> SupportIntakeResult:
-        ticket_action, trace_events = self._derive_ticket_action(outcome)
-        recommended_actions = [item.as_dict() for item in outcome.recommendations]
         system_key = self._resolve_system_for_outcome(outcome=outcome)
+        ticket_action, trace_events = self._derive_ticket_action(outcome, system_key)
+        recommended_actions = [item.as_dict() for item in outcome.recommendations]
         return SupportIntakeResult(
             ticket_id=outcome.ticket.ticket_id,
             reply_text=reply_text,
@@ -2514,8 +2514,14 @@ class SupportIntakeWorkflow:
                 payload={"context": handoff_context},
             )
 
-    def _derive_ticket_action(self, outcome: WorkflowOutcome) -> tuple[str, list[str]]:
+    def _derive_ticket_action(
+        self, outcome: WorkflowOutcome, system_key: str | None = None
+    ) -> tuple[str, list[str]]:
         trace_events: list[str] = []
+        if system_key and system_key != "ticket":
+            trace_events.extend(["system_route", "system_dispatch"])
+            return "system_dispatch", trace_events
+
         if outcome.handoff.should_handoff:
             trace_events.extend(["need_handoff", "push_human_queue"])
             return "handoff", trace_events

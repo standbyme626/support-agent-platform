@@ -181,7 +181,7 @@ class TestHrSystem:
         )
         assert result["ok"] is True
         assert result["system"] == "hr"
-        assert result["status"] == "submitted"
+        assert result["status"] == "preboarding"
 
     def test_hr_lifecycle(self) -> None:
         system = HrSystem()
@@ -195,12 +195,22 @@ class TestHrSystem:
             }
         )
         entity_id = result["entity_id"]
+        assert result["status"] == "preboarding"
 
-        result = system.execute_action(entity_id, "submit", "hr", {}, "trace-001")
+        result = system.execute_action(
+            entity_id,
+            "send_offer",
+            "hr",
+            {"candidate_name": "李四", "position": "经理"},
+            "trace-001",
+        )
+        assert result["status"] == "submitted"
+
+        result = system.execute_action(entity_id, "submit", "hr", {}, "trace-002")
         assert result["status"] == "pending_approval"
 
         result = system.execute_action(
-            entity_id, "approve", "hr", {"hr_approver_id": "HR-001"}, "trace-002"
+            entity_id, "approve", "hr", {"hr_approver_id": "HR-001"}, "trace-003"
         )
         assert result["ok"] is True
         assert result["status"] == "profile_created"

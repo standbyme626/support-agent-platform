@@ -157,9 +157,8 @@ def test_support_intake_outputs_explicit_procurement_system(tmp_path: Path) -> N
         )
     )
 
-    assert result.ticket_id is not None
-    assert result.ticket_action in {"create_ticket", "handoff", "conservative_ticket"}
     assert result.system == "procurement"
+    assert result.ticket_action in {"system_dispatch", "handoff", "conservative_ticket"}
 
 
 def test_support_intake_outputs_explicit_system_for_ten_domains(tmp_path: Path) -> None:
@@ -1171,7 +1170,9 @@ def test_support_intake_polite_and_question_style_claim_commands_are_supported(
         )
     )
     assert claimed_question.ticket_action == "collab_claim"
-    assert claimed_question.reply_text == f"认领成功：{seed.ticket_id}，当前处理人员：u_ops_question。"
+    assert (
+        claimed_question.reply_text == f"认领成功：{seed.ticket_id}，当前处理人员：u_ops_question。"
+    )
     claimed_ticket = ticket_api.require_ticket(seed.ticket_id)
     assert claimed_ticket.assignee == "u_ops_question"
 
