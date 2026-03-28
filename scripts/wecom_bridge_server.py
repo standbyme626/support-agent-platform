@@ -1430,6 +1430,9 @@ def main() -> int:
             interval_seconds=args.reload_interval,
             service_name="wecom_bridge_server",
         )
+    from app.domain.systems.system_registry import SystemRegistry
+
+    SystemRegistry.reset_instance()
     runtime = build_runtime(args.env)
     handler = _build_handler(runtime=runtime, path=args.path)
     server = ThreadingHTTPServer((args.host, args.port), handler)

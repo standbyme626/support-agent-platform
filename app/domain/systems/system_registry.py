@@ -10,11 +10,11 @@ from app.domain.systems.base import SystemKey
 
 class SystemRegistry:
     _instance: SystemRegistry | None = None
-    _systems: dict[str, "BaseSystem"] = {}
 
     def __new__(cls) -> "SystemRegistry":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
+            cls._instance._systems = {}
         return cls._instance
 
     def register(self, system: "BaseSystem") -> None:
@@ -34,6 +34,10 @@ class SystemRegistry:
 
     def reset(self) -> None:
         self._systems.clear()
+
+    @classmethod
+    def reset_instance(cls) -> None:
+        cls._instance = None
 
 
 registry = SystemRegistry()
