@@ -74,7 +74,7 @@ class ERPNextCrmAdapter(ERPNextAdapter):
 
     @property
     def doctype(self) -> str:
-        return "CRM Lead"
+        return "Customer"
 
     @property
     def system_key(self) -> str:
@@ -125,20 +125,13 @@ class ERPNextCrmAdapter(ERPNextAdapter):
     def _to_erpnext_format(self, data: dict[str, Any]) -> dict[str, Any]:
         return {
             "doctype": self.doctype,
-            "lead_name": data.get("customer_name"),
-            "company_name": data.get("customer_name"),
+            "customer_name": data.get("customer_name"),
+            "customer_type": "Company",
+            "customer_group": data.get("customer_group") or "All Customer Groups",
+            "territory": data.get("territory") or "All Territories",
             "email_id": data.get("contact_email"),
             "phone": data.get("contact_phone"),
             "mobile_no": data.get("contact_phone"),
-            "subject": data.get("subject"),
-            "notes": data.get("description"),
-            "priority": data.get("priority", "Medium"),
-            "lead_owner": data.get("assigned_to"),
-            "custom_resolution": data.get("resolution"),
-            "custom_closed_at": data.get("closed_at"),
-            "custom_opportunity_value": data.get("opportunity_value"),
-            "custom_sales_stage": data.get("sales_stage"),
-            "custom_expected_close": data.get("expected_close"),
         }
 
     def _local_status_to_erpnext(self, local_status: str) -> dict[str, Any]:
