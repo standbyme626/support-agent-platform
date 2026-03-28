@@ -1,22 +1,33 @@
-services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    environment:
-      SUPPORT_AGENT_ENV: dev
-      SUPPORT_AGENT_SQLITE_PATH: /app/storage/support-agent.db
-    volumes:
-      - ./storage:/app/storage
-    command: ["python", "scripts/healthcheck.py", "--env", "dev"]
+version: '3.8'
 
-  smoke:
-    build:
-      context: .
-      dockerfile: Dockerfile
+services:
+  erpnext:
+    image: frappe/erpnext:v16
+    container_name: erpnext
+    ports:
+      - "8080:8080"
+      - "9000:9000"
     environment:
-      SUPPORT_AGENT_ENV: dev
-      SUPPORT_AGENT_SQLITE_PATH: /app/storage/support-agent.db
+      - SITE_NAME=erp.local
+      - SITES=erp.local
+      - FRAPPE_SITE=erp.local
     volumes:
-      - ./storage:/app/storage
-    command: ["python", "-m", "pytest", "tests/integration/test_openclaw_gateway.py", "-q"]
+      - /mnt/f/docker-data/erpnext/frappe-bench:/home/frappe/frappe-bench
+    depends_on:
+      - mariadb
+      - redis
+    restart: unless-stopped
+
+  mariadb:
+    image: mariadb:10.11
+    container_name: erpnext-mariadb
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+    volumes:
+      - /mnt/f/docker-data/erpnext/mariadb:/var/lib/mysql
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-bookworm
+    container_name: erpnext-redis
+    restart: unless-stopped

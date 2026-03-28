@@ -15,13 +15,15 @@ def get_asset(entity_id: str) -> dict[str, Any] | None:
     return adapter.get(entity_id)
 
 
-def list_asset(
-    filters: dict[str, Any] | None = None,
-    page: int = 1,
-    page_size: int = 20,
-) -> dict[str, Any]:
+def list_asset(args: dict[str, Any] | None = None) -> dict[str, Any]:
+    if args is None:
+        args = {}
     adapter = ERPNextAssetAdapter()
-    return adapter.list(filters=filters, page=page, page_size=page_size)
+    return adapter.list(
+        filters=args.get("filters"),
+        page=args.get("page", 1),
+        page_size=args.get("page_size", 20),
+    )
 
 
 def execute_asset_action(
